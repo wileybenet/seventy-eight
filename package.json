@@ -1,0 +1,29 @@
+{
+  "name": "seventy-eight",
+  "version": "0.0.15",
+  "description": "Active-Record like API",
+  "main": "index.js",
+  "scripts": {
+    "test": "grunt test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wileybenet/seventy-eight.git"
+  },
+  "author": "wileybenet",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/wileybenet/seventy-eight/issues"
+  },
+  "homepage": "https://github.com/wileybenet/seventy-eight#readme",
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-bump": "^0.6.0"
+  },
+  "dependencies": {
+    "colors": "^1.1.2",
+    "lodash": "^3.10.1",
+    "mysql": "^2.9.0",
+    "q": "^1.4.1"
+  }
+}
