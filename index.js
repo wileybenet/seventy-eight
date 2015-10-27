@@ -156,6 +156,7 @@ record.staticMethods = {
   }
 };
 
+// base instance methods
 record.instanceMethods = {
   _public: function(fields) {
     return _.pick(this, function(value, key) {
