@@ -51,6 +51,7 @@ record.staticMethods = {
   },
   one: function() {
     this.$singleResult = true;
+    this.queryParams.limit = 1;
   },
   joins: function(sql) {
     var joins;
