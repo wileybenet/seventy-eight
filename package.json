@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "grunt test",
-    "build": "git add -u && git commit -m 'patch update' && npm version patch && git add -u && git commit -m 'patch update' && npm update && npm publish"
+    "build": "npm version patch && git add -u && git commit -m 'patch update' && npm update && npm publish"
   },
   "repository": {
     "type": "git",
