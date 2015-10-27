@@ -30,6 +30,7 @@ record.getSchema = function(tableName) {
   return _.pluck(tableSchemas[tableName], 'columnName');
 };
 
+// base static methods
 record.staticMethods = {
   all: function() {},
   select: function(fields) {
