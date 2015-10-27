@@ -220,7 +220,7 @@ record.instanceMethods = {
   }
 };
 
-// api
+// public record API
 record.createModel = function(options) {
   var staticMethod, instanceMethod;
   var Model = options.constructor;

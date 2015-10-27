@@ -4,7 +4,8 @@
   "description": "Active-Record like API",
   "main": "index.js",
   "scripts": {
-    "test": "grunt test"
+    "test": "grunt test",
+    "build": "git add -u && git commit -m 'patch update' && npm version patch && git add -u && git commit -m 'patch update' && npm update && npm publish"
   },
   "repository": {
     "type": "git",
