@@ -229,7 +229,7 @@ record.createModel = function(options) {
   var Model = options.constructor;
   var staticMethods = _.extend({}, record.staticMethods, options.staticMethods || {});
   var instanceMethods = _.extend({}, record.instanceMethods, options.instanceMethods || {});
-  var tableName = options.tableName || (utils.toSnake(Model.name) + 's');
+  var tableName = options.tableName || (utils.toSnake(Model.name).replace(/y$/g, 'ie') + 's');
   var QueryConstructor = eval("(" +
     "function " + Model.name + "(row, skip) {" +
       "for (var key in row) {" +
