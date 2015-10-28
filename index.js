@@ -1,6 +1,7 @@
 var client = require('./lib/db.client');
 var _ = require('lodash');
 var utils = require('./lib/utils');
+var Collection = require('./lib/Collection');
 var db;
 var record = {};
 // var connectionCalled = false;
@@ -150,8 +151,9 @@ record.staticMethods = {
   },
   _instantiateResponse: function(data) {
     var _this = this;
-    var models = data.map(function(el) {
-      return new _this._constructor(el, true);
+    var models = new Collection();
+    data.forEach(function(el) {
+      models.push(new _this._constructor(el, true));
     });
 
     return (this.$singleResult) ? (models[0] || null) : (models || []);
