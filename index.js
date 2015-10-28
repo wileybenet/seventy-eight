@@ -143,9 +143,9 @@ record.staticMethods = {
   },
   _formatWhere: function(key, value) {
     if (_.isArray(value)) {
-      return record.db.escapeId(key) + ' IN (' + record.db.escape(value) + ')';
+      return record.db.escapeKey(key) + ' IN (' + record.db.escapeValue(value) + ')';
     } else {
-      return record.db.escapeId(key) + ' = ' + record.db.escape(value);
+      return record.db.escapeKey(key) + ' = ' + record.db.escapeValue(value);
     }
   },
   _instantiateResponse: function(data) {
