@@ -18,3 +18,24 @@ module.exports = seventyEight.createModel({
     }
   }
 });
+```
+
+### Documentation
+
+#### all()
+
+#### select()
+
+#### one()
+
+#### joins()
+
+#### where()
+
+#### order()
+
+#### group()
+
+#### limit()
+
+#### then()
