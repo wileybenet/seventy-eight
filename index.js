@@ -35,7 +35,7 @@ record.staticMethods = {
   all: function() {},
   select: function(fields) {
     var selects;
-    if (typeof fields === 'object') {
+    if (_.isArray(fields)) {
       selects = fields;
     } else {
       selects = fields.split(/,/g);
@@ -55,7 +55,7 @@ record.staticMethods = {
   },
   joins: function(sql) {
     var joins;
-    if (typeof sql === 'object') {
+    if (_.isArray(sql)) {
       joins = sql.join(' ');
     } else {
       joins = sql;
@@ -64,7 +64,7 @@ record.staticMethods = {
   },
   group: function(keys) {
     var groups;
-    if (typeof keys === 'object') {
+    if (_.isArray(keys)) {
       groups = keys;
     } else {
       groups = keys.split(/,/g);
@@ -76,7 +76,7 @@ record.staticMethods = {
   },
   order: function(keys) {
     var orders;
-    if (typeof keys === 'object') {
+    if (_.isArray(keys)) {
       orders = keys;
     } else {
       orders = keys.split(/,/g);
@@ -142,7 +142,7 @@ record.staticMethods = {
       });
   },
   _formatWhere: function(key, value) {
-    if (value.length > 0) {
+    if (_.isArray(value)) {
       return record.db.escapeId(key) + ' IN (' + record.db.escape(value) + ')';
     } else {
       return record.db.escapeId(key) + ' = ' + record.db.escape(value);
