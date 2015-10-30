@@ -43,7 +43,7 @@ record.staticMethods = {
       selects = fields.split(/,/g);
     }
 
-    this.queryParams.select = this.queryParams.select.concat(selects.map(function(el) {
+    this.$queryParams.select = this.$queryParams.select.concat(selects.map(function(el) {
       return el.trim();
     }));
   },
@@ -53,7 +53,7 @@ record.staticMethods = {
   },
   one: function() {
     this.$singleResult = true;
-    this.queryParams.limit = 1;
+    this.$queryParams.limit = 1;
   },
   joins: function(sql) {
     var joins;
@@ -62,7 +62,7 @@ record.staticMethods = {
     } else {
       joins = sql;
     }
-    this.queryParams.joins.push(joins);
+    this.$queryParams.joins.push(joins);
   },
   group: function(keys) {
     var groups;
@@ -72,7 +72,7 @@ record.staticMethods = {
       groups = keys.split(/,/g);
     }
 
-    this.queryParams.group = this.queryParams.group.concat(groups.map(function(el) {
+    this.$queryParams.group = this.$queryParams.group.concat(groups.map(function(el) {
       return el.trim();
     }));
   },
@@ -84,24 +84,24 @@ record.staticMethods = {
       orders = keys.split(/,/g);
     }
 
-    this.queryParams.order = this.queryParams.order.concat(orders.map(function(el) {
+    this.$queryParams.order = this.$queryParams.order.concat(orders.map(function(el) {
       return el.trim();
     }));
   },
   where: function(condition) {
     for (var key in condition) {
-      this.queryParams.where[key] = condition[key];
+      this.$queryParams.where[key] = condition[key];
     }
   },
   limit: function(size) {
-    this.queryParams.limit = +size;
+    this.$queryParams.limit = +size;
   },
   then: function(cbFn) {
     var _this = this;
     var query = '';
     var params = [];
-    if (_.size(this.queryParams.select)) {
-      query += 'SELECT ' + this.queryParams.select.join(', ');
+    if (_.size(this.$queryParams.select)) {
+      query += 'SELECT ' + this.$queryParams.select.join(', ');
     } else {
       query += 'SELECT *';
     }
@@ -109,26 +109,26 @@ record.staticMethods = {
       params.push(this.tableName);
       query += ' FROM ??';
     }
-    if (_.size(this.queryParams.joins)) {
-      query += ' ' + this.queryParams.joins.join(' ');
+    if (_.size(this.$queryParams.joins)) {
+      query += ' ' + this.$queryParams.joins.join(' ');
     }
-    if (_.size(this.queryParams.where) === 1) {
-      params.push(this.queryParams.where);
+    if (_.size(this.$queryParams.where) === 1) {
+      params.push(this.$queryParams.where);
       query += ' WHERE ?';
-    } else if (_.size(this.queryParams.where) > 1) {
-      query += ' WHERE ' + _.map(this.queryParams.where, function(value, key) {
+    } else if (_.size(this.$queryParams.where) > 1) {
+      query += ' WHERE ' + _.map(this.$queryParams.where, function(value, key) {
         return _this._formatWhere(key, value);
       }).join(' AND ');
     }
-    if (_.size(this.queryParams.group)) {
-      params.push(this.queryParams.group);
+    if (_.size(this.$queryParams.group)) {
+      params.push(this.$queryParams.group);
       query += ' GROUP BY ??';
     }
-    if (_.size(this.queryParams.order)) {
-      query += ' ORDER BY ' + this.queryParams.order.join(' ');
+    if (_.size(this.$queryParams.order)) {
+      query += ' ORDER BY ' + this.$queryParams.order.join(' ');
     }
-    if (this.queryParams.limit) {
-      params.push(this.queryParams.limit);
+    if (this.$queryParams.limit) {
+      params.push(this.$queryParams.limit);
       query += ' LIMIT ?';
     }
 
@@ -154,7 +154,7 @@ record.staticMethods = {
     var _this = this;
     var models = new Collection();
     data.forEach(function(el) {
-      models.push(new _this._constructor(el, true));
+      models.push(new _this.$constructor(el, true));
     });
 
     return (this.$singleResult) ? (models[0] || null) : (models || []);
@@ -247,11 +247,11 @@ record.createModel = function(options) {
   QueryConstructor.tableName = tableName;
 
   function initChain() {
-    return _.extend({}, QueryConstructor, {
-      _constructor: QueryConstructor,
+    return _.extend({}, record.staticProps, QueryConstructor, {
+      $constructor: QueryConstructor,
       $init: true,
       $singleResult: false,
-      queryParams: {
+      $queryParams: {
         where: {},
         select: [],
         joins: [],
