@@ -1,3 +1,4 @@
+var q = require('q');
 var client = require('./lib/db.client');
 var _ = require('lodash');
 var utils = require('./lib/utils');
@@ -97,41 +98,41 @@ record.staticMethods = {
   },
   then: function(cbFn) {
     var _this = this;
-    var q = '';
+    var query = '';
     var params = [];
     if (_.size(this.queryParams.select)) {
-      q += 'SELECT ' + this.queryParams.select.join(', ');
+      query += 'SELECT ' + this.queryParams.select.join(', ');
     } else {
-      q += 'SELECT *';
+      query += 'SELECT *';
     }
     if (this.tableName) {
       params.push(this.tableName);
-      q += ' FROM ??';
+      query += ' FROM ??';
     }
     if (_.size(this.queryParams.joins)) {
-      q += ' ' + this.queryParams.joins.join(' ');
+      query += ' ' + this.queryParams.joins.join(' ');
     }
     if (_.size(this.queryParams.where) === 1) {
       params.push(this.queryParams.where);
-      q += ' WHERE ?';
+      query += ' WHERE ?';
     } else if (_.size(this.queryParams.where) > 1) {
-      q += ' WHERE ' + _.map(this.queryParams.where, function(value, key) {
+      query += ' WHERE ' + _.map(this.queryParams.where, function(value, key) {
         return _this._formatWhere(key, value);
       }).join(' AND ');
     }
     if (_.size(this.queryParams.group)) {
       params.push(this.queryParams.group);
-      q += ' GROUP BY ??';
+      query += ' GROUP BY ??';
     }
     if (_.size(this.queryParams.order)) {
-      q += ' ORDER BY ' + this.queryParams.order.join(' ');
+      query += ' ORDER BY ' + this.queryParams.order.join(' ');
     }
     if (this.queryParams.limit) {
       params.push(this.queryParams.limit);
-      q += ' LIMIT ?';
+      query += ' LIMIT ?';
     }
 
-    q += ';';
+    query += ';';
 
     client
       .query(q, params)
@@ -202,6 +203,7 @@ record.instanceMethods = {
   },
   save: function(callback) {
     var _this = this;
+    var deferred = q.defer();
     var columns = _(this._public())
       .pick(function(value) { return {String: true, Number: true, Date: true}[value && value.constructor.name]; })
       .keys()
@@ -212,12 +214,12 @@ record.instanceMethods = {
         .query("INSERT INTO ?? (??) VALUES (?)", [this.$tableName, columns, this._get(columns)])
         .then(function(data) {
           _this.id = data.insertId;
-          callback(_this._public());
+          callback ? callback(_this._public()) : deferred.resolve(_this._public());
         });
     } else {
-      callback(_this._public());
+      callback ? callback(_this._public()) : deferred.resolve(_this._public());
     }
-    return this;
+    return this || deferred.promise;
   },
   delete: function(callback) {
     callback();
