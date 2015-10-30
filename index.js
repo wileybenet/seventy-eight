@@ -232,7 +232,7 @@ record.instanceMethods = {
 record.createModel = function(options) {
   var staticMethod, instanceMethod;
   var Model = options.constructor;
-  var staticProps = record.staticProps || {};
+  var staticProps = options.staticProps || {};
   var staticMethods = _.extend({}, record.staticMethods, options.staticMethods || {});
   var instanceMethods = _.extend({}, record.instanceMethods, options.instanceMethods || {});
   var tableName = options.tableName || (utils.toSnake(Model.name).replace(/y$/g, 'ie') + 's');
@@ -248,7 +248,7 @@ record.createModel = function(options) {
   QueryConstructor.tableName = tableName;
 
   function initChain() {
-    return _.extend({}, staticProps, QueryConstructor, {
+    return _.extend({}, QueryConstructor, staticProps, {
       $constructor: QueryConstructor,
       $init: true,
       $singleResult: false,
