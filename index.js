@@ -135,7 +135,7 @@ record.staticMethods = {
     query += ';';
 
     client
-      .query(q, params)
+      .query(query, params)
       .then(function(data) {
         if (cbFn)
           cbFn(_this._instantiateResponse.call(_this, data));
