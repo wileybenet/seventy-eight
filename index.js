@@ -276,6 +276,10 @@ record.createModel = function(options) {
     };
   }
 
+  for (var staticProp in record.staticProps) {
+    QueryConstructor[staticProp] = record.staticProps[staticProp];
+  }
+
   for (staticMethod in staticMethods) {
     QueryConstructor[staticMethod] = staticMethod[0] === '_' ? staticMethods[staticMethod] : startChain(staticMethods[staticMethod]);
   }
