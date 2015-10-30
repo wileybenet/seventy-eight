@@ -205,7 +205,7 @@ record.instanceMethods = {
   save: function(callback) {
     var _this = this;
     var deferred = q.defer();
-    var columns = _(this._public())
+    var columns = _(this._public(record.getSchema(this.$tableName)))
       .pick(function(value) { return {String: true, Number: true, Date: true}[value && value.constructor.name]; })
       .keys()
       .value();
