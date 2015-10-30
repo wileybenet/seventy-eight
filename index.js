@@ -200,7 +200,7 @@ record.instanceMethods = {
       callback ? callback(_this._public()) : deferred.resolve(_this._public());
     }
 
-    return this || deferred.promise;
+    return callback ? this : deferred.promise;
   },
   save: function(callback) {
     var _this = this;
@@ -220,7 +220,7 @@ record.instanceMethods = {
     } else {
       callback ? callback(_this._public()) : deferred.resolve(_this._public());
     }
-    return this || deferred.promise;
+    return callback ? this : deferred.promise;
   },
   delete: function(callback) {
     callback();
