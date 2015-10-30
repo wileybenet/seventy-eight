@@ -143,14 +143,14 @@ record.staticMethods = {
           console.log('SQL error: ' + err.message);
       });
   },
-  _formatWhere: function(key, value) {
+  $formatWhere: function(key, value) {
     if (_.isArray(value)) {
       return record.db.escapeKey(key) + ' IN (' + record.db.escapeValue(value) + ')';
     } else {
       return record.db.escapeKey(key) + ' = ' + record.db.escapeValue(value);
     }
   },
-  _instantiateResponse: function(data) {
+  $instantiateResponse: function(data) {
     var _this = this;
     var models = new Collection();
     data.forEach(function(el) {
@@ -232,11 +232,12 @@ record.instanceMethods = {
 record.createModel = function(options) {
   var staticMethod, instanceMethod;
   var Model = options.constructor;
+  var staticProps = record.staticProps || {};
   var staticMethods = _.extend({}, record.staticMethods, options.staticMethods || {});
   var instanceMethods = _.extend({}, record.instanceMethods, options.instanceMethods || {});
   var tableName = options.tableName || (utils.toSnake(Model.name).replace(/y$/g, 'ie') + 's');
-  var QueryConstructor = eval("(" +
-    "function " + Model.name + "(row, skip) {" +
+  var QueryConstructor = eval(
+    "(function " + Model.name + "(row, skip) {" +
       "for (var key in row) {" +
         "this[key] = row[key];" +
       "}" +
@@ -247,7 +248,7 @@ record.createModel = function(options) {
   QueryConstructor.tableName = tableName;
 
   function initChain() {
-    return _.extend({}, record.staticProps, QueryConstructor, {
+    return _.extend({}, staticProps, QueryConstructor, {
       $constructor: QueryConstructor,
       $init: true,
       $singleResult: false,
@@ -276,12 +277,12 @@ record.createModel = function(options) {
     };
   }
 
-  for (var staticProp in record.staticProps) {
-    QueryConstructor[staticProp] = record.staticProps[staticProp];
+  for (var staticProp in staticProps) {
+    QueryConstructor[staticProp] = staticProps[staticProp];
   }
 
   for (staticMethod in staticMethods) {
-    QueryConstructor[staticMethod] = staticMethod[0] === '_' ? staticMethods[staticMethod] : startChain(staticMethods[staticMethod]);
+    QueryConstructor[staticMethod] = staticMethod[0] === '$' ? staticMethods[staticMethod] : startChain(staticMethods[staticMethod]);
   }
 
   for (instanceMethod in instanceMethods) {
