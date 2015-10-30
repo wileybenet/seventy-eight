@@ -117,7 +117,7 @@ record.staticMethods = {
       query += ' WHERE ?';
     } else if (_.size(this.$queryParams.where) > 1) {
       query += ' WHERE ' + _.map(this.$queryParams.where, function(value, key) {
-        return _this._formatWhere(key, value);
+        return _this.$formatWhere(key, value);
       }).join(' AND ');
     }
     if (_.size(this.$queryParams.group)) {
@@ -138,7 +138,7 @@ record.staticMethods = {
       .query(query, params)
       .then(function(data) {
         if (cbFn)
-          cbFn(_this._instantiateResponse.call(_this, data));
+          cbFn(_this.$instantiateResponse.call(_this, data));
       }, function(err) {
           console.log('SQL error: ' + err.message);
       });
