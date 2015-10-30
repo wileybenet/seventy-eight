@@ -182,6 +182,7 @@ record.instanceMethods = {
   },
   update: function(properties, callback) {
     var _this = this;
+    var deferred = q.defer();
     var whiteList = this.$fields || record.getSchema(this.$tableName);
     var whiteListedProperties = _.pick(properties, whiteList);
 
@@ -193,13 +194,13 @@ record.instanceMethods = {
       client
         .query("UPDATE ?? SET ? WHERE id = ?", [this.$tableName, whiteListedProperties, this.id])
         .then(function(data) {
-          callback(_this._public());
+          callback ? callback(_this._public()) : deferred.resolve(_this._public());
         });
     } else {
-      callback(_this._public());
+      callback ? callback(_this._public()) : deferred.resolve(_this._public());
     }
 
-    return this;
+    return this || deferred.promise;
   },
   save: function(callback) {
     var _this = this;
