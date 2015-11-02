@@ -194,10 +194,12 @@ record.instanceMethods = {
       client
         .query("UPDATE ?? SET ? WHERE id = ?", [this.$tableName, whiteListedProperties, this.id])
         .then(function(data) {
-          callback ? callback(_this._public()) : deferred.resolve(_this._public());
+          callback ? callback(null, _this._public()) : deferred.resolve(_this._public());
+        }, function(err) {
+          callback(err);
         });
     } else {
-      callback ? callback(_this._public()) : deferred.resolve(_this._public());
+      callback ? callback(null, _this._public()) : deferred.resolve(_this._public());
     }
 
     return callback ? this : deferred.promise;
@@ -215,10 +217,12 @@ record.instanceMethods = {
         .query("INSERT INTO ?? (??) VALUES (?)", [this.$tableName, columns, this._get(columns)])
         .then(function(data) {
           _this.id = data.insertId;
-          callback ? callback(_this._public()) : deferred.resolve(_this._public());
+          callback ? callback(null, _this._public()) : deferred.resolve(_this._public());
+        }, function(err) {
+          callback(err);
         });
     } else {
-      callback ? callback(_this._public()) : deferred.resolve(_this._public());
+      callback ? callback(null, _this._public()) : deferred.resolve(_this._public());
     }
     return callback ? this : deferred.promise;
   },
