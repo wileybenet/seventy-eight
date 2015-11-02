@@ -167,12 +167,9 @@ record.instanceMethods = {
     return typeof this._beforeSave === 'function' ? this._beforeSave(_.extend({}, this._public())) : this;
   },
   $getAt: function(fields, properties) {
-    var values = [];
-    for (var key in properties) {
-      if (!!~fields.indexOf(key))
-        values.push(properties[key]);
-    }
-    return values;
+    return fields.map(function(field) {
+      return properties[field] || 'NULL';
+    });
   },
   _beforeSave: function(obj) {
     return obj;
