@@ -166,7 +166,7 @@ record.instanceMethods = {
   $prepareProps: function() {
     return typeof this._beforeSave === 'function' ? this._beforeSave(_.extend({}, this._public())) : this;
   },
-  $get: function(fields, properties) {
+  $getAt: function(fields, properties) {
     var values = [];
     for (var key in properties) {
       if (!!~fields.indexOf(key))
@@ -215,14 +215,15 @@ record.instanceMethods = {
     var _this = this;
     var properties = this.$prepareProps();
     var deferred = q.defer();
-    var columns = _(this._public(record.getSchema(this.$tableName)))
+    var columns = _(properties)
+      .pick(record.getSchema(this.$tableName))
       .pick(function(value) { return {String: true, Number: true, Date: true}[value && value.constructor.name]; })
       .keys()
       .value();
 
     if (_.size(this._public())) {
       client
-        .query("INSERT INTO ?? (??) VALUES (?)", [this.$tableName, columns, this.$get(columns, properties)])
+        .query("INSERT INTO ?? (??) VALUES (?)", [this.$tableName, columns, this.$getAt(columns, properties)])
         .then(function(data) {
           _this.id = data.insertId;
           callback ? callback(null, _this._public()) : deferred.resolve(_this._public());
