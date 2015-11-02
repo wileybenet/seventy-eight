@@ -1,4 +1,4 @@
-### Active Record Lite
+## Active Record Lite
 
 ```javascript
 var seventyEight = require('seventy-eight');
@@ -20,7 +20,9 @@ module.exports = seventyEight.createModel({
 });
 ```
 
-### Documentation
+## Documentation
+
+### Static Methods
 
 #### all()
 
@@ -39,3 +41,13 @@ module.exports = seventyEight.createModel({
 #### limit()
 
 #### then()
+
+### Instance Methods
+
+#### save()
+
+#### update()
+
+#### delete()
+
+#### _beforeSave()

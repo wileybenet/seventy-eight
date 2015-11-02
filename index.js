@@ -163,6 +163,20 @@ record.staticMethods = {
 
 // base instance methods
 record.instanceMethods = {
+  $prepareProps: function() {
+    return typeof this._beforeSave === 'function' ? this._beforeSave() : this;
+  },
+  $get: function(fields, properties) {
+    var values = [];
+    for (var key in properties) {
+      if (!!~fields.indexOf(key))
+        values.push(properties[key]);
+    }
+    return values;
+  },
+  _beforeSave: function() {
+    return this;
+  },
   _public: function(fields) {
     return _.pick(this, function(value, key) {
       if (fields) {
@@ -172,16 +186,9 @@ record.instanceMethods = {
       }
     });
   },
-  _get: function(fields) {
-    var values = [];
-    for (var key in this) {
-      if (!!~fields.indexOf(key))
-        values.push(this[key]);
-    }
-    return values;
-  },
   update: function(properties, callback) {
     var _this = this;
+    properties = this.$prepareProps();
     var deferred = q.defer();
     var whiteList = this.$fields || record.getSchema(this.$tableName);
     var whiteListedProperties = _.pick(properties, whiteList);
@@ -206,6 +213,7 @@ record.instanceMethods = {
   },
   save: function(callback) {
     var _this = this;
+    var properties = this.$prepareProps();
     var deferred = q.defer();
     var columns = _(this._public(record.getSchema(this.$tableName)))
       .pick(function(value) { return {String: true, Number: true, Date: true}[value && value.constructor.name]; })
@@ -214,7 +222,7 @@ record.instanceMethods = {
 
     if (_.size(this._public())) {
       client
-        .query("INSERT INTO ?? (??) VALUES (?)", [this.$tableName, columns, this._get(columns)])
+        .query("INSERT INTO ?? (??) VALUES (?)", [this.$tableName, columns, this.$get(columns, properties)])
         .then(function(data) {
           _this.id = data.insertId;
           callback ? callback(null, _this._public()) : deferred.resolve(_this._public());
