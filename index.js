@@ -164,7 +164,7 @@ record.staticMethods = {
 // base instance methods
 record.instanceMethods = {
   $prepareProps: function() {
-    return typeof this._beforeSave === 'function' ? this._beforeSave() : this;
+    return typeof this._beforeSave === 'function' ? this._beforeSave(_.extend({}, this._public())) : this;
   },
   $get: function(fields, properties) {
     var values = [];
@@ -174,8 +174,8 @@ record.instanceMethods = {
     }
     return values;
   },
-  _beforeSave: function() {
-    return this;
+  _beforeSave: function(obj) {
+    return obj;
   },
   _public: function(fields) {
     return _.pick(this, function(value, key) {
