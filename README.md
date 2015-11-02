@@ -20,6 +20,12 @@ module.exports = seventyEight.createModel({
 });
 ```
 
+## Initialize
+
+Configure DB connection at runtime:
+
+> DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_SCHEMA
+
 ## Documentation
 
 ### Static Methods
