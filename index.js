@@ -166,8 +166,8 @@ record.instanceMethods = {
   $whiteList: function(properties) {
     return _.pick(properties || this, record.getSchema(this.$tableName));
   },
-  $prepareProps: function() {
-    return typeof this._beforeSave === 'function' ? this._beforeSave(_.extend({}, this.$whiteList())) : this;
+  $prepareProps: function(properties) {
+    return typeof this._beforeSave === 'function' ? this._beforeSave(_.extend({}, this.$whiteList(properties))) : this;
   },
   $getAt: function(fields, properties) {
     return fields.map(function(field) {
