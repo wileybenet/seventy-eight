@@ -163,8 +163,8 @@ record.staticMethods = {
 
 // base instance methods
 record.instanceMethods = {
-  $whiteList: function() {
-    return _.pick(this, record.getSchema(this.$tableName));
+  $whiteList: function(properties) {
+    return _.pick(properties || this, record.getSchema(this.$tableName));
   },
   $prepareProps: function() {
     return typeof this._beforeSave === 'function' ? this._beforeSave(_.extend({}, this.$whiteList())) : this;
@@ -190,7 +190,7 @@ record.instanceMethods = {
   update: function(properties, callback) {
     var _this = this;
     var deferred = q.defer();
-    var whiteListedProperties = this.$whiteList();
+    var whiteListedProperties = this.$whiteList(properties);
 
     for (var key in whiteListedProperties) {
       this[key] = whiteListedProperties[key];
