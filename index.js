@@ -253,8 +253,15 @@ record.instanceMethods = {
     return callback ? this : deferred.promise;
   },
   delete: function(callback) {
-    callback();
-    return this;
+    var deferred = q.defer();
+    client
+      .query("DELETE FROM ?? WHERE id = ?", [this.$tableName, this.id])
+      .then(function(data) {
+        callback ? callback(null, true) : deferred.resolve(true);
+      }, function(err) {
+        callback ? callback(err) : deferred.reject(err);
+      });
+    return callback ? this : deferred.promise;
   }
 };
 
