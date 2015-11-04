@@ -253,7 +253,9 @@ record.createModel = function(options) {
       "this.$schema = options.schema;" +
       "!skip && Model.call(this);" +
     "})");
+
   QueryConstructor.tableName = tableName;
+  QueryConstructor.prototype.Class = {};
 
   function initChain() {
     return _.extend({}, QueryConstructor, staticProps, {
@@ -287,6 +289,7 @@ record.createModel = function(options) {
 
   for (var staticProp in staticProps) {
     QueryConstructor[staticProp] = staticProps[staticProp];
+    QueryConstructor.prototype.Class[staticProp] = staticProps[staticProp];
   }
 
   for (staticMethod in staticMethods) {
