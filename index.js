@@ -187,7 +187,7 @@ record.instanceMethods = {
       }
     });
     obj.include = function(extraFields) {
-      return _.extend({}, obj, _.pick(this, extraFields));
+      return _.extend({}, obj, _.pick(this, [].concat(extraFields)));
     };
     return obj;
   },
