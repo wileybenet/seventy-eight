@@ -207,7 +207,7 @@ record.instanceMethods = {
         .then(function(data) {
           callback ? callback(null, _this._public()) : deferred.resolve(_this._public());
         }, function(err) {
-          callback(err);
+          callback ? callback(err) : deferred.reject(err);
         });
     } else {
       callback ? callback(null, _this._public()) : deferred.resolve(_this._public());
@@ -228,7 +228,7 @@ record.instanceMethods = {
           _this.id = data.insertId;
           callback ? callback(null, _this._public()) : deferred.resolve(_this._public());
         }, function(err) {
-          callback(err);
+          callback ? callback(err) : deferred.reject(err);
         });
     } else {
       callback ? callback(null, _this._public()) : deferred.resolve(_this._public());
