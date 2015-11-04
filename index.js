@@ -178,6 +178,7 @@ record.instanceMethods = {
     return obj;
   },
   _public: function(fields) {
+    var _this = this;
     fields = fields || this._publicFields || null;
     var obj = _.pick(this, function(value, key) {
       if (fields) {
@@ -187,7 +188,7 @@ record.instanceMethods = {
       }
     });
     obj.include = function(extraFields) {
-      return _.extend({}, obj, _.pick(this, [].concat(extraFields)));
+      return _.extend({}, obj, _.pick(_this, [].concat(extraFields)));
     };
     return obj;
   },
