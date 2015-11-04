@@ -112,13 +112,8 @@ record.staticMethods = {
     if (_.size(this.$queryParams.joins)) {
       query += ' ' + this.$queryParams.joins.join(' ');
     }
-    if (_.size(this.$queryParams.where) === 1) {
-      params.push(this.$queryParams.where);
-      query += ' WHERE ?';
-    } else if (_.size(this.$queryParams.where) > 1) {
-      query += ' WHERE ' + _.map(this.$queryParams.where, function(value, key) {
-        return _this.$formatWhere(key, value);
-      }).join(' AND ');
+    if (_.size(this.$queryParams.where)) {
+      query += ' WHERE ' + this.$formatWhere(this.$queryParams.where);
     }
     if (_.size(this.$queryParams.group)) {
       params.push(this.$queryParams.group);
@@ -143,7 +138,29 @@ record.staticMethods = {
           console.log('SQL error: ' + err.message);
       });
   },
-  $formatWhere: function(key, value) {
+  $formatWhere: function(obj) {
+    var _this = this;
+    if (obj.$OR || obj.$AND) {
+      return _.map(obj, function(value, key) {
+        return _this.$formatWhereDeep(key, value);
+      }).join('');
+    } else {
+      return _.map(obj, function(value, key) {
+        return _this.$formatWherePair(key, value);
+      }).join(' AND ');
+    }
+  },
+  $formatWhereDeep: function(key, value) {
+    var _this = this;
+    if (key === '$OR' || key === '$AND') {
+      return '(' + _.map(value, function(v, k) {
+        return _this.$formatWhereDeep(k, v);
+      }).join(' ' + key.substr(1) + ' ') + ')';
+    } else {
+      return this.$formatWherePair(key, value);
+    }
+  },
+  $formatWherePair: function(key, value) {
     if (_.isArray(value)) {
       return record.db.escapeKey(key) + ' IN (' + record.db.escapeValue(value) + ')';
     } else {
