@@ -175,6 +175,7 @@ record.instanceMethods = {
     return obj;
   },
   _public: function(fields) {
+    fields = fields || this._publicFields || null;
     return _.pick(this, function(value, key) {
       if (fields) {
         return !!~fields.indexOf(key);
