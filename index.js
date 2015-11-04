@@ -179,13 +179,17 @@ record.instanceMethods = {
   },
   _public: function(fields) {
     fields = fields || this._publicFields || null;
-    return _.pick(this, function(value, key) {
+    var obj = _.pick(this, function(value, key) {
       if (fields) {
         return !!~fields.indexOf(key);
       } else {
         return !{$: true, _: true}[key.substr(0, 1)];
       }
     });
+    obj.include = function(extraFields) {
+      return _.extend({}, obj, _.pick(this, extraFields));
+    };
+    return obj;
   },
   update: function(properties, callback) {
     var _this = this;
