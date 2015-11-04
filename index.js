@@ -190,7 +190,7 @@ record.instanceMethods = {
   update: function(properties, callback) {
     var _this = this;
     var deferred = q.defer();
-    var whiteListedProperties = this.$whiteList(properties);
+    var whiteListedProperties = this.$prepareProps(properties);
 
     for (var key in whiteListedProperties) {
       this[key] = whiteListedProperties[key];
@@ -214,11 +214,7 @@ record.instanceMethods = {
     var _this = this;
     var properties = this.$prepareProps();
     var deferred = q.defer();
-    var columns = _(properties)
-      .pick(record.getSchema(this.$tableName))
-      .pick(function(value) { return {String: true, Number: true, Date: true}[value && value.constructor.name]; })
-      .keys()
-      .value();
+    var columns = _.keys(properties);
 
     if (_.size(this._public())) {
       client
