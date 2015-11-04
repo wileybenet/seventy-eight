@@ -186,7 +186,6 @@ record.instanceMethods = {
   },
   update: function(properties, callback) {
     var _this = this;
-    properties = this.$prepareProps();
     var deferred = q.defer();
     var whiteList = this.$fields || record.getSchema(this.$tableName);
     var whiteListedProperties = _.pick(properties, whiteList);
