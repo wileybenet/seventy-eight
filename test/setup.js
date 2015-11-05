@@ -1,4 +1,4 @@
-var client = require('./lib/db.client');
+var client = require('../lib/db.client');
 var path = require('path');
 var fs = require('fs');
 
