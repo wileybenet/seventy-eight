@@ -13,6 +13,7 @@ _.mixin(utils.lodashMixin);
 
 
 
+record.const = {};
 record.db = client;
 
 client.query("SELECT * FROM information_schema.columns WHERE table_schema = '" + client.schema + "' ORDER BY table_name, ordinal_position", function(err, data) {
@@ -26,6 +27,13 @@ client.query("SELECT * FROM information_schema.columns WHERE table_schema = '" +
     .groupBy('table')
     .value();
   console.log('mapped record schemas');
+});
+
+client.query("SELECT * FROM const").then(function(data) {
+  _.each(data, function(row) {
+    record.const[row.name] = row.value;
+  });
+  console.log('loaded const', record.const);
 });
 
 record.getSchema = function(tableName) {
