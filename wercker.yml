@@ -25,14 +25,8 @@ build:
     - npm-install
     - script:
         name: install global packages
-        code: sudo npm install -g grunt-cli istanbul
-    - script:
-        name: setup tests
-        code: node test/setup.js
+        code: sudo npm install -g grunt-cli
     - npm-test
-    - script:
-        name: teardown tests
-        code: node test/teardown.js
 
     # A custom script step, name value is used in the UI
     # and the code value contains the command that get executed
