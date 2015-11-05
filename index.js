@@ -33,7 +33,6 @@ client.query("SELECT * FROM const").then(function(data) {
   _.each(data, function(row) {
     record.const[row.name] = row.value;
   });
-  console.log('loaded const', record.const);
 });
 
 record.getSchema = function(tableName) {
