@@ -23,7 +23,9 @@ build:
   # http://devcenter.wercker.com/docs/steps/index.html
   steps:
     - npm-install
-    # A step that executes `npm test` command
+    - script:
+        name: install grunt
+        code: sudo npm install grunt-cli -g
     - npm-test
 
     - script:
