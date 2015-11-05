@@ -1,5 +1,56 @@
 var Collection = require('./lib/Collection');
 var _ = require('lodash');
+var db = require('./lib/db.client');
+
+function formatWhere(obj) {
+  if (obj.$OR || obj.$AND) {
+    return _.map(obj, function(value, key) {
+      return formatWhereDeep(key, value);
+    }).join('');
+  } else {
+    return _.map(obj, function(value, key) {
+      return formatWherePair(key, value);
+    }).join(' AND ');
+  }
+}
+
+function formatWhereDeep(key, value) {
+  if (key === '$OR' || key === '$AND') {
+    return '(' + _.map(value, function(v, k) {
+      return formatWhereDeep(k, v);
+    }).join(' ' + key.substr(1) + ' ') + ')';
+  } else {
+    return formatWherePair(key, value);
+  }
+}
+
+function formatWherePair(key, value) {
+  var multiValue = false;
+  var operator = '=';
+  if (_.isArray(value)) {
+    if (['!=' ,'<>', '<', '<=', '>', '>=', '<=>', 'IS', 'IS NOT'].indexOf(value[0]) !== -1) {
+      operator = value[0];
+      value = value[1];
+    } else {
+      multiValue = true;
+    }
+  }
+  if (multiValue) {
+    return db.escapeKey(key) + ' IN (' + db.escapeValue(value) + ')';
+  } else {
+    return db.escapeKey(key) + ' ' + operator + ' ' + db.escapeValue(value);
+  }
+}
+
+function instantiateResponse(data) {
+  var this_ = this;
+  var models = new Collection();
+  data.forEach(function(el) {
+    models.push(new this_.$constructor(el, true));
+  });
+
+  return (this.$singleResult) ? (models[0] || null) : (models || []);
+}
 
 var api = {
   all: function() {},
@@ -57,9 +108,7 @@ var api = {
     }));
   },
   where: function(condition) {
-    for (var key in condition) {
-      this.$queryParams.where[key] = condition[key];
-    }
+    this.$queryParams.where.push(formatWhere(condition));
   },
   limit: function(size) {
     this.$queryParams.limit = +size;
@@ -72,10 +121,8 @@ var api = {
       .query(query)
       .then(function(data) {
         if (cbFn)
-          cbFn(this_.$instantiateResponse.call(this_, data));
-      }, errFn || function(err) {
-          console.log('SQL error: ' + err.message);
-      });
+          cbFn(instantiateResponse.call(this_, data));
+      }, errFn);
   },
   $renderSql: function() {
     var query = '';
@@ -93,7 +140,7 @@ var api = {
       query += ' ' + this.$queryParams.joins.join(' ');
     }
     if (_.size(this.$queryParams.where)) {
-      query += ' WHERE ' + this.$formatWhere(this.$queryParams.where);
+      query += ' WHERE ' + this.$queryParams.where.join(' AND ');
     }
     if (_.size(this.$queryParams.group)) {
       params.push(this.$queryParams.group);
@@ -108,45 +155,7 @@ var api = {
     }
 
     query += ';';
-    return this.$record.db.formatQuery(query, params);
-  },
-  $formatWhere: function(obj) {
-    var this_ = this;
-    if (obj.$OR || obj.$AND) {
-      return _.map(obj, function(value, key) {
-        return this_.$formatWhereDeep(key, value);
-      }).join('');
-    } else {
-      return _.map(obj, function(value, key) {
-        return this_.$formatWherePair(key, value);
-      }).join(' AND ');
-    }
-  },
-  $formatWhereDeep: function(key, value) {
-    var this_ = this;
-    if (key === '$OR' || key === '$AND') {
-      return '(' + _.map(value, function(v, k) {
-        return this_.$formatWhereDeep(k, v);
-      }).join(' ' + key.substr(1) + ' ') + ')';
-    } else {
-      return this.$formatWherePair(key, value);
-    }
-  },
-  $formatWherePair: function(key, value) {
-    if (_.isArray(value)) {
-      return this.$record.db.escapeKey(key) + ' IN (' + this.$record.db.escapeValue(value) + ')';
-    } else {
-      return this.$record.db.escapeKey(key) + ' = ' + this.$record.db.escapeValue(value);
-    }
-  },
-  $instantiateResponse: function(data) {
-    var this_ = this;
-    var models = new Collection();
-    data.forEach(function(el) {
-      models.push(new this_.$constructor(el, true));
-    });
-
-    return (this.$singleResult) ? (models[0] || null) : (models || []);
+    return db.formatQuery(query, params);
   }
 };
 

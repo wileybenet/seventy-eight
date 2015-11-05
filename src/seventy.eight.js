@@ -3,8 +3,10 @@ var client = require('./lib/db.client');
 var _ = require('lodash');
 var utils = require('./lib/utils');
 var Collection = require('./lib/Collection');
-var db;
-var record = {};
+var deferred = q.defer();
+var record = {
+  promise: deferred.promise
+};
 
 var recordStaticMethods = require('./query.builder');
 
@@ -13,7 +15,10 @@ var tableSchemas;
 record.const = {};
 record.db = client;
 
-record.db.query("SELECT * FROM information_schema.columns WHERE table_schema = '" + record.db.schema + "' ORDER BY table_name, ordinal_position", function(err, data) {
+var schemaDeferred = q.defer();
+var constDeferred = q.defer();
+
+record.db.query(record.db.formatQuery("SELECT * FROM information_schema.columns WHERE table_schema = ? ORDER BY table_name, ordinal_position", record.db.schema), function(err, data) {
   tableSchemas = _.chain(data)
     .map(function(row) {
       return {
@@ -24,13 +29,21 @@ record.db.query("SELECT * FROM information_schema.columns WHERE table_schema = '
     .groupBy('table')
     .value();
   console.log('mapped record schemas');
+  schemaDeferred.resolve(record);
 });
 
-record.db.query("SELECT * FROM const").then(function(data) {
+record.db.query(record.db.formatQuery("SELECT * FROM const")).then(function(data) {
   _.each(data, function(row) {
     record.const[row.name] = row.value;
   });
+  console.log('mapped const table');
+  constDeferred.resolve(record);
 });
+
+q.all([schemaDeferred, constDeferred])
+  .then(function() {
+    deferred.resolve(record);
+  });
 
 record.getSchema = function(tableName) {
   return _.pluck(tableSchemas[tableName], 'columnName');
@@ -81,7 +94,7 @@ record.instanceMethods = {
 
     if (_.size(whiteListedProperties)) {
       record.db
-        .query("UPDATE ?? SET ? WHERE id = ?", [this.$tableName, whiteListedProperties, this.id])
+        .query(record.db.formatQuery("UPDATE ?? SET ? WHERE id = ?", [this.$tableName, whiteListedProperties, this.id]))
         .then(function(data) {
           callback ? callback(null, this_._public()) : deferred.resolve(this_._public());
         }, function(err) {
@@ -101,7 +114,7 @@ record.instanceMethods = {
 
     if (_.size(this._public())) {
       record.db
-        .query("INSERT INTO ?? (??) VALUES (?)", [this.$tableName, columns, this.$getAt(columns, properties)])
+        .query(record.db.formatQuery("INSERT INTO ?? (??) VALUES (?)", [this.$tableName, columns, this.$getAt(columns, properties)]))
         .then(function(data) {
           this_.id = data.insertId;
           callback ? callback(null, this_._public()) : deferred.resolve(this_._public());
@@ -116,7 +129,7 @@ record.instanceMethods = {
   delete: function(callback) {
     var deferred = q.defer();
     record.db
-      .query("DELETE FROM ?? WHERE id = ?", [this.$tableName, this.id])
+      .query(record.db.formatQuery("DELETE FROM ?? WHERE id = ?", [this.$tableName, this.id]))
       .then(function(data) {
         callback ? callback(null, true) : deferred.resolve(true);
       }, function(err) {
@@ -128,9 +141,10 @@ record.instanceMethods = {
 
 // public record API
 record.createModel = function(options) {
-  var staticMethod, instanceMethod;
+  var staticMethod, instanceMethod, staticProp, instanceProp;
   var Model = options.constructor;
   var staticProps = options.staticProps || {};
+  var instanceProps = options.instanceProps || {};
   var staticMethods = _.extend({}, record.staticMethods, options.staticMethods || {});
   var instanceMethods = _.extend({}, record.instanceMethods, options.instanceMethods || {});
   var tableName = options.tableName || (utils.toSnake(Model.name).replace(/y$/g, 'ie') + 's');
@@ -154,7 +168,7 @@ record.createModel = function(options) {
       $init: true,
       $singleResult: false,
       $queryParams: {
-        where: {},
+        where: [],
         select: [],
         joins: [],
         group: [],
@@ -178,7 +192,7 @@ record.createModel = function(options) {
     };
   }
 
-  for (var staticProp in staticProps) {
+  for (staticProp in staticProps) {
     QueryConstructor[staticProp] = staticProps[staticProp];
     QueryConstructor.prototype.Class[staticProp] = staticProps[staticProp];
   }
@@ -189,6 +203,10 @@ record.createModel = function(options) {
 
   for (instanceMethod in instanceMethods) {
     QueryConstructor.prototype[instanceMethod] = instanceMethods[instanceMethod];
+  }
+
+  for (instanceProp in instanceProps) {
+    QueryConstructor.prototype[instanceProp] = instanceMethods[instanceProp];
   }
 
   return QueryConstructor;

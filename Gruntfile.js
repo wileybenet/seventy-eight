@@ -52,7 +52,7 @@ module.exports = function(grunt) {
     setup.then(done);
   });
 
-  grunt.registerTask('test', ['local', 'setup', 'jasmine_node', 'teardown']);
+  grunt.registerTask('test', ['local', 'setup', 'jasmine_node']);
 
   grunt.registerTask('test_integration', ['setup', 'jasmine_node', 'teardown']);
 

@@ -35,17 +35,27 @@ exports.schema = schema;
 exports.escapeKey = pool.escapeId.bind(pool);
 exports.escapeValue = pool.escape.bind(pool);
 
-exports.ping = function() {
-  setInterval(function() {
+exports.ping = function(wait, callbackFn) {
+  callbackFn = callbackFn || function() {};
+  var pingId = setInterval(function() {
     pool.getConnection(function(err, connection) {
-      if (err) throw err;
+      if (err) {
+        return callbackFn(err);
+      }
       connection.ping(function() {
-        if (err) throw err;
+        if (err) {
+          callbackFn(err);
+        }
         console.log('connected to mysql:', exports.getDate());
         connection.release();
+        callbackFn();
       });
     });
-  }, 60000);
+  }, wait || 60000);
+
+  return function() {
+    clearInterval(pingId);
+  };
 };
 
 exports.getClient = function(cbFn) {
