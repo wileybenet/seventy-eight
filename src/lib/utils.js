@@ -10,15 +10,6 @@ module.exports = {
     return str.substr(1).replace(/_[a-z]/g, function(match) {
       return match.toUpperCase();
     });
-  },
-
-  lodashMixin: {
-    valuesAt: function(objArr, keyArr) {
-      return objArr.map(function(obj) {
-        return keyArr.map(function(key) {
-          return obj[key];
-        });
-      });
-    }
-}
+  }
+  
 };

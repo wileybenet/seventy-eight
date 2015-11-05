@@ -54,13 +54,18 @@ exports.getClient = function(cbFn) {
   });
 };
 
+exports.formatQuery = function(str, params) {
+  var queryString = mysql.format(str, params);
+  console.log(queryString.replace(/( [A-Z]+|[A-Z]+ )/g, function(s, m) { return m.cyan; }));
+  return queryString;
+};
+
 exports.query = function (str, params) {
   var deferred = q.defer();
   pool.getConnection(function(err, connection) {
     if (err)
       return deferred.reject(err);
 
-    console.log(connection.format(str, params).replace(/( [A-Z]+|[A-Z]+ )/g, function(s, m) { return m.cyan; }));
     connection.query(str, params, function(err, data) {
       if (err)
         deferred.reject(err);
