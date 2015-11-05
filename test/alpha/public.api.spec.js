@@ -1,4 +1,4 @@
-var seventyEight = require('../index');
+var seventyEight = require('../../index');
 
 describe('Interface', function(){
 

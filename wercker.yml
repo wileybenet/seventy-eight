@@ -26,11 +26,14 @@ build:
     - script:
         name: install grunt
         code: sudo npm install grunt-cli -g
-    - npm-test
-
     - script:
-        name: seed database
+        name: setup tests
         code: node test/setup.js
+    - npm-test
+    - script:
+        name: teardown tests
+        code: node test/teardown.js
+
     # A custom script step, name value is used in the UI
     # and the code value contains the command that get executed
     - script:
