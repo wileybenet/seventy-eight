@@ -64,7 +64,7 @@ var api = {
   limit: function(size) {
     this.$queryParams.limit = +size;
   },
-  then: function(cbFn) {
+  then: function(cbFn, errFn) {
     var this_ = this;
     var query = this.$renderSql();
 
@@ -73,7 +73,7 @@ var api = {
       .then(function(data) {
         if (cbFn)
           cbFn(this_.$instantiateResponse.call(this_, data));
-      }, function(err) {
+      }, errFn || function(err) {
           console.log('SQL error: ' + err.message);
       });
   },
