@@ -1,4 +1,5 @@
 ## Active Record Lite
+[![wercker status](https://app.wercker.com/status/00e73ae1d42d6fdab896730134abd8f8/s/master "wercker status")](https://app.wercker.com/project/bykey/00e73ae1d42d6fdab896730134abd8f8)
 
 ```javascript
 var seventyEight = require('seventy-eight');
