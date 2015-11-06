@@ -1,1 +1,1 @@
-module.exports = require('./lib/seventy.eight');
+module.exports = require('./src/seventy.eight');
