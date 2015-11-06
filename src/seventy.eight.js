@@ -28,7 +28,7 @@ record.db.query(record.db.formatQuery("SELECT * FROM information_schema.columns 
     })
     .groupBy('table')
     .value();
-  console.log('mapped record schemas');
+
   schemaDeferred.resolve(record);
 });
 
@@ -36,7 +36,7 @@ record.db.query(record.db.formatQuery("SELECT * FROM const")).then(function(data
   _.each(data, function(row) {
     record.const[row.name] = row.value;
   });
-  console.log('mapped const table');
+
   constDeferred.resolve(record);
 });
 
