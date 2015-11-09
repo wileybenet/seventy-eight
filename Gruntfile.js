@@ -52,9 +52,17 @@ module.exports = function(grunt) {
     setup.then(done);
   });
 
+  grunt.registerTask('report_coverage', 'report coverage stats to coveralls', function() {
+    var done = this.async();
+    var child_process = require('child_process');
+
+    child_process.spawn('cat ./test/coverage/reports/lcov.info | ./node_modules/coveralls/bin/coveralls.js');
+    child_process.on('exit', done);
+  });
+
   grunt.registerTask('test', ['local', 'setup', 'jasmine_node']);
 
-  grunt.registerTask('test_integration', ['setup', 'jasmine_node', 'teardown']);
+  grunt.registerTask('test_integration', ['setup', 'jasmine_node', 'teardown', 'report_coverage']);
 
   grunt.registerTask('coverage', ['env:coverage', 'instrument', 'test', 'storeCoverage', 'makeReport']);
 
