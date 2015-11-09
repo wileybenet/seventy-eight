@@ -26,6 +26,10 @@ build:
     - script:
         name: install global packages
         code: sudo npm install -g grunt-cli istanbul
+    - script:
+        name: write coveralls token file
+        code: |
+          echo "repo_token: $COVERALLS" > .coveralls.yml
     - npm-test
 
     # A custom script step, name value is used in the UI
