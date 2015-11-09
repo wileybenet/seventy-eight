@@ -61,7 +61,7 @@ module.exports = function(grunt) {
 
   grunt.registerTask('test', ['local', 'setup', 'jasmine_node']);
 
-  grunt.registerTask('test_integration', ['env:coverage', 'instrument', 'setup', 'jasmine_node', 'teardown', 'report_coverage']);
+  grunt.registerTask('test_integration', ['env:coverage', 'instrument', 'setup', 'jasmine_node', 'storeCoverage', 'makeReport', 'teardown', 'report_coverage']);
 
   grunt.registerTask('coverage', ['env:coverage', 'instrument', 'test', 'storeCoverage', 'makeReport']);
 
