@@ -25,7 +25,7 @@ build:
     - npm-install
     - script:
         name: install global packages
-        code: sudo npm install -g grunt-cli
+        code: sudo npm install -g grunt-cli istanbul
     - npm-test
 
     # A custom script step, name value is used in the UI
