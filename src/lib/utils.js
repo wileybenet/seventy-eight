@@ -7,7 +7,7 @@ module.exports = {
   },
 
   toCamel: function(str) {
-    return str.substr(1).replace(/_[a-z]/g, function(match) {
+    return str.replace(/_([a-z])/g, function(full, match) {
       return match.toUpperCase();
     });
   }
