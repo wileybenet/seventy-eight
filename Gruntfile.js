@@ -54,10 +54,9 @@ module.exports = function(grunt) {
 
   grunt.registerTask('report_coverage', 'report coverage stats to coveralls', function() {
     var done = this.async();
-    var child_process = require('child_process');
+    var exec = require('child_process').exec;
 
-    child_process.spawn('cat ./test/coverage/reports/lcov.info | ./node_modules/coveralls/bin/coveralls.js');
-    child_process.on('exit', done);
+    exec('cat ./test/coverage/reports/lcov.info | ./node_modules/coveralls/bin/coveralls.js', done);
   });
 
   grunt.registerTask('test', ['local', 'setup', 'jasmine_node']);
