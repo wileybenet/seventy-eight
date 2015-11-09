@@ -11,4 +11,13 @@ describe('#miscellaneous', function(){
     expect(UserRole.tableName).toEqual('user_roles');
   });
 
+  var User = seventyEight.createModel({
+    constructor: function User() {},
+    tableName: 'user_tbl'
+  });
+
+  it('should read explicit tableName', function() {
+    expect(UserRole.tableName).toEqual('user_tbl');
+  });
+
 });
