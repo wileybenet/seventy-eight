@@ -17,7 +17,7 @@ describe('#miscellaneous', function(){
   });
 
   it('should read explicit tableName', function() {
-    expect(UserRole.tableName).toEqual('user_tbl');
+    expect(User.tableName).toEqual('user_tbl');
   });
 
 });
