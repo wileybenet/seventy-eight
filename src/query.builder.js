@@ -108,7 +108,8 @@ var api = {
     }));
   },
   where: function(condition) {
-    this.$queryParams.where.push(formatWhere(condition));
+    if (condition)
+      this.$queryParams.where.push(formatWhere(condition));
   },
   limit: function(size) {
     this.$queryParams.limit = +size;
