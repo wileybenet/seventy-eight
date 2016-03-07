@@ -158,6 +158,10 @@ record.createModel = function(options) {
       "!skip && Model.call(this);" +
     "})");
 
+  schemaDeferred.promise.then(function(data) {
+    QueryConstructor.$schema = record.getSchema(tableName);
+  });
+
   QueryConstructor.tableName = tableName;
   QueryConstructor.prototype.Class = {};
 
