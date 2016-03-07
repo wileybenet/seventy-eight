@@ -159,7 +159,7 @@ record.createModel = function(options) {
     "})");
 
   schemaDeferred.promise.then(function(data) {
-    options.schema = record.getSchema(tableName);
+    // options.schema = record.getSchema(tableName);
   });
 
   QueryConstructor.tableName = tableName;
