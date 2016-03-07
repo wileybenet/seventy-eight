@@ -124,7 +124,7 @@ var api = {
       .query(query)
       .then(function(data) {
         if (cbFn)
-          cbFn(instantiateResponse.call(this_, data));
+          cbFn.call(this_, instantiateResponse.call(this_, data));
       }, errFn);
 
     this.$init = false;
