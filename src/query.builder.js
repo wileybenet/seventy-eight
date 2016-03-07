@@ -3,7 +3,9 @@ var _ = require('lodash');
 var db = require('./lib/db.client');
 
 function formatWhere(obj) {
-  if (obj.$OR || obj.$AND) {
+  if (typeof obj === 'string') {
+    return db.escapeValue(obj);
+  } else if (obj.$OR || obj.$AND) {
     return _.map(obj, function(value, key) {
       return formatWhereDeep(key, value);
     }).join('');
@@ -109,7 +111,7 @@ var api = {
   },
   where: function(condition) {
     if (condition)
-      this.$queryParams.where.push(formatWhere(condition));
+      this.$queryParams.where.push(formatWhere.apply(null, [].concat(condition)));
   },
   limit: function(size) {
     this.$queryParams.limit = +size;

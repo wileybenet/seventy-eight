@@ -43,6 +43,12 @@ describe('#base-static-methods', function(){
     expect(query.$renderSql()).toEqual("SELECT * FROM `models` WHERE `id` = 1;");
   });
 
+  it('should omit falsy WHERE objects', function() {
+    var query = Model.where(null);
+
+    expect(query.$renderSql()).toEqual("SELECT * FROM `models`;");
+  });
+
   it('should format WHERE objects with $OR clauses', function() {
     var query = Model.where({ $OR: { id: 1, name: 'root' } });
 
