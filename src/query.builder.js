@@ -4,7 +4,7 @@ var db = require('./lib/db.client');
 
 function formatWhere(obj) {
   if (typeof obj === 'string') {
-    return db.escapeValue(obj);
+    return obj;
   } else if (obj.$OR || obj.$AND) {
     return _.map(obj, function(value, key) {
       return formatWhereDeep(key, value);
