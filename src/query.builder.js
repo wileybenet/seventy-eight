@@ -125,8 +125,9 @@ var api = {
       .then(function(data) {
         if (cbFn)
           cbFn(instantiateResponse.call(this_, data));
-        this_.$init = false;
       }, errFn);
+
+    this.$init = false;
   },
   $renderSql: function() {
     var query = '';
