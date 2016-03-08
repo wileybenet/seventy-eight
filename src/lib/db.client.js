@@ -66,7 +66,8 @@ exports.getClient = function(cbFn) {
 
 exports.formatQuery = function(str, params) {
   var queryString = mysql.format(str, params);
-  if (!process.env.DEBUG && queryString) console.log((/^w+/).exec(queryString)[0].cyan);
+  var notification = (/^w+/).exec(queryString)[0];
+  if (!process.env.DEBUG) console.log(notification ? notification.cyan : 'QUERY: null');
   if (process.env.DEBUG) console.log(queryString.replace(/( [A-Z]+|[A-Z]+ )/g, function(s, m) { return m.cyan; }));
   return queryString;
 };
