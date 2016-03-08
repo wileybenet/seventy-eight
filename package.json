@@ -1,6 +1,6 @@
 {
   "name": "seventy-eight",
-  "version": "0.2.16",
+  "version": "0.2.17",
   "description": "Active-Record like API",
   "main": "index.js",
   "scripts": {
