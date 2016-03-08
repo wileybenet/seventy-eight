@@ -16,7 +16,7 @@ var pool = mysql.createPool({
   user     : process.env.DB_USER ||'root',
   password : process.env.DB_PASSWORD ||'root',
   database : (schema = process.env.DB_SCHEMA || null),
-
+  connectionLimit: 100,
   multipleStatements: true
 });
 var totalConnections = 0;
