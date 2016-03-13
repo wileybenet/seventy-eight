@@ -192,7 +192,7 @@ record.createModel = function(options) {
       }
       var nextSelf = _.extend({}, self);
       var ret = fn.apply(nextSelf, arguments);
-      return ret || nextSelf;
+      return _.isUndefined(ret) ? nextSelf : ret;
     };
   }
 
