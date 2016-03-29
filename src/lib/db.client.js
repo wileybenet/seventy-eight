@@ -30,6 +30,14 @@ pool.on('enqueue', function () {
   console.log('waiting for available connection slot');
 });
 
+function log(str, params) {
+  if (params)
+    str = mysql.format(str, params);
+  var notification = (/^\w+/).exec(str);
+  if (!process.env.DEBUG) console.log(notification ? notification[0].cyan : 'QUERY: null');
+  if (process.env.DEBUG) console.log(str.replace(/( [A-Z]+|[A-Z]+ )/g, function(s, m) { return m.cyan; }));
+}
+
 exports.schema = schema;
 
 exports.escapeKey = pool.escapeId.bind(pool);
@@ -66,9 +74,6 @@ exports.getClient = function(cbFn) {
 
 exports.formatQuery = function(str, params) {
   var queryString = mysql.format(str, params);
-  var notification = (/^\w+/).exec(queryString);
-  if (!process.env.DEBUG) console.log(notification ? notification[0].cyan : 'QUERY: null');
-  if (process.env.DEBUG) console.log(queryString.replace(/( [A-Z]+|[A-Z]+ )/g, function(s, m) { return m.cyan; }));
   return queryString;
 };
 
@@ -78,11 +83,15 @@ exports.query = function (str, params) {
     if (err)
       return deferred.reject(err);
 
+    var start = new Date();
     connection.query(str, params, function(err, data) {
-      if (err)
+      if (err){
         deferred.reject(err);
-      else
+      } else {
         deferred.resolve(data);
+        log(str, params);
+        log(Math.round(new Date() - start / 1000).toString().red);
+      }
       connection.release();
     });
   });
