@@ -34,8 +34,8 @@ function log(str, params) {
   if (params)
     str = mysql.format(str, params);
   var notification = (/^\w+/).exec(str);
-  if (!process.env.DEBUG) console.log(notification ? notification[0].cyan : 'QUERY: null');
-  if (process.env.DEBUG) console.log(str.replace(/( [A-Z]+|[A-Z]+ )/g, function(s, m) { return m.cyan; }));
+  if (!process.env.DEBUG) return (notification ? notification[0].cyan : 'QUERY: null');
+  if (process.env.DEBUG) return (str.replace(/( [A-Z]+|[A-Z]+ )/g, function(s, m) { return m.cyan; }));
 }
 
 exports.schema = schema;
@@ -89,8 +89,8 @@ exports.query = function (str, params) {
         deferred.reject(err);
       } else {
         deferred.resolve(data);
-        log(str, params);
-        process.stdout.write(' ' + Math.round((+(new Date()) - start )/ 1000).toString().red + 'sec');
+        process.stdout.write(log(str, params));
+        console.log(' ' + Math.round((+(new Date()) - start )/ 1000).toString().red + 'sec');
       }
       connection.release();
     });
