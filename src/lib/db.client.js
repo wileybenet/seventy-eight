@@ -90,7 +90,7 @@ exports.query = function (str, params) {
       } else {
         deferred.resolve(data);
         process.stdout.write(log(str, params));
-        console.log(' ' + Math.round((+(new Date()) - start )/ 1000).toString().red + 'sec');
+        console.log(' ' + Math.round((+(new Date()) - start )/ 1000).toString().red + ' sec'.red);
       }
       connection.release();
     });
