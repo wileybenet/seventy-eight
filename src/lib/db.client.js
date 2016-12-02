@@ -38,6 +38,7 @@ function log(str, params) {
   if (process.env.DEBUG) return (str.replace(/( [A-Z]+|[A-Z]+ )/g, function(s, m) { return m.cyan; }));
 }
 function spinner() {
+  if (!process.env.DEBUG) return function() {};
   var count = 0;
   var spinner = ['\\', '|', '/', '-', '\\', '|', '/', '-'];
   var intval = setInterval(function() {
@@ -46,7 +47,7 @@ function spinner() {
   }, 75);
   return function() {
     clearInterval(intval);
-  }
+  };
 }
 
 exports.schema = schema;
