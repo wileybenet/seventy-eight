@@ -19,7 +19,7 @@ var schemaDeferred = q.defer();
 var constDeferred = q.defer();
 
 record.db.query(record.db.formatQuery("SELECT * FROM information_schema.columns WHERE table_schema = ? ORDER BY table_name, ordinal_position", record.db.schema))
-  .then(function(err, data) {
+  .then(function(data) {
     tableSchemas = _.chain(data)
       .map(function(row) {
         return {
@@ -31,6 +31,8 @@ record.db.query(record.db.formatQuery("SELECT * FROM information_schema.columns 
       .value();
 
     schemaDeferred.resolve(record);
+  }, function(err) {
+    console.log('SCHEMA ERROR'.red, err);
   });
 
 record.db.query(record.db.formatQuery("SELECT * FROM const")).then(function(data) {
