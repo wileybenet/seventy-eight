@@ -18,19 +18,20 @@ record.db = client;
 var schemaDeferred = q.defer();
 var constDeferred = q.defer();
 
-record.db.query(record.db.formatQuery("SELECT * FROM information_schema.columns WHERE table_schema = ? ORDER BY table_name, ordinal_position", record.db.schema), function(err, data) {
-  tableSchemas = _.chain(data)
-    .map(function(row) {
-      return {
-        table: row.TABLE_NAME,
-        columnName: row.COLUMN_NAME
-      };
-    })
-    .groupBy('table')
-    .value();
+record.db.query(record.db.formatQuery("SELECT * FROM information_schema.columns WHERE table_schema = ? ORDER BY table_name, ordinal_position", record.db.schema))
+  .then(function(err, data) {
+    tableSchemas = _.chain(data)
+      .map(function(row) {
+        return {
+          table: row.TABLE_NAME,
+          columnName: row.COLUMN_NAME
+        };
+      })
+      .groupBy('table')
+      .value();
 
-  schemaDeferred.resolve(record);
-});
+    schemaDeferred.resolve(record);
+  });
 
 record.db.query(record.db.formatQuery("SELECT * FROM const")).then(function(data) {
   _.each(data, function(row) {
@@ -217,4 +218,3 @@ record.createModel = function(options) {
 };
 
 module.exports = record;
-

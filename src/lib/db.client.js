@@ -40,10 +40,13 @@ function log(str, params) {
 function spinner() {
   var count = 0;
   var spinner = ['\\', '|', '/', '-', '\\', '|', '/', '-'];
-  return setInterval(function() {
+  var intval = setInterval(function() {
     process.stdout.write("\r" + spinner[count%8]);
     count++;
-  }, 50);
+  }, 75);
+  return function() {
+    clearInterval(intval);
+  }
 }
 
 exports.schema = schema;
@@ -96,7 +99,7 @@ exports.query = function (str, params) {
 
     var interval = spinner();
     connection.query(str, params, function(err, data) {
-      clearInterval(interval);
+      interval();
       if (err){
         deferred.reject(err);
       } else {
