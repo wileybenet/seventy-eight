@@ -43,7 +43,7 @@ function spinner() {
   return setInterval(function() {
     process.stdout.write("\r" + spinner[count%8]);
     count++;
-  }, 100);
+  }, 50);
 }
 
 exports.schema = schema;
@@ -96,7 +96,7 @@ exports.query = function (str, params) {
 
     var interval = spinner();
     connection.query(str, params, function(err, data) {
-      interval.clear();
+      clearInterval(interval);
       if (err){
         deferred.reject(err);
       } else {
