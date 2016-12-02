@@ -4,7 +4,7 @@
  * The client is replaced if it is disconnected.
  */
 
-var colors = require('colors'); 
+var colors = require('colors');
 var mysql = require('mysql');
 var q = require('q');
 
@@ -20,7 +20,7 @@ var pool = mysql.createPool({
   multipleStatements: true
 });
 var totalConnections = 0;
- 
+
 pool.on('connection', function (connection) {
   totalConnections++;
   console.log('new connection made:', totalConnections, 'active');
@@ -36,6 +36,14 @@ function log(str, params) {
   var notification = (/^\w+/).exec(str);
   if (!process.env.DEBUG) return (notification ? notification[0].cyan : 'QUERY: null');
   if (process.env.DEBUG) return (str.replace(/( [A-Z]+|[A-Z]+ )/g, function(s, m) { return m.cyan; }));
+}
+function spinner() {
+  var count = 0;
+  var spinner = ['\\', '|', '/', '-', '\\', '|', '/', '-'];
+  return setInterval(function() {
+    process.stdout.write("\r" + spinner[count%8]);
+    count++;
+  }, 100);
 }
 
 exports.schema = schema;
@@ -84,13 +92,16 @@ exports.query = function (str, params) {
       return deferred.reject(err);
 
     var start = new Date();
+    console.log(log(str, params));
+
+    var interval = spinner();
     connection.query(str, params, function(err, data) {
+      interval.clear();
       if (err){
         deferred.reject(err);
       } else {
         deferred.resolve(data);
-        process.stdout.write(log(str, params));
-        console.log(' ' + Math.round((+(new Date()) - start )/ 1000).toString().green + ' sec'.green);
+        console.log("\r" + Math.round((+(new Date()) - start )/ 1000).toString().green + ' sec'.green);
       }
       connection.release();
     });
