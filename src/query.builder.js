@@ -1,4 +1,3 @@
-var Collection = require('./lib/Collection');
 var _ = require('lodash');
 var db = require('./lib/db.client');
 
@@ -46,7 +45,7 @@ function formatWherePair(key, value) {
 
 function instantiateResponse(data) {
   var this_ = this;
-  var models = new Collection();
+  var models = [];
   data.forEach(function(el) {
     models.push(new this_.$constructor(el, true));
   });
