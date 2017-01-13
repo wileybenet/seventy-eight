@@ -2,7 +2,6 @@ var q = require('q');
 var client = require('./lib/db.client');
 var _ = require('lodash');
 var utils = require('./lib/utils');
-var Collection = require('./lib/Collection');
 var deferred = q.defer();
 var record = {
   promise: deferred.promise

@@ -16,15 +16,6 @@ describe('#static-query', function(){
     });
   });
 
-  it('should instantiate collection', function(done) {
-    var query = User.all();
-    query.then(function(users) {
-      expect(users.constructor.name).toEqual('Collection');
-      expect(_.isArray(users.publicFields())).toEqual(true);
-      done();
-    });
-  });
-
   it('should retreive a single instance with one()', function(done) {
     var query = User.one();
     query.then(function(users) {
