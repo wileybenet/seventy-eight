@@ -115,7 +115,40 @@ user.save().then(function(user) {
 
 #### delete()
 
-#### _beforeSave()
+#### afterFind()
+
+```javascript
+var seventyEight = require('seventy-eight');
+
+module.exports = seventyEight.createModel({
+  constructor: function User(props) {
+
+  },
+  instanceMethods: {
+    afterFind: function() {
+      this.data = JSON.parse(this.json);
+    }
+  }
+});
+```
+
+#### beforeSave(properties)
+
+```javascript
+var seventyEight = require('seventy-eight');
+
+module.exports = seventyEight.createModel({
+  constructor: function User(props) {
+
+  },
+  instanceMethods: {
+    beforeSave: function(props) {
+      props.json = JSON.stringify(props.data);
+      return props;
+    }
+  }
+});
+```
 
 ### Literal SQL
 

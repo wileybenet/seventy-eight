@@ -9,6 +9,8 @@ var sql = fs.readFileSync(path.resolve(__dirname, 'seed.sql')).toString().replac
 client.query(sql).then(function() {
   console.log('DATABASE SEEDED');
   deferred.resolve(true);
+}, function(err) {
+  console.log(err);
 });
 
 module.exports = deferred.promise;

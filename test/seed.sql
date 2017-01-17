@@ -49,13 +49,13 @@ CREATE TABLE `users` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `username` varchar(255) NOT NULL DEFAULT '',
   `password` varchar(255) DEFAULT NULL,
+  `json` varchar(255) DEFAULT NULL,
   `active` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `USERNAMEIDX` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-INSERT INTO `users` (`id`, `username`, `password`, `active`)
+INSERT INTO `users` (`id`, `username`, `password`, `json`, `active`)
 VALUES
-  (1,'root','$2a$10$xb6OlUSgar.Lx1toO3UnB.yE0RwoqYAdLtM5MdG628o/dFmeqG3XC',1),
-  (2,'home','good',0);
-
+  (1,'root','$2a$10$xb6OlUSgar.Lx1toO3UnB.yE0RwoqYAdLtM5MdG628o/dFmeqG3XC','{\"test\": true}',1),
+  (2,'home','good','{\"test2\": true}',0);

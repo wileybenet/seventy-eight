@@ -2,7 +2,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-jasmine-node');
   grunt.loadNpmTasks('grunt-istanbul');
   grunt.loadNpmTasks('grunt-env');
-  
+
   // Project configuration.
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
@@ -40,7 +40,7 @@ module.exports = function(grunt) {
     require('./local/process.env');
   });
 
-  grunt.registerTask('setup', 'load local configs', function() {
+  grunt.registerTask('setup', 'seed database', function() {
     var done = this.async();
     var setup = require('./test/setup');
     setup.then(done);
@@ -59,7 +59,7 @@ module.exports = function(grunt) {
     exec('cat ./test/coverage/reports/lcov.info | ./node_modules/coveralls/bin/coveralls.js', done);
   });
 
-  grunt.registerTask('test', ['local', 'setup', 'jasmine_node']);
+  grunt.registerTask('test', ['local', 'setup', 'jasmine_node', 'teardown']);
 
   grunt.registerTask('test_integration', ['env:coverage', 'instrument', 'setup', 'jasmine_node', 'storeCoverage', 'makeReport', 'teardown', 'report_coverage']);
 

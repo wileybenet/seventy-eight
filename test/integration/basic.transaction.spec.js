@@ -5,7 +5,18 @@ var _ = require('lodash');
 describe('#static-query', function(){
 
   var User = seventyEight.createModel({
-    constructor: function User() {}
+    constructor: function User() {},
+    instanceMethods: {
+      afterFind: function() {
+        this.data = JSON.parse(this.json);
+      },
+      beforeSave: function(props) {
+        if (props.data) {
+          props.json = JSON.stringify(props.data);
+        }
+        return props;
+      }
+    }
   });
 
   it('should retreive an array of instances with all()', function(done) {
@@ -17,9 +28,17 @@ describe('#static-query', function(){
   });
 
   it('should retreive a single instance with one()', function(done) {
-    var query = User.one();
-    query.then(function(users) {
-      expect(users.constructor.name).toEqual('User');
+    var query = User.where({ id: 1 }).one();
+    query.then(function(user) {
+      expect(user.username).toEqual('root');
+      done();
+    });
+  });
+
+  it('should format response with afterFind', function(done) {
+    var query = User.find(1);
+    query.then(function(user) {
+      expect(user.data).toEqual({ test: true });
       done();
     });
   });
@@ -36,10 +55,23 @@ describe('#static-query', function(){
   });
 
   it('should save a new row', function(done) {
-    var user = new User({ username: 'user', password: 'good' });
+    var user = new User({ username: 'user', password: 'good', json: '{}'});
     user.save().then(function(user) {
       expect(user.id).toEqual(3);
       done();
+    });
+  });
+
+  it('should format data with beforeSave when saving', function(done) {
+    var data = { mapping: [{ name: 'test' }, { name: 'two' }] };
+    var user = new User({ username: 'wiley', password: 'password', data: data });
+    user.save().then(function(user) {
+      User.find(user.id).then(function(u) {
+        expect(u.data).toEqual(data);
+        done();
+      });
+    }, function(err) {
+      console.log(err);
     });
   });
 

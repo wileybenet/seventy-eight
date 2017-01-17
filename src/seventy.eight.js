@@ -57,18 +57,15 @@ record.staticMethods = recordStaticMethods;
 // base instance methods
 record.instanceMethods = {
   $whiteList: function(properties) {
-    return _.pick(properties || this, record.getSchema(this.$tableName));
+    return _.pick(properties, record.getSchema(this.$tableName));
   },
   $prepareProps: function(properties) {
-    return typeof this._beforeSave === 'function' ? this._beforeSave(_.extend({}, this.$whiteList(properties))) : this;
+    return this.$whiteList(properties);
   },
   $getAt: function(fields, properties) {
     return fields.map(function(field) {
       return properties[field] || 'NULL';
     });
-  },
-  _beforeSave: function(obj) {
-    return obj;
   },
   _public: function(fields) {
     var this_ = this;
@@ -85,9 +82,12 @@ record.instanceMethods = {
     };
     return obj;
   },
-  update: function(properties, callback) {
+  afterFind: function(obj) {},
+  beforeSave: function() {},
+  update: function(props, callback) {
     var this_ = this;
     var deferred = q.defer();
+    var properties = this.beforeSave(_.extend({}, this, props));
     var whiteListedProperties = this.$prepareProps(properties);
 
     for (var key in whiteListedProperties) {
@@ -110,13 +110,14 @@ record.instanceMethods = {
   },
   save: function(callback) {
     var this_ = this;
-    var properties = this.$prepareProps();
     var deferred = q.defer();
-    var columns = _.keys(properties);
+    var properties = this.beforeSave(this);
+    var whiteListedProperties = this.$prepareProps(properties);
+    var columns = _.keys(whiteListedProperties);
 
     if (_.size(this._public())) {
       record.db
-        .query(record.db.formatQuery("INSERT INTO ?? (??) VALUES (?)", [this.$tableName, columns, this.$getAt(columns, properties)]))
+        .query(record.db.formatQuery("INSERT INTO ?? (??) VALUES (?)", [this.$tableName, columns, this.$getAt(columns, whiteListedProperties)]))
         .then(function(data) {
           this_.id = data.insertId;
           callback ? callback(null, this_._public()) : deferred.resolve(this_._public());
@@ -151,13 +152,17 @@ record.createModel = function(options) {
   var instanceMethods = _.extend({}, record.instanceMethods, options.instanceMethods || {});
   var tableName = options.tableName || (utils.toSnake(Model.name).replace(/y$/g, 'ie') + 's');
   var QueryConstructor = eval(
-    "(function " + Model.name + "(row, skip) {" +
+    "(function " + Model.name + "(row, found) {" +
       "for (var key in row) {" +
         "this[key] = row[key];" +
       "}" +
       "this.$tableName = tableName;" +
       "this.$schema = options.schema;" +
-      "!skip && Model.call(this);" +
+      "if (found) {"+
+        "this.afterFind();"+
+      "} else {"+
+        "Model.call(this);" +
+      "}"+
     "})");
 
   schemaDeferred.promise.then(function(data) {

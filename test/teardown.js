@@ -10,6 +10,8 @@ client.query(sql).then(function() {
   console.log('DATABASE PURGED');
   client.close();
   deferred.resolve(true);
+}, function(err) {
+  console.log(err);
 });
 
 module.exports = deferred.promise;

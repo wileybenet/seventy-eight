@@ -19,6 +19,7 @@ var pool = mysql.createPool({
   connectionLimit: 100,
   multipleStatements: true
 });
+
 var totalConnections = 0;
 
 pool.on('connection', function (connection) {
