@@ -83,21 +83,20 @@ record.instanceMethods = {
     return obj;
   },
   afterFind: function(obj) {},
-  beforeSave: function() {},
+  beforeSave: function(props) {
+    return props;
+  },
   update: function(props, callback) {
     var this_ = this;
     var deferred = q.defer();
     var properties = this.beforeSave(_.extend({}, this, props));
     var whiteListedProperties = this.$prepareProps(properties);
 
-    for (var key in whiteListedProperties) {
-      this[key] = whiteListedProperties[key];
-    }
-
     if (_.size(whiteListedProperties)) {
       record.db
         .query(record.db.formatQuery("UPDATE ?? SET ? WHERE id = ?", [this.$tableName, whiteListedProperties, this.id]))
         .then(function(data) {
+          _.extend(this_, whiteListedProperties);
           callback ? callback(null, this_._public()) : deferred.resolve(this_._public());
         }, function(err) {
           callback ? callback(err) : deferred.reject(err);
@@ -105,7 +104,6 @@ record.instanceMethods = {
     } else {
       callback ? callback(null, this_._public()) : deferred.resolve(this_._public());
     }
-
     return callback ? this : deferred.promise;
   },
   save: function(callback) {
@@ -140,6 +138,33 @@ record.instanceMethods = {
       });
     return callback ? this : deferred.promise;
   }
+};
+
+record.staticMethods.update = function(record_id, props, callback) {
+  var this_ = this;
+  var deferred = q.defer();
+  var pseudoModel = new this.$constructor({ id: record_id });
+  var properties = pseudoModel.beforeSave(_.extend({}, props));
+  var whiteListedProperties = pseudoModel.$prepareProps(properties);
+
+  if (_.size(whiteListedProperties)) {
+    var update = record.db
+      .query(record.db.formatQuery("UPDATE ?? SET ? WHERE id = ?", [pseudoModel.$tableName, whiteListedProperties, record_id]));
+    var select = this_.$constructor.find(record_id);
+
+    q.all([update, select])
+      .spread(function(updateSuccessful, data) {
+        _.extend(data, whiteListedProperties);
+        callback ? callback(null, data._public()) : deferred.resolve(data._public());
+      }, function(err) {
+        callback ? callback(err) : deferred.reject(err);
+      });
+  } else {
+    var err = '';
+    callback ? callback(err) : deferred.reject(err);
+  }
+
+  return callback ? this : deferred.promise;
 };
 
 // public record API

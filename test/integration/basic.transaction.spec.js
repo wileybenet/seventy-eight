@@ -19,6 +19,10 @@ describe('#static-query', function(){
     }
   });
 
+  var Role = seventyEight.createModel({
+    constructor: function Role() {}
+  });
+
   it('should retreive an array of instances with all()', function(done) {
     var query = User.all();
     query.then(function(users) {
@@ -55,9 +59,9 @@ describe('#static-query', function(){
   });
 
   it('should save a new row', function(done) {
-    var user = new User({ username: 'user', password: 'good', json: '{}'});
-    user.save().then(function(user) {
-      expect(user.id).toEqual(3);
+    var role = new Role({ name: 'guest' });
+    role.save().then(function(role) {
+      expect(role.id).toEqual(4);
       done();
     });
   });
@@ -83,6 +87,15 @@ describe('#static-query', function(){
         done();
       });
     });
+  });
+
+  it('should update an existing row with the static method', function(done) {
+    Role.update(3, { name: 'removed' }).then(function(user) {
+      Role.find(3).then(function(role) {
+        expect(role.name).toEqual('removed');
+        done();
+      }, function(err) { console.log(err); });
+    }, function(err) { console.log(err); });
   });
 
   it('should delete an existing row', function(done) {
