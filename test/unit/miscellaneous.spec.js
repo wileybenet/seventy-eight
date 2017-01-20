@@ -16,7 +16,7 @@ describe('#miscellaneous', function(){
     tableName: 'user_tbl'
   });
 
-  it('should read explicit tableName', function() {
+  it('should store explicit tableName', function() {
     expect(User.tableName).toEqual('user_tbl');
   });
 

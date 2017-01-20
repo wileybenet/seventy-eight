@@ -97,14 +97,23 @@ record.instanceMethods = {
         .query(record.db.formatQuery("UPDATE ?? SET ? WHERE id = ?", [this.$tableName, whiteListedProperties, this.id]))
         .then(function(data) {
           _.extend(this_, whiteListedProperties);
-          callback ? callback(null, this_._public()) : deferred.resolve(this_._public());
+          deferred.resolve(this_._public());
+          if (callback) {
+            callback(null, this_._public());
+          }
         }, function(err) {
-          callback ? callback(err) : deferred.reject(err);
+          deferred.reject(err);
+          if (callback) {
+            callback(err);
+          }
         });
     } else {
-      callback ? callback(null, this_._public()) : deferred.resolve(this_._public());
+      deferred.resolve(this_._public());
+      if (callback) {
+        callback(null, this_._public());
+      }
     }
-    return callback ? this : deferred.promise;
+    return deferred.promise;
   },
   save: function(callback) {
     var this_ = this;
@@ -118,25 +127,40 @@ record.instanceMethods = {
         .query(record.db.formatQuery("INSERT INTO ?? (??) VALUES (?)", [this.$tableName, columns, this.$getAt(columns, whiteListedProperties)]))
         .then(function(data) {
           this_.id = data.insertId;
-          callback ? callback(null, this_._public()) : deferred.resolve(this_._public());
+          deferred.resolve(this_._public());
+          if (callback) {
+            callback(null, this_._public());
+          }
         }, function(err) {
-          callback ? callback(err) : deferred.reject(err);
+          deferred.reject(err);
+          if (callback) {
+            callback(err);
+          }
         });
     } else {
-      callback ? callback(null, this_._public()) : deferred.resolve(this_._public());
+      deferred.resolve(this_._public());
+      if (callback) {
+        callback(null, this_._public());
+      }
     }
-    return callback ? this : deferred.promise;
+    return deferred.promise;
   },
   delete: function(callback) {
     var deferred = q.defer();
     record.db
       .query(record.db.formatQuery("DELETE FROM ?? WHERE id = ?", [this.$tableName, this.id]))
       .then(function(data) {
-        callback ? callback(null, true) : deferred.resolve(true);
+        deferred.resolve(true);
+        if (callback) {
+          callback(null, true);
+        }
       }, function(err) {
-        callback ? callback(err) : deferred.reject(err);
+        deferred.reject(err);
+        if (callback) {
+          callback(err);
+        }
       });
-    return callback ? this : deferred.promise;
+    return deferred.promise;
   }
 };
 
@@ -155,16 +179,25 @@ record.staticMethods.update = function(record_id, props, callback) {
     q.all([update, select])
       .spread(function(updateSuccessful, data) {
         _.extend(data, whiteListedProperties);
-        callback ? callback(null, data._public()) : deferred.resolve(data._public());
+        deferred.resolve(data._public());
+        if (callback) {
+          callback(null, data._public());
+        }
       }, function(err) {
-        callback ? callback(err) : deferred.reject(err);
+        deferred.reject(err);
+        if (callback) {
+          callback(err);
+        }
       });
   } else {
     var err = '';
-    callback ? callback(err) : deferred.reject(err);
+    deferred.reject(err);
+    if (callback) {
+      callback(err);
+    }
   }
 
-  return callback ? this : deferred.promise;
+  return deferred.promise;
 };
 
 // public record API
@@ -242,7 +275,7 @@ record.createModel = function(options) {
   }
 
   for (instanceProp in instanceProps) {
-    QueryConstructor.prototype[instanceProp] = instanceMethods[instanceProp];
+    QueryConstructor.prototype[instanceProp] = instanceProps[instanceProp];
   }
 
   return QueryConstructor;

@@ -7,11 +7,21 @@ describe('#static-properties', function(){
     constructor: function User() {},
     staticProps: {
       activeStates: [0, 1]
+    },
+    instanceProps: {
+      color: 'red'
     }
   });
 
   it('should merge static properties', function() {
     expect(User.activeStates).toEqual([0, 1]);
+  });
+
+  it('should merge instance properties', function(done) {
+    User.find(1).then(function(user) {
+      expect(user.color).toEqual('red');
+      done();
+    });
   });
 
 });
@@ -39,8 +49,8 @@ describe('#static-methods', function(){
 
 describe('#instance-properties', function(){
 
-  
-  
+
+
 });
 
 describe('#instance-methods', function(){

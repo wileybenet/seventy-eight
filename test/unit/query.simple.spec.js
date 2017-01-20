@@ -9,7 +9,7 @@ describe('#base-static-methods', function(){
 
   it('should pluralize Classname', function() {
     var query = Model.all();
-    
+
     expect(query.$renderSql()).toEqual("SELECT * FROM `models`;");
   });
 
@@ -49,6 +49,12 @@ describe('#base-static-methods', function(){
     expect(query.$renderSql()).toEqual("SELECT * FROM `models`;");
   });
 
+  it('should pass WHERE string literally', function() {
+    var query = Model.where('id = 10');
+
+    expect(query.$renderSql()).toEqual("SELECT * FROM `models` WHERE id = 10;");
+  });
+
   it('should format WHERE objects with $OR clauses', function() {
     var query = Model.where({ $OR: { id: 1, name: 'root' } });
 
@@ -75,7 +81,7 @@ describe('#base-static-methods', function(){
 
   it('should format JOIN arrays', function() {
     var query = Model.joins([
-      "INNER JOIN user_roles", 
+      "INNER JOIN user_roles",
         "ON user_roles.user_id = models.id"]);
 
     expect(query.$renderSql()).toEqual("SELECT * FROM `models` INNER JOIN user_roles ON user_roles.user_id = models.id;");
