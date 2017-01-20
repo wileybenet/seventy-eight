@@ -14,6 +14,17 @@ var tableSchemas;
 record.const = {};
 record.db = client;
 
+record.resolvedPromise = function(data) {
+  var deferred = q.defer();
+  deferred.resolve(data);
+  return deferred.promise;
+};
+record.rejectedPromise = function(err) {
+  var deferred = q.defer();
+  deferred.reject(err);
+  return deferred.promise;
+};
+
 var schemaDeferred = q.defer();
 var constDeferred = q.defer();
 
