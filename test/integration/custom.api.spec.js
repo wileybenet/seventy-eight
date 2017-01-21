@@ -33,6 +33,13 @@ describe('#static-methods', function(){
     staticMethods: {
       findByUsername: function(username) {
         return this.where({ username: username }).one();
+      },
+      customPromise: function() {
+        var this_ = this;
+        setTimeout(function() {
+          this_.resolve({ done: true });
+        }, 100);
+        return this.promise;
       }
     }
   });
@@ -41,6 +48,14 @@ describe('#static-methods', function(){
     var query = User.findByUsername('root');
     query.then(function(user) {
       expect(user.username).toEqual('root');
+      done();
+    });
+  });
+
+  it('should allow for custom resolutions within static methods', function(done) {
+    var query = User.customPromise();
+    query.then(function(data) {
+      expect(data.done).toEqual(true);
       done();
     });
   });

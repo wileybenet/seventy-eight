@@ -242,7 +242,8 @@ record.createModel = function(options) {
   QueryConstructor.prototype.Class = {};
 
   function initChain() {
-    return _.extend({}, QueryConstructor, staticProps, {
+    var deferred = q.defer();
+    return _.extend(deferred, QueryConstructor, staticProps, {
       $constructor: QueryConstructor,
       $record: record,
       $init: true,

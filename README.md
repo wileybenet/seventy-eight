@@ -30,6 +30,21 @@ Configure DB connection at runtime:
 
 ## Documentation
 
+### API
+
+```javascript
+
+// model creation
+seventyEight.createModel({ config });
+
+// shorthand return for an automatically resolved promise
+seventyEight.resolvedPromise({ data });
+
+// shorthand return for an automatically rejected promise
+seventyEight.rejectedPromise({ err });
+
+```
+
 ### Static Methods
 
 #### all()
