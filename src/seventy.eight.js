@@ -182,30 +182,31 @@ record.staticMethods.update = function(record_id, props, callback) {
   var properties = pseudoModel.beforeSave(_.extend({}, props));
   var whiteListedProperties = pseudoModel.$prepareProps(properties);
 
+  function error(err) {
+    deferred.reject(err);
+    if (callback) {
+      callback(err);
+    }
+  }
+
   if (_.size(whiteListedProperties)) {
     var update = record.db
       .query(record.db.formatQuery("UPDATE ?? SET ? WHERE id = ?", [pseudoModel.$tableName, whiteListedProperties, record_id]));
     var select = this_.$constructor.find(record_id);
 
-    q.all([update, select])
-      .spread(function(updateSuccessful, data) {
+    update
+      .then(select)
+      .then(function(data) {
         _.extend(data, whiteListedProperties);
-        deferred.resolve(data._public());
+        deferred.resolve(data);
         if (callback) {
-          callback(null, data._public());
+          callback(null, data);
         }
-      }, function(err) {
-        deferred.reject(err);
-        if (callback) {
-          callback(err);
-        }
-      });
+      })
+      .catch(error)
+      .done();
   } else {
-    var err = '';
-    deferred.reject(err);
-    if (callback) {
-      callback(err);
-    }
+    error('');
   }
 
   return deferred.promise;

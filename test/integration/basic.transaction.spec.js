@@ -85,6 +85,8 @@ describe('#static-query', function(){
       user.update({ active: 0}).then(function(user) {
         expect(user.active).toEqual(0);
         done();
+      }, function(err) {
+        console.log(err);
       });
     });
   });
