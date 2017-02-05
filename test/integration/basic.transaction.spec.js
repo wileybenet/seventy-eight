@@ -92,8 +92,9 @@ describe('#static-query', function(){
   });
 
   it('should update an existing row with the static method', function(done) {
-    Role.update(3, { name: 'removed' }).then(function(user) {
+    Role.update(3, { name: 'removed' }).then(function(success) {
       Role.find(3).then(function(role) {
+        expect(success).toEqual(true);
         expect(role.name).toEqual('removed');
         done();
       }, function(err) { console.log(err); });

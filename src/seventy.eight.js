@@ -192,19 +192,14 @@ record.staticMethods.update = function(record_id, props, callback) {
   if (_.size(whiteListedProperties)) {
     var update = record.db
       .query(record.db.formatQuery("UPDATE ?? SET ? WHERE id = ?", [pseudoModel.$tableName, whiteListedProperties, record_id]));
-    var select = this_.$constructor.find(record_id);
 
     update
-      .then(select)
       .then(function(data) {
-        _.extend(data, whiteListedProperties);
-        deferred.resolve(data);
+        deferred.resolve(true);
         if (callback) {
           callback(null, data);
         }
-      })
-      .catch(error)
-      .done();
+      }, error);
   } else {
     error('');
   }
