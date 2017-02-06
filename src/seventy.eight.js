@@ -190,10 +190,7 @@ record.staticMethods.update = function(record_id, props, callback) {
   }
 
   if (_.size(whiteListedProperties)) {
-    var update = record.db
-      .query(record.db.formatQuery("UPDATE ?? SET ? WHERE id = ?", [pseudoModel.$tableName, whiteListedProperties, record_id]));
-
-    update
+    record.db.query(record.db.formatQuery("UPDATE ?? SET ? WHERE id = ?", [pseudoModel.$tableName, whiteListedProperties, record_id]))
       .then(function(data) {
         deferred.resolve(true);
         if (callback) {
