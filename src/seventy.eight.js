@@ -108,6 +108,7 @@ record.instanceMethods = {
         .query(record.db.formatQuery("UPDATE ?? SET ? WHERE id = ?", [this.$tableName, whiteListedProperties, this.id]))
         .then(function(data) {
           _.extend(this_, whiteListedProperties);
+          this_.afterFind();
           deferred.resolve(this_._public());
           if (callback) {
             callback(null, this_._public());
@@ -138,6 +139,7 @@ record.instanceMethods = {
         .query(record.db.formatQuery("INSERT INTO ?? (??) VALUES (?)", [this.$tableName, columns, this.$getAt(columns, whiteListedProperties)]))
         .then(function(data) {
           this_.id = data.insertId;
+          this_.afterFind();
           deferred.resolve(this_._public());
           if (callback) {
             callback(null, this_._public());
