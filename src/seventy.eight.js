@@ -63,7 +63,43 @@ record.getSchema = function(tableName) {
 };
 
 // base static methods
-record.staticMethods = recordStaticMethods;
+record.staticMethods = _.extend(recordStaticMethods, {
+  int: function(value) {
+    var intVal = parseInt(value);
+    return intVal > 0 || intVal < 0 || intVal === 0 ? intVal : null;
+  },
+  string: function(value) {
+    return value !== undefined && value !== null ? (value + '') : null;
+  },
+  update: function(record_id, props, callback) {
+    var this_ = this;
+    var deferred = q.defer();
+    var pseudoModel = new this.$constructor({ id: record_id });
+    var properties = pseudoModel.beforeSave(_.extend({}, props));
+    var whiteListedProperties = pseudoModel.$prepareProps(properties);
+
+    function error(err) {
+      deferred.reject(err);
+      if (callback) {
+        callback(err);
+      }
+    }
+
+    if (_.size(whiteListedProperties)) {
+      record.db.query(record.db.formatQuery("UPDATE ?? SET ? WHERE id = ?", [pseudoModel.$tableName, whiteListedProperties, record_id]))
+        .then(function(data) {
+          deferred.resolve(true);
+          if (callback) {
+            callback(null, data);
+          }
+        }, error);
+    } else {
+      error('');
+    }
+
+    return deferred.promise;
+  }
+});
 
 // base instance methods
 record.instanceMethods = {
@@ -92,13 +128,6 @@ record.instanceMethods = {
       return _.extend({}, obj, _.pick(this_, [].concat(extraFields)));
     };
     return obj;
-  },
-  int: function(value) {
-    var intVal = parseInt(value);
-    return intVal > 0 || intVal < 0 || intVal === 0 ? intVal : null;
-  },
-  string: function(value) {
-    return value !== undefined && value !== null ? (value + '') : null;
   },
   afterFind: function(obj) {},
   beforeSave: function(props) {
@@ -182,35 +211,6 @@ record.instanceMethods = {
       });
     return deferred.promise;
   }
-};
-
-record.staticMethods.update = function(record_id, props, callback) {
-  var this_ = this;
-  var deferred = q.defer();
-  var pseudoModel = new this.$constructor({ id: record_id });
-  var properties = pseudoModel.beforeSave(_.extend({}, props));
-  var whiteListedProperties = pseudoModel.$prepareProps(properties);
-
-  function error(err) {
-    deferred.reject(err);
-    if (callback) {
-      callback(err);
-    }
-  }
-
-  if (_.size(whiteListedProperties)) {
-    record.db.query(record.db.formatQuery("UPDATE ?? SET ? WHERE id = ?", [pseudoModel.$tableName, whiteListedProperties, record_id]))
-      .then(function(data) {
-        deferred.resolve(true);
-        if (callback) {
-          callback(null, data);
-        }
-      }, error);
-  } else {
-    error('');
-  }
-
-  return deferred.promise;
 };
 
 // public record API
