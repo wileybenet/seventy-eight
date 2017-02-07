@@ -93,6 +93,13 @@ record.instanceMethods = {
     };
     return obj;
   },
+  int: function(value) {
+    var intVal = parseInt(value);
+    return intVal > 0 || intVal < 0 || intVal === 0 ? intVal : null;
+  },
+  string: function(value) {
+    return value !== undefined && value !== null ? (value + '') : null;
+  },
   afterFind: function(obj) {},
   beforeSave: function(props) {
     return props;
