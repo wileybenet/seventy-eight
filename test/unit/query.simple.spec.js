@@ -16,7 +16,7 @@ describe('#base-static-methods', function(){
   it('should limit and restrict FIND calls', function() {
     var query = Model.find(1);
 
-    expect(query.$renderSql()).toEqual("SELECT * FROM `models` WHERE `id` = 1 LIMIT 1;");
+    expect(query.$renderSql()).toEqual("SELECT * FROM `models` WHERE `models`.`id` = 1 LIMIT 1;");
   });
 
   it('should limit one calls', function() {

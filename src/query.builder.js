@@ -69,7 +69,9 @@ var api = {
   },
   find: function(id) {
     this.$singleResult = true;
-    this.where({ id: id }).limit(1);
+    var where = {};
+    where[this.$constructor.tableName + '.id'] = id;
+    this.where(where).limit(1);
   },
   one: function() {
     this.$singleResult = true;
