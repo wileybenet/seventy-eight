@@ -64,12 +64,12 @@ record.getSchema = function(tableName) {
 
 // base static methods
 record.staticMethods = _.extend(recordStaticMethods, {
-  int: function(value) {
+  int: function(value, dflt) {
     var intVal = parseInt(value);
-    return intVal > 0 || intVal < 0 || intVal === 0 ? intVal : null;
+    return intVal > 0 || intVal < 0 || intVal === 0 ? intVal : (dflt !== undefined ? dflt : null);
   },
-  string: function(value) {
-    return value !== undefined && value !== null ? (value + '') : null;
+  string: function(value, dflt) {
+    return value !== undefined && value !== null ? (value + '') : (dflt !== undefined ? dflt : null);
   },
   update: function(record_id, props, callback) {
     var this_ = this;
