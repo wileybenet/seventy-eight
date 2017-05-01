@@ -111,7 +111,7 @@ record.instanceMethods = {
   },
   $getAt: function(fields, properties) {
     return fields.map(function(field) {
-      return properties[field] || 'NULL';
+      return properties[field] !== undefined ? properties[field] : 'NULL';
     });
   },
   _public: function(fields) {
