@@ -137,7 +137,7 @@ var seventyEight = require('seventy-eight');
 
 module.exports = seventyEight.createModel({
   constructor: function User(props) {
-
+    this.data_field = props.data;
   },
   instanceMethods: {
     afterFind: function() {
