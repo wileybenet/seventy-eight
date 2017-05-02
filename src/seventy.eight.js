@@ -241,7 +241,7 @@ record.createModel = function(options) {
   });
 
   QueryConstructor.tableName = tableName;
-  QueryConstructor.prototype.Class = {};
+  QueryConstructor.prototype.Class = QueryConstructor;
 
   function initChain() {
     var deferred = q.defer();
@@ -277,7 +277,6 @@ record.createModel = function(options) {
 
   for (staticProp in staticProps) {
     QueryConstructor[staticProp] = staticProps[staticProp];
-    QueryConstructor.prototype.Class[staticProp] = staticProps[staticProp];
   }
 
   for (staticMethod in staticMethods) {
