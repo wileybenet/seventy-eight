@@ -37,6 +37,12 @@ describe('#base-static-methods', function(){
     expect(query.$renderSql()).toEqual("SELECT id, name, title FROM `models`;");
   });
 
+  it('should format multiple select calls', function() {
+    var query = Model.select(["id", "name"]).select("title");
+
+    expect(query.$renderSql()).toEqual("SELECT id, name, title FROM `models`;");
+  });
+
   it('should format WHERE objects', function() {
     var query = Model.where({ id: 1 });
 
