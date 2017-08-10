@@ -91,6 +91,18 @@ describe('#static-query', function(){
     });
   });
 
+  it('should update an existing row', function(done) {
+    User.find(1).then(function(user) {
+      user.data = { update: 'viaSave' };
+      user.save().then(function(user) {
+        expect(user.data.update).toEqual('viaSave');
+        done();
+      }, function(err) {
+        console.log(err);
+      });
+    });
+  });
+
   it('should update an existing row with the static method', function(done) {
     Role.update(3, { name: 'removed' }).then(function(success) {
       Role.find(3).then(function(role) {

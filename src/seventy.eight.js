@@ -171,6 +171,11 @@ record.instanceMethods = {
     var columns = _.keys(whiteListedProperties);
 
     if (_.size(this._public())) {
+      if (this.id) {
+        const props = this._public();
+        delete props.id;
+        return this.update(props, callback);
+      }
       record.db
         .query(record.db.formatQuery("INSERT INTO ?? (??) VALUES (?)", [this.$tableName, columns, this.$getAt(columns, whiteListedProperties)]))
         .then(function(data) {
