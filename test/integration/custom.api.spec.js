@@ -63,19 +63,34 @@ describe('#static-methods', function(){
 });
 
 describe('#options', function(){
-  var WeirdUsers;
+  var WeirdUser;
 
   beforeEach(function() {
-    WeirdUsers = seventyEight.createModel({
+    WeirdUser = seventyEight.createModel({
       constructor: function WeirdUser() {},
       primaryKey: 'weird_id'
     });
   });
 
   it('should lookup records by the primaryKey', function(done) {
-    WeirdUsers.find('sdf0Sjqnpfps9-jfa').then(function(user) {
-      expect(user.middle_name).toEqual('goldwater');
+    var id = 'sdf0Sjqnpfps9-jfa';
+    WeirdUser.find(id).then(function(user) {
+      expect(user.weird_id).toEqual(id);
       done();
+    });
+  });
+
+  it('should upsert a record', function(done) {
+    var id = 'sdf0Sjqnpfps9-jfa';
+    var name = 'steve-o';
+    var user = new WeirdUser({
+      weird_id: id,
+      middle_name: name
+    }).save().then(function() {
+      WeirdUser.find(id).then(function(user) {
+        expect(user.middle_name).toEqual(name);
+        done();
+      });
     });
   });
 });

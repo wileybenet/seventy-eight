@@ -173,13 +173,8 @@ record.instanceMethods = {
     var columns = _.keys(whiteListedProperties);
 
     if (_.size(this._public())) {
-      if (this[this.$primaryKey]) {
-        const props = this._public();
-        delete props[this.$primaryKey];
-        return this.update(props, callback);
-      }
       record.db
-        .query(record.db.formatQuery("INSERT INTO ?? (??) VALUES (?)", [this.$tableName, columns, this.$getAt(columns, whiteListedProperties)]))
+        .query(record.db.formatQuery("INSERT INTO ?? (??) VALUES (?) ON DUPLICATE KEY UPDATE ?", [this.$tableName, columns, this.$getAt(columns, whiteListedProperties), whiteListedProperties]))
         .then(function(data) {
           this_[this_.$primaryKey] = data.insertId;
           this_.afterFind();
