@@ -62,6 +62,24 @@ describe('#static-methods', function(){
 
 });
 
+describe('#options', function(){
+  var WeirdUsers;
+
+  beforeEach(function() {
+    WeirdUsers = seventyEight.createModel({
+      constructor: function WeirdUser() {},
+      primaryKey: 'weird_id'
+    });
+  });
+
+  it('should lookup records by the primaryKey', function(done) {
+    WeirdUsers.find('sdf0Sjqnpfps9-jfa').then(function(user) {
+      expect(user.middle_name).toEqual('goldwater');
+      done();
+    });
+  });
+});
+
 describe('#instance-properties', function(){
 
 

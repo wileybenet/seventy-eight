@@ -74,7 +74,9 @@ record.staticMethods = _.extend(recordStaticMethods, {
   update: function(record_id, props, callback) {
     var this_ = this;
     var deferred = q.defer();
-    var pseudoModel = new this.$constructor({ id: record_id });
+    var id = {};
+    id[this.$primaryKey] = record_id;
+    var pseudoModel = new this.$constructor(id);
     var properties = pseudoModel.beforeSave(_.extend({}, props));
     var whiteListedProperties = pseudoModel.$prepareProps(properties);
 
@@ -86,7 +88,7 @@ record.staticMethods = _.extend(recordStaticMethods, {
     }
 
     if (_.size(whiteListedProperties)) {
-      record.db.query(record.db.formatQuery("UPDATE ?? SET ? WHERE id = ?", [pseudoModel.$tableName, whiteListedProperties, record_id]))
+      record.db.query(record.db.formatQuery("UPDATE ?? SET ? WHERE ?? = ?", [pseudoModel.$tableName, whiteListedProperties, this.$primaryKey, record_id]))
         .then(function(data) {
           deferred.resolve(true);
           if (callback) {
@@ -141,7 +143,7 @@ record.instanceMethods = {
 
     if (_.size(whiteListedProperties)) {
       record.db
-        .query(record.db.formatQuery("UPDATE ?? SET ? WHERE id = ?", [this.$tableName, whiteListedProperties, this.id]))
+        .query(record.db.formatQuery("UPDATE ?? SET ? WHERE ?? = ?", [this.$tableName, whiteListedProperties, this.$primaryKey, this[this.$primaryKey]]))
         .then(function(data) {
           _.extend(this_, whiteListedProperties);
           this_.afterFind();
@@ -171,15 +173,15 @@ record.instanceMethods = {
     var columns = _.keys(whiteListedProperties);
 
     if (_.size(this._public())) {
-      if (this.id) {
+      if (this[this.$primaryKey]) {
         const props = this._public();
-        delete props.id;
+        delete props[this.$primaryKey];
         return this.update(props, callback);
       }
       record.db
         .query(record.db.formatQuery("INSERT INTO ?? (??) VALUES (?)", [this.$tableName, columns, this.$getAt(columns, whiteListedProperties)]))
         .then(function(data) {
-          this_.id = data.insertId;
+          this_[this_.$primaryKey] = data.insertId;
           this_.afterFind();
           deferred.resolve(this_._public());
           if (callback) {
@@ -202,7 +204,7 @@ record.instanceMethods = {
   delete: function(callback) {
     var deferred = q.defer();
     record.db
-      .query(record.db.formatQuery("DELETE FROM ?? WHERE id = ?", [this.$tableName, this.id]))
+      .query(record.db.formatQuery("DELETE FROM ?? WHERE ?? = ?", [this.$tableName, this.$primaryKey, this[this.$primaryKey]]))
       .then(function(data) {
         deferred.resolve(true);
         if (callback) {
@@ -224,6 +226,7 @@ record.createModel = function(options) {
   var Model = options.constructor;
   var staticProps = options.staticProps || {};
   var instanceProps = options.instanceProps || {};
+  var primaryKey = options.primaryKey || 'id';
   var staticMethods = _.extend({}, record.staticMethods, options.staticMethods || {});
   var instanceMethods = _.extend({}, record.instanceMethods, options.instanceMethods || {});
   var tableName = options.tableName || (utils.toSnake(Model.name).replace(/y$/g, 'ie') + 's');
@@ -234,6 +237,7 @@ record.createModel = function(options) {
       "}" +
       "this.$tableName = tableName;" +
       "this.$schema = options.schema;" +
+      "this.$primaryKey = primaryKey;" +
       "if (found) {"+
         "this.afterFind();"+
       "} else {"+
@@ -252,6 +256,7 @@ record.createModel = function(options) {
     var deferred = q.defer();
     return _.extend(deferred, QueryConstructor, staticProps, {
       $constructor: QueryConstructor,
+      $primaryKey: primaryKey,
       $record: record,
       $init: true,
       $singleResult: false,

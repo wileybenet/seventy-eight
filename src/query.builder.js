@@ -70,7 +70,7 @@ var api = {
   find: function(id) {
     this.$singleResult = true;
     var where = {};
-    where[this.$constructor.tableName + '.id'] = id;
+    where[this.$constructor.tableName + '.' + this.$primaryKey] = id;
     this.where(where).limit(1);
   },
   one: function() {

@@ -1,11 +1,11 @@
 {
   "name": "seventy-eight",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Active-Record like API",
   "main": "index.js",
   "scripts": {
     "test": "grunt test_integration",
-    "prepublish": "git add -u && git commit -m \"patch\" && git push origin master && npm version patch && npm update"
+    "patch": "git add -u && npm version patch && git push origin master"
   },
   "repository": {
     "type": "git",

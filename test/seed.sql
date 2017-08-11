@@ -59,3 +59,15 @@ INSERT INTO `users` (`id`, `username`, `password`, `json`, `active`)
 VALUES
   (1,'root','$2a$10$xb6OlUSgar.Lx1toO3UnB.yE0RwoqYAdLtM5MdG628o/dFmeqG3XC','{\"test\": true}',1),
   (2,'home','good','{\"test2\": true}',0);
+
+DROP TABLE IF EXISTS `weird_users`;
+
+CREATE TABLE `weird_users` (
+  `weird_id` varchar(255) NOT NULL,
+  `middle_name` varchar(255) NOT NULL DEFAULT '',
+  PRIMARY KEY (`weird_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+INSERT INTO `weird_users` (`weird_id`, `middle_name`)
+VALUES
+  ('sdf0Sjqnpfps9-jfa', 'goldwater');
