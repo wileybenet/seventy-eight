@@ -36,7 +36,7 @@ function log(str, params) {
     str = mysql.format(str, params);
   var notification = (/^\w+/).exec(str);
   if (!process.env.DEBUG) return (notification ? notification[0].cyan : 'QUERY: null');
-  if (process.env.DEBUG) return (str.replace(/( [A-Z]+|[A-Z]+ )/g, function(s, m) { return m.cyan; }));
+  if (process.env.DEBUG) return (str.replace(/( [A-Z_]+|[A-Z_]+ )/g, function(s, m) { return m.cyan; }));
 }
 function spinner() {
   if (!process.env.DEBUG) return function() {};

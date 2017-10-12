@@ -138,7 +138,7 @@ record.instanceMethods = {
   update: function(props, callback) {
     var this_ = this;
     var deferred = q.defer();
-    var properties = this.beforeSave(_.extend({}, this, props));
+    var properties = this.beforeSave(_.extend({}, props));
     var whiteListedProperties = this.$prepareProps(properties);
 
     if (_.size(whiteListedProperties)) {
