@@ -5,10 +5,18 @@
  */
 
 var colors = require('colors');
+var style = require('ansi-styles');
 var mysql = require('mysql');
 var q = require('q');
 
 var schema;
+
+function color(str, clr) {
+  if (str) {
+    return style[clr].open + str + style[clr].close;
+  }
+  return '';
+}
 
 var pool = mysql.createPool({
   host     : process.env.DB_HOST ||'localhost',
@@ -35,8 +43,8 @@ function log(str, params) {
   if (params)
     str = mysql.format(str, params);
   var notification = (/^\w+/).exec(str);
-  if (!process.env.DEBUG) return (notification ? notification[0].cyan : 'QUERY: null');
-  if (process.env.DEBUG) return (str.replace(/( [A-Z_]+|[A-Z_]+ )/g, function(s, m) { return m.cyan; }));
+  if (!process.env.DEBUG) return (notification ? color(notification[0], 'cyan') : 'QUERY: null');
+  if (process.env.DEBUG) return (str.replace(/( [A-Z_]+|[A-Z_]+ )/g, function(s, m) { return color(m, 'cyan'); }));
 }
 function spinner() {
   if (!process.env.DEBUG) return function() {};
