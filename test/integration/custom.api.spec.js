@@ -1,10 +1,15 @@
 var requireHelper = require('../helper');
 var seventyEight = requireHelper('seventy.eight');
 
-describe('#static-properties', function(){
+describe('#static-properties', function() {
 
   var User = seventyEight.createModel({
     constructor: function User() {},
+    schema: {
+      id: true,
+      data: true,
+      json: true,
+    },
     staticProps: {
       activeStates: [0, 1]
     },
@@ -26,10 +31,14 @@ describe('#static-properties', function(){
 
 });
 
-describe('#static-methods', function(){
+describe('#static-methods', function() {
 
   var User = seventyEight.createModel({
     constructor: function User() {},
+    schema: {
+      id: true,
+      username: true,
+    },
     staticMethods: {
       findByUsername: function(username) {
         return this.where({ username: username }).one();
@@ -62,13 +71,17 @@ describe('#static-methods', function(){
 
 });
 
-describe('#options', function(){
+describe('#options', function() {
   var WeirdUser;
 
   beforeEach(function() {
     WeirdUser = seventyEight.createModel({
       constructor: function WeirdUser() {},
-      primaryKey: 'weird_id'
+      primaryKey: 'weird_id',
+      schema: {
+        weird_id: true,
+        middle_name: true,
+      }
     });
   });
 

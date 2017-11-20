@@ -6,6 +6,11 @@ describe('#static-query', function(){
 
   var User = seventyEight.createModel({
     constructor: function User() {},
+    schema: {
+      id: true,
+      json: true,
+      active: true,
+    },
     instanceMethods: {
       afterFind: function() {
         this.data = JSON.parse(this.json);
@@ -20,7 +25,11 @@ describe('#static-query', function(){
   });
 
   var Role = seventyEight.createModel({
-    constructor: function Role() {}
+    constructor: function Role() {},
+    schema: {
+      id: true,
+      name: true,
+    },
   });
 
   it('should retreive an array of instances with all()', function(done) {
@@ -133,4 +142,19 @@ describe('#static-query', function(){
     });
   });
 
+});
+
+describe('schemas', () => {
+  var User = seventyEight.createModel({
+    constructor: function User() {},
+    schema: {
+      id: { type: 'int', length: 11, primary: true, autoIncrement: true },
+      name: { type: 'string', length: 255 },
+      data: { type: 'json' },
+    }
+  });
+
+  it('should generate field create syntax', function() {
+    expect(User.createTableSyntax()).toContain(`CREATE TABLE users`);
+  });
 });

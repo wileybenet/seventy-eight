@@ -8,28 +8,28 @@ function formatWhere(obj) {
     return _.map(obj, function(value, key) {
       return formatWhereDeep(key, value);
     }).join('');
-  } else {
+  } 
     return _.map(obj, function(value, key) {
       return formatWherePair(key, value);
     }).join(' AND ');
-  }
+  
 }
 
 function formatWhereDeep(key, value) {
   if (key === '$OR' || key === '$AND') {
-    return '(' + _.map(value, function(v, k) {
+    return `(${_.map(value, function(v, k) {
       return formatWhereDeep(k, v);
-    }).join(' ' + key.substr(1) + ' ') + ')';
-  } else {
+    }).join(` ${key.substr(1)} `)})`;
+  } 
     return formatWherePair(key, value);
-  }
+  
 }
 
 function formatWherePair(key, value) {
   var multiValue = false;
   var operator = '=';
   if (_.isArray(value)) {
-    if (['!=' ,'<>', '<', '<=', '>', '>=', '<=>', 'IS', 'IS NOT'].indexOf(value[0]) !== -1) {
+    if (['!=', '<>', '<', '<=', '>', '>=', '<=>', 'IS', 'IS NOT'].indexOf(value[0]) !== -1) {
       operator = value[0];
       value = value[1];
     } else {
@@ -37,10 +37,10 @@ function formatWherePair(key, value) {
     }
   }
   if (multiValue) {
-    return db.escapeKey(key) + ' IN (' + db.escapeValue(value) + ')';
-  } else {
-    return db.escapeKey(key) + ' ' + operator + ' ' + db.escapeValue(value);
-  }
+    return `${db.escapeKey(key)} IN (${db.escapeValue(value)})`;
+  } 
+    return `${db.escapeKey(key)} ${operator} ${db.escapeValue(value)}`;
+  
 }
 
 function instantiateResponse(data) {
@@ -50,12 +50,12 @@ function instantiateResponse(data) {
     models.push(new this_.$constructor(el, true));
   });
 
-  return (this.$singleResult) ? (models[0] || null) : (models || []);
+  return this.$singleResult ? models[0] || null : models || [];
 }
 
 var api = {
-  all: function() {},
-  select: function(fields) {
+  all() {},
+  select(fields) {
     var selects;
     if (_.isArray(fields)) {
       selects = fields;
@@ -67,17 +67,17 @@ var api = {
       return el.trim();
     }));
   },
-  find: function(id) {
+  find(id) {
     this.$singleResult = true;
     var where = {};
-    where[this.$constructor.tableName + '.' + this.$primaryKey] = id;
+    where[`${this.$constructor.tableName}.${this.$primaryKey}`] = id;
     this.where(where).limit(1);
   },
-  one: function() {
+  one() {
     this.$singleResult = true;
     this.$queryParams.limit = 1;
   },
-  joins: function(sql) {
+  joins(sql) {
     var joins;
     if (_.isArray(sql)) {
       joins = sql.join(' ');
@@ -86,7 +86,7 @@ var api = {
     }
     this.$queryParams.joins.push(joins);
   },
-  group: function(keys) {
+  group(keys) {
     var groups;
     if (_.isArray(keys)) {
       groups = keys;
@@ -98,7 +98,7 @@ var api = {
       return el.trim();
     }));
   },
-  order: function(keys) {
+  order(keys) {
     var orders;
     if (_.isArray(keys)) {
       orders = keys;
@@ -110,31 +110,33 @@ var api = {
       return el.trim();
     }));
   },
-  where: function(condition) {
-    if (condition)
-      this.$queryParams.where.push(formatWhere.apply(null, [].concat(condition)));
+  where(condition) {
+    if (condition) {
+ this.$queryParams.where.push(formatWhere(...[].concat(condition)));
+}
   },
-  limit: function(size) {
-    this.$queryParams.limit = +size;
+  limit(size) {
+    this.$queryParams.limit = Number(size);
   },
-  then: function(cbFn, errFn) {
+  then(cbFn, errFn) {
     var this_ = this;
     var query = this.$renderSql();
 
     this.$record.db
       .query(query)
       .then(function(data) {
-        if (cbFn)
-          cbFn.call(this_, instantiateResponse.call(this_, data));
+        if (cbFn) {
+ cbFn.call(this_, instantiateResponse.call(this_, data)); 
+}
       }, errFn);
 
     this.$init = false;
   },
-  $renderSql: function() {
+  $renderSql() {
     var query = '';
     var params = [];
     if (_.size(this.$queryParams.select)) {
-      query += 'SELECT ' + this.$queryParams.select.join(', ');
+      query += `SELECT ${this.$queryParams.select.join(', ')}`;
     } else {
       query += 'SELECT *';
     }
@@ -143,17 +145,17 @@ var api = {
       query += ' FROM ??';
     }
     if (_.size(this.$queryParams.joins)) {
-      query += ' ' + this.$queryParams.joins.join(' ');
+      query += ` ${this.$queryParams.joins.join(' ')}`;
     }
     if (_.size(this.$queryParams.where)) {
-      query += ' WHERE ' + this.$queryParams.where.join(' AND ');
+      query += ` WHERE ${this.$queryParams.where.join(' AND ')}`;
     }
     if (_.size(this.$queryParams.group)) {
       params.push(this.$queryParams.group);
       query += ' GROUP BY ??';
     }
     if (_.size(this.$queryParams.order)) {
-      query += ' ORDER BY ' + this.$queryParams.order.join(', ');
+      query += ` ORDER BY ${this.$queryParams.order.join(', ')}`;
     }
     if (this.$queryParams.limit) {
       params.push(this.$queryParams.limit);
@@ -162,7 +164,7 @@ var api = {
 
     query += ';';
     return db.formatQuery(query, params);
-  }
+  },
 };
 
 module.exports = api;

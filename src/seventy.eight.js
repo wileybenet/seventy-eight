@@ -1,15 +1,14 @@
 var q = require('q');
 var client = require('./lib/db.client');
 var _ = require('lodash');
+var syntax = require('./lib/syntax');
 var utils = require('./lib/utils');
-var deferred = q.defer();
+var recordDeferred = q.defer();
 var record = {
-  promise: deferred.promise
+  promise: recordDeferred.promise,
 };
 
 var recordStaticMethods = require('./query.builder');
-
-var tableSchemas;
 
 record.const = {};
 record.db = client;
@@ -25,25 +24,7 @@ record.rejectedPromise = function(err) {
   return deferred.promise;
 };
 
-var schemaDeferred = q.defer();
 var constDeferred = q.defer();
-
-record.db.query(record.db.formatQuery("SELECT * FROM information_schema.columns WHERE table_schema = ? ORDER BY table_name, ordinal_position", record.db.schema))
-  .then(function(data) {
-    tableSchemas = _.chain(data)
-      .map(function(row) {
-        return {
-          table: row.TABLE_NAME,
-          columnName: row.COLUMN_NAME
-        };
-      })
-      .groupBy('table')
-      .value();
-
-    schemaDeferred.resolve(record);
-  }, function(err) {
-    console.log('SCHEMA ERROR'.red, err);
-  });
 
 record.db.query(record.db.formatQuery("SELECT * FROM const")).then(function(data) {
   _.each(data, function(row) {
@@ -53,25 +34,21 @@ record.db.query(record.db.formatQuery("SELECT * FROM const")).then(function(data
   constDeferred.resolve(record);
 });
 
-q.all([schemaDeferred, constDeferred])
+q.all([constDeferred])
   .then(function() {
-    deferred.resolve(record);
+    recordDeferred.resolve(record);
   });
 
-record.getSchema = function(tableName) {
-  return _.pluck(tableSchemas[tableName], 'columnName');
-};
-
 // base static methods
-record.staticMethods = _.extend(recordStaticMethods, {
-  int: function(value, dflt) {
+record.staticMethods = _.extend(recordStaticMethods, syntax.methods, {
+  int(value, dflt) {
     var intVal = parseInt(value);
-    return intVal > 0 || intVal < 0 || intVal === 0 ? intVal : (dflt !== undefined ? dflt : null);
+    return intVal > 0 || intVal < 0 || intVal === 0 ? intVal : dflt !== undefined ? dflt : null;
   },
-  string: function(value, dflt) {
-    return value !== undefined && value !== null ? (value + '') : (dflt !== undefined ? dflt : null);
+  string(value, dflt) {
+    return value !== undefined && value !== null ? `${value}` : dflt !== undefined ? dflt : null;
   },
-  update: function(record_id, props, callback) {
+  update(record_id, props, callback) {
     var this_ = this;
     var deferred = q.defer();
     var id = {};
@@ -100,42 +77,42 @@ record.staticMethods = _.extend(recordStaticMethods, {
     }
 
     return deferred.promise;
-  }
+  },
 });
 
 // base instance methods
 record.instanceMethods = {
-  $whiteList: function(properties) {
-    return _.pick(properties, record.getSchema(this.$tableName));
+  $whiteList(properties) {
+    return _.pick(properties, Object.keys(this.Class.schema));
   },
-  $prepareProps: function(properties) {
+  $prepareProps(properties) {
     return this.$whiteList(properties);
   },
-  $getAt: function(fields, properties) {
+  $getAt(fields, properties) {
     return fields.map(function(field) {
       return properties[field] !== undefined ? properties[field] : 'NULL';
     });
   },
-  _public: function(fields) {
+  _public(fields) {
     var this_ = this;
     fields = fields || this._publicFields || null;
     var obj = _.pick(this, function(value, key) {
       if (fields) {
-        return !!~fields.indexOf(key);
-      } else {
-        return !{$: true, _: true}[key.substr(0, 1)];
-      }
+        return Boolean(~fields.indexOf(key));
+      } 
+        return !{ $: true, _: true }[key.substr(0, 1)];
+      
     });
     obj.include = function(extraFields) {
       return _.extend({}, obj, _.pick(this_, [].concat(extraFields)));
     };
     return obj;
   },
-  afterFind: function(obj) {},
-  beforeSave: function(props) {
+  afterFind(obj) {},
+  beforeSave(props) {
     return props;
   },
-  update: function(props, callback) {
+  update(props, callback) {
     var this_ = this;
     var deferred = q.defer();
     var properties = this.beforeSave(_.extend({}, props));
@@ -165,7 +142,7 @@ record.instanceMethods = {
     }
     return deferred.promise;
   },
-  save: function(callback) {
+  save(callback) {
     var this_ = this;
     var deferred = q.defer();
     var properties = this.beforeSave(this);
@@ -196,7 +173,7 @@ record.instanceMethods = {
     }
     return deferred.promise;
   },
-  delete: function(callback) {
+  delete(callback) {
     var deferred = q.defer();
     record.db
       .query(record.db.formatQuery("DELETE FROM ?? WHERE ?? = ?", [this.$tableName, this.$primaryKey, this[this.$primaryKey]]))
@@ -212,7 +189,7 @@ record.instanceMethods = {
         }
       });
     return deferred.promise;
-  }
+  },
 };
 
 // public record API
@@ -220,31 +197,28 @@ record.createModel = function(options) {
   var staticMethod, instanceMethod, staticProp, instanceProp;
   var Model = options.constructor;
   var staticProps = options.staticProps || {};
+  var schema = options.schema || {};
   var instanceProps = options.instanceProps || {};
   var primaryKey = options.primaryKey || 'id';
   var staticMethods = _.extend({}, record.staticMethods, options.staticMethods || {});
   var instanceMethods = _.extend({}, record.instanceMethods, options.instanceMethods || {});
-  var tableName = options.tableName || (utils.toSnake(Model.name).replace(/y$/g, 'ie') + 's');
+  var tableName = options.tableName || `${utils.toSnake(Model.name).replace(/y$/g, 'ie')}s`;
   var QueryConstructor = eval(
-    "(function " + Model.name + "(row, found) {" +
-      "for (var key in row) {" +
-        "this[key] = row[key];" +
-      "}" +
-      "this.$tableName = tableName;" +
-      "this.$schema = options.schema;" +
-      "this.$primaryKey = primaryKey;" +
-      "if (found) {"+
-        "this.afterFind();"+
-      "} else {"+
-        "Model.call(this);" +
-      "}"+
-    "})");
-
-  schemaDeferred.promise.then(function(data) {
-    // options.schema = record.getSchema(tableName);
-  });
+    `(function ${Model.name}(row, found) {` +
+      `for (var key in row) {` +
+        `this[key] = row[key];` +
+      `}` +
+      `this.$tableName = tableName;` +
+      `this.$primaryKey = primaryKey;` +
+      `if (found) {` +
+        `this.afterFind();` +
+      `} else {` +
+        `Model.call(this);` +
+      `}` +
+    `})`);
 
   QueryConstructor.tableName = tableName;
+  QueryConstructor.schema = schema;
   QueryConstructor.prototype.Class = QueryConstructor;
 
   function initChain() {
@@ -261,8 +235,8 @@ record.createModel = function(options) {
         joins: [],
         group: [],
         order: [],
-        limit: null
-      }
+        limit: null,
+      },
     });
   }
 

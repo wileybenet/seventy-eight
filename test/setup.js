@@ -7,7 +7,7 @@ var client = require('../src/lib/db.client');
 var args = [
   '-u', process.env.DB_USER,
   `-p${process.env.DB_PASSWORD}`,
-  '-e', `CREATE DATABASE IF NOT EXISTS ${process.env.DB_SCHEMA}`
+  '-e', `CREATE DATABASE IF NOT EXISTS ${process.env.DB_SCHEMA}`,
 ];
 
 var createTable = spawn('mysql', args);
