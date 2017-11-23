@@ -39,7 +39,7 @@ seventyEight.staticMethods = _.extend(recordStaticMethods, migrator.methods, {
     var this_ = this;
     var deferred = q.defer();
     var id = {};
-    id[this.$primaryKey] = record_id;
+    id[this.$constructor.$getPrimaryKey()] = record_id;
     var pseudoModel = new this.$constructor(id);
     var properties = pseudoModel.beforeSave(_.extend({}, props));
     var whiteListedProperties = pseudoModel.$prepareProps(properties);
@@ -53,7 +53,7 @@ seventyEight.staticMethods = _.extend(recordStaticMethods, migrator.methods, {
     }
 
     if (_.size(whiteListedProperties)) {
-      seventyEight.db.query(seventyEight.db.formatQuery("UPDATE ?? SET ? WHERE ?? = ?", [pseudoModel.$tableName, whiteListedProperties, this.$primaryKey, record_id]))
+      seventyEight.db.query(seventyEight.db.formatQuery("UPDATE ?? SET ? WHERE ?? = ?", [pseudoModel.$tableName, whiteListedProperties, this.$constructor.$getPrimaryKey(), record_id]))
         .then(function(data) {
           deferred.resolve(true);
           if (callback) {
@@ -108,10 +108,10 @@ seventyEight.instanceMethods = {
       }
     });
   },
-  afterFind(obj) {},
+  afterFind() {},
   $beforeSave(props) {
     this.Class.getSchema().forEach(field => {
-      if (field.type === 'json') {
+      if (field.type === 'json' && props.hasOwnProperty(field.name)) {
         props[`${field.name}__json`] = JSON.stringify(props[field.name]);
         delete props[field.name];
       }
@@ -211,23 +211,25 @@ seventyEight.instanceMethods = {
 };
 
 // public seventyEight API
-seventyEight.createModel = function(options) {
-  var staticMethod, instanceMethod, staticProp, instanceProp;
+seventyEight.createModel = function(options) { // eslint-disable-line max-statements
+  let staticMethod = null;
+  let instanceMethod = null;
+  let staticProp = null;
+  let instanceProp = null;
   var Model = options.constructor;
   var staticProps = options.staticProps || {};
   var schema = options.schema || {};
   var instanceProps = options.instanceProps || {};
-  var primaryKey = options.primaryKey || 'id';
   var staticMethods = _.extend({}, seventyEight.staticMethods, options.staticMethods || {});
   var instanceMethods = _.extend({}, seventyEight.instanceMethods, options.instanceMethods || {});
   var tableName = options.tableName || `${utils.toSnake(Model.name).replace(/y$/g, 'ie')}s`;
-  var QueryConstructor = eval(
+  var QueryConstructor = eval( // eslint-disable-line no-eval
     `(function ${Model.name}(row, found) {
       for (var key in row) {
         this[key] = row[key];
       }
       this.$tableName = tableName;
-      this.$primaryKey = primaryKey;
+      this.$primaryKey = this.Class.$getPrimaryKey();
       if (found) {
         this.$afterFind();
         this.afterFind();
@@ -239,13 +241,20 @@ seventyEight.createModel = function(options) {
   QueryConstructor.tableName = tableName;
   QueryConstructor.schema = schema;
   QueryConstructor.db = client;
+  QueryConstructor.$getPrimaryKey = function() {
+    try {
+      return Object.keys(this.schema).map(name => ({ name, primary: this.schema[name].primary })).find(field => field.primary).name;
+    } catch (err) {
+      throw new Error(`schema missing primary field: \n${JSON.stringify(this.schema, null, 2)}`);
+    }
+  };
   QueryConstructor.prototype.Class = QueryConstructor;
 
-  function initChain() {
+  const initChain = () => {
     var deferred = q.defer();
     return _.extend(deferred, QueryConstructor, staticProps, {
       $constructor: QueryConstructor,
-      $primaryKey: primaryKey,
+      $getPrimaryKey: QueryConstructor.$getPrimaryKey(),
       $record: seventyEight,
       $init: true,
       $singleResult: false,
@@ -258,21 +267,14 @@ seventyEight.createModel = function(options) {
         limit: null,
       },
     });
-  }
+  };
 
-  function startChain(fn) {
-    return function() {
-      var self;
-      if (this.$init) {
-        self = this;
-      } else {
-        self = initChain();
-      }
-      var nextSelf = _.extend({}, self);
-      var ret = fn.apply(nextSelf, arguments);
-      return _.isUndefined(ret) ? nextSelf : ret;
-    };
-  }
+  const startChain = fn => function(...args) {
+    const context = this.$init ? this : initChain(); // eslint-disable-line no-invalid-this
+    var nextSelf = _.extend({}, context);
+    var ret = fn.apply(nextSelf, args);
+    return _.isUndefined(ret) ? nextSelf : ret;
+  };
 
   for (staticProp in staticProps) {
     QueryConstructor[staticProp] = staticProps[staticProp];
@@ -288,6 +290,10 @@ seventyEight.createModel = function(options) {
 
   for (instanceProp in instanceProps) {
     QueryConstructor.prototype[instanceProp] = instanceProps[instanceProp];
+  }
+
+  if (!schema) {
+    throw new Error('model requires schema: {}');
   }
 
   return QueryConstructor;

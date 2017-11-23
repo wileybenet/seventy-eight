@@ -1,20 +1,22 @@
 const { requireHelper } = require('../helper');
 var seventyEight = requireHelper('seventy.eight');
 
-describe('#miscellaneous', function(){
+describe('#miscellaneous', function() {
 
-  var UserRole = seventyEight.createModel({
+  const User = seventyEight.createModel({
+    constructor: function User() {},
+    tableName: 'user_tbl',
+    schema: {
+      id: { type: 'int', primary: true },
+    },
+  });
+
+  const UserRole = seventyEight.createModel({
     constructor: function UserRole() {}
   });
 
   it('should format tableName from constructor name', function() {
     expect(UserRole.tableName).toEqual('user_roles');
-  });
-
-  var User = seventyEight.createModel({
-    constructor: function User() {},
-    tableName: 'user_tbl',
-    schema: {},
   });
 
   it('should store explicit tableName', function() {

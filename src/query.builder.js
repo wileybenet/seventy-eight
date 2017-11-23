@@ -8,11 +8,11 @@ function formatWhere(obj) {
     return _.map(obj, function(value, key) {
       return formatWhereDeep(key, value);
     }).join('');
-  } 
+  }
     return _.map(obj, function(value, key) {
       return formatWherePair(key, value);
     }).join(' AND ');
-  
+
 }
 
 function formatWhereDeep(key, value) {
@@ -20,9 +20,9 @@ function formatWhereDeep(key, value) {
     return `(${_.map(value, function(v, k) {
       return formatWhereDeep(k, v);
     }).join(` ${key.substr(1)} `)})`;
-  } 
+  }
     return formatWherePair(key, value);
-  
+
 }
 
 function formatWherePair(key, value) {
@@ -38,9 +38,9 @@ function formatWherePair(key, value) {
   }
   if (multiValue) {
     return `${db.escapeKey(key)} IN (${db.escapeValue(value)})`;
-  } 
+  }
     return `${db.escapeKey(key)} ${operator} ${db.escapeValue(value)}`;
-  
+
 }
 
 function instantiateResponse(data) {
@@ -68,9 +68,9 @@ var api = {
     }));
   },
   find(id) {
-    this.$singleResult = true;
     var where = {};
-    where[`${this.$constructor.tableName}.${this.$primaryKey}`] = id;
+    this.$singleResult = true;
+    where[`${this.$constructor.tableName}.${this.$constructor.$getPrimaryKey()}`] = id;
     this.where(where).limit(1);
   },
   one() {
@@ -126,7 +126,7 @@ var api = {
       .query(query)
       .then(function(data) {
         if (cbFn) {
- cbFn.call(this_, instantiateResponse.call(this_, data)); 
+ cbFn.call(this_, instantiateResponse.call(this_, data));
 }
       }, errFn);
 

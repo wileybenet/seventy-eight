@@ -5,7 +5,9 @@ describe('#base-static-methods', function(){
 
   var Model = seventyEight.createModel({
     constructor: function Model() {},
-    schema: {},
+    schema: {
+      id: { type: 'int', primary: true },
+    },
   });
 
   it('should pluralize Classname', function() {

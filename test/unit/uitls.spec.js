@@ -1,7 +1,7 @@
 const { requireHelper } = require('../helper');
 var utils = requireHelper('lib/utils.js');
 
-describe('#utils', function(){
+describe('#utils', function() {
 
   it('should convert snake to camel case', function() {
     expect(utils.toCamel('hello_lonely_world')).toEqual('helloLonelyWorld');

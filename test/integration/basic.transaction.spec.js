@@ -39,7 +39,6 @@ describe('#static-query', function() {
   it('should format response json into `data` property', function(done) {
     var query = User.find(1);
     query.then(function(user) {
-      console.log(user);
       expect(user.data).toEqual({ test: true });
       done();
     });
@@ -66,9 +65,9 @@ describe('#static-query', function() {
 
   it('should format data with beforeSave when saving', function(done) {
     var data = { mapping: [{ name: 'test' }, { name: 'two' }] };
-    var user = new User({ username: 'wiley', password: 'password', data: data });
-    user.save().then(function(user) {
-      User.find(user.id).then(function(u) {
+    var user = new User({ username: 'wiley', password: 'password', data });
+    user.save().then(function(savedUser) {
+      User.find(savedUser.id).then(function(u) {
         expect(u.data).toEqual(data);
         done();
       });
@@ -77,10 +76,10 @@ describe('#static-query', function() {
     });
   });
 
-  it('should update an existing row', function(done) {
+  it('should update an existing row via update()', function(done) {
     User.find(1).then(function(user) {
       expect(user.id).toEqual(1);
-      user.update({ active: 0 }).then(function() {
+      user.update({ active: 0 }).then(function(savedUser) {
         expect(user.active).toEqual(0);
         done();
       }, function(err) {
@@ -89,7 +88,7 @@ describe('#static-query', function() {
     });
   });
 
-  it('should update an existing row', function(done) {
+  it('should update an existing row via save()', function(done) {
     User.find(1).then(function(user) {
       user.data = { update: 'viaSave' };
       user.save().then(function() {

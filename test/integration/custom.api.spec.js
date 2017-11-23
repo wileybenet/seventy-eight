@@ -40,17 +40,16 @@ describe('#static-methods', function() {
       username: { type: 'string' },
     },
     staticMethods: {
-      findByUsername: function(username) {
-        return this.where({ username: username }).one();
+      findByUsername(username) {
+        return this.where({ username }).one();
       },
-      customPromise: function() {
-        var this_ = this;
-        setTimeout(function() {
-          this_.resolve({ done: true });
+      customPromise() {
+        setTimeout(() => {
+          this.resolve({ done: true });
         }, 100);
         return this.promise;
-      }
-    }
+      },
+    },
   });
 
   it('should merge static members', function(done) {

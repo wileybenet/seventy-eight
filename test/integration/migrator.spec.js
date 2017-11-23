@@ -7,7 +7,7 @@ describe('schemas', () => {
     schema: {
       id: { type: 'int', primary: true, autoIncrement: true },
       name: { type: 'string' },
-      data: { type: 'json' },
+      data: { type: 'json', required: true },
     },
   });
 

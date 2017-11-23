@@ -5,7 +5,9 @@ describe('#static-composition', function() {
 
   var User = seventyEight.createModel({
     constructor: function User() {},
-    schema: {},
+    schema: {
+      id: { type: 'int', primary: true },
+    },
   });
 
   it('should combine all methods in correct order', function() {

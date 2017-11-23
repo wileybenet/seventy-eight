@@ -178,7 +178,7 @@ const utils = {
     return Object.keys(utils.fields).reduce((memo, fieldName) => {
       memo[fieldName] = utils.fields[fieldName].default(schemaField);
       return memo;
-    }, schemaField);
+    }, Object.assign({}, schemaField));
   },
 
   writeSchemaToSQL(schemaField, method = 'init') {
@@ -211,9 +211,9 @@ const utils = {
     if (!validTypes) {
       return `invalid field type '${schemaFields.map(field => field.type).filter(type => !Object.keys(typeMapping).includes(type))[0]}'`;
     }
-    const validPrimary = schemaFields.filter(field => field.primary).length <= 1;
-    if (!validPrimary) {
-      return 'only 1 primary field permitted';
+    const validPrimary = schemaFields.filter(field => field.primary);
+    if (validPrimary.length !== 1) {
+      return '1 primary field needed `field: { type: \'<type>\', primary: true }`';
     }
     return false;
   },

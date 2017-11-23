@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/wileybenet/seventy-eight#readme",
   "devDependencies": {
-    "coveralls": "^2.11.4",
+    "coveralls": "^2.13.3",
     "eslint": "^4.11.0",
     "eslint-plugin-node": "^5.1.1",
     "grunt": "^0.4.5",
@@ -34,7 +34,7 @@
     "ansi-styles": "^3.2.0",
     "colors": "^1.1.2",
     "lodash": "^3.10.1",
-    "mysql": "^2.9.0",
-    "q": "^1.4.1"
+    "mysql": "^2.15.0",
+    "q": "^1.5.1"
   }
 }

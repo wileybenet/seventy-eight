@@ -13,8 +13,7 @@ module.exports = {
       const schema = Object.keys(this.schema).map(name => {
         var schemaField = this.schema[name];
         schemaField.name = name;
-        utils.applySchemaDefaults(schemaField);
-        return schemaField;
+        return utils.applySchemaDefaults(schemaField);
       });
       const error = utils.schemaValidationError(schema);
       if (error) {
