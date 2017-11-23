@@ -58,7 +58,12 @@ const utils = {
       },
     },
     required: {
-      default: noop('required', false),
+      default(schemaField) {
+        if (schemaField.primary) {
+          return true;
+        }
+        return schemaField.required || false;
+      },
       fromSQL(field) {
         return field.Null === 'NO';
       },

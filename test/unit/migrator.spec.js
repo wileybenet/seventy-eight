@@ -32,7 +32,7 @@ describe('schemas', () => {
     User.createTableSyntax().then(sql => {
       expect(statements(sql)).toEqual(statements(`
         CREATE TABLE \`users\` (
-          \`id\` INT(11) PRIMARY KEY AUTO_INCREMENT,
+          \`id\` INT(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
           \`name\` VARCHAR(255),
           \`data__json\` LONGTEXT
         )
