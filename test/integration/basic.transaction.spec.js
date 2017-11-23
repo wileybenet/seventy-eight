@@ -1,34 +1,22 @@
-var requireHelper = require('../helper');
+const { requireHelper } = require('../helper');
 var seventyEight = requireHelper('seventy.eight');
-var _ = require('lodash');
 
-describe('#static-query', function(){
-
+describe('#static-query', function() {
   var User = seventyEight.createModel({
     constructor: function User() {},
     schema: {
-      id: true,
-      json: true,
-      active: true,
+      id: { type: 'int', primary: true, autoIncrement: true },
+      data: { type: 'json' },
+      active: { type: 'boolean' },
     },
-    instanceMethods: {
-      afterFind: function() {
-        this.data = JSON.parse(this.json);
-      },
-      beforeSave: function(props) {
-        if (props.data) {
-          props.json = JSON.stringify(props.data);
-        }
-        return props;
-      }
-    }
+    instanceMethods: {},
   });
 
   var Role = seventyEight.createModel({
     constructor: function Role() {},
     schema: {
-      id: true,
-      name: true,
+      id: { type: 'int', primary: true, autoIncrement: true },
+      name: { type: 'string' },
     },
   });
 
@@ -48,9 +36,10 @@ describe('#static-query', function(){
     });
   });
 
-  it('should format response with afterFind', function(done) {
+  it('should format response json into `data` property', function(done) {
     var query = User.find(1);
     query.then(function(user) {
+      console.log(user);
       expect(user.data).toEqual({ test: true });
       done();
     });
@@ -69,7 +58,7 @@ describe('#static-query', function(){
 
   it('should save a new row', function(done) {
     var role = new Role({ name: 'guest' });
-    role.save().then(function(role) {
+    role.save().then(function() {
       expect(role.id).toEqual(4);
       done();
     });
@@ -91,7 +80,7 @@ describe('#static-query', function(){
   it('should update an existing row', function(done) {
     User.find(1).then(function(user) {
       expect(user.id).toEqual(1);
-      user.update({ active: 0}).then(function(user) {
+      user.update({ active: 0 }).then(function() {
         expect(user.active).toEqual(0);
         done();
       }, function(err) {
@@ -103,7 +92,7 @@ describe('#static-query', function(){
   it('should update an existing row', function(done) {
     User.find(1).then(function(user) {
       user.data = { update: 'viaSave' };
-      user.save().then(function(user) {
+      user.save().then(function() {
         expect(user.data.update).toEqual('viaSave');
         done();
       }, function(err) {
@@ -118,8 +107,8 @@ describe('#static-query', function(){
         expect(success).toEqual(true);
         expect(role.name).toEqual('removed');
         done();
-      }, function(err) { console.log(err); });
-    }, function(err) { console.log(err); });
+      }, err => console.log(err));
+    }, err => console.log(err));
   });
 
   it('should delete an existing row', function(done) {
@@ -127,34 +116,12 @@ describe('#static-query', function(){
       expect(user.id).toEqual(2);
       user.delete().then(function(status) {
         expect(status).toEqual(true);
-        User.find(2).then(function(user) {
-          expect(user).toEqual(null);
+        User.find(2).then(function(deletedUser) {
+          expect(deletedUser).toEqual(null);
           done();
         });
       });
     });
   });
 
-  it('should load const object with const table', function(done) {
-    seventyEight.promise.then(function(seventyEight) {
-      expect(seventyEight.const.salt).toEqual('$2a$10$xb6OlUSgar.Lx1toO3UnB.');
-      done();
-    });
-  });
-
-});
-
-describe('schemas', () => {
-  var User = seventyEight.createModel({
-    constructor: function User() {},
-    schema: {
-      id: { type: 'int', length: 11, primary: true, autoIncrement: true },
-      name: { type: 'string', length: 255 },
-      data: { type: 'json' },
-    }
-  });
-
-  it('should generate field create syntax', function() {
-    expect(User.createTableSyntax()).toContain(`CREATE TABLE users`);
-  });
 });

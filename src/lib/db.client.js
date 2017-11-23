@@ -19,10 +19,10 @@ function color(str, clr) {
 }
 
 var pool = mysql.createPool({
-  host     : process.env.DB_HOST ||'localhost',
-  port     : process.env.DB_PORT ||'8889',
-  user     : process.env.DB_USER ||'root',
-  password : process.env.DB_PASSWORD ||'root',
+  host     : process.env.DB_HOST || 'localhost',
+  port     : process.env.DB_PORT || '3000',
+  user     : process.env.DB_USER || 'root',
+  password : process.env.DB_PASSWORD || 'root',
   database : (schema = process.env.DB_SCHEMA || null),
   connectionLimit: 100,
   multipleStatements: true
@@ -30,7 +30,7 @@ var pool = mysql.createPool({
 
 var totalConnections = 0;
 
-pool.on('connection', function (connection) {
+pool.on('connection', function () {
   totalConnections++;
   console.log('new connection made:', totalConnections, 'active');
 });
@@ -64,27 +64,22 @@ exports.schema = schema;
 exports.escapeKey = pool.escapeId.bind(pool);
 exports.escapeValue = pool.escape.bind(pool);
 
-exports.ping = function(wait, callbackFn) {
-  callbackFn = callbackFn || function() {};
-  var pingId = setInterval(function() {
+exports.ping = function() {
+  return new Promise((resolve, reject) => {
     pool.getConnection(function(err, connection) {
       if (err) {
-        return callbackFn(err);
+        return reject(err);
       }
       connection.ping(function() {
         if (err) {
-          callbackFn(err);
+          reject(err);
         }
         console.log('connected to mysql:', exports.getDate());
         connection.release();
-        callbackFn();
+        resolve();
       });
     });
-  }, wait || 60000);
-
-  return function() {
-    clearInterval(pingId);
-  };
+  });
 };
 
 exports.getClient = function(cbFn) {
@@ -110,7 +105,7 @@ exports.query = function (str, params) {
     var interval = spinner();
     connection.query(str, params, function(err, data) {
       interval();
-      if (err){
+      if (err) {
         deferred.reject(err);
       } else {
         deferred.resolve(data);

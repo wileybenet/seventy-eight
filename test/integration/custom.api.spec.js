@@ -1,4 +1,4 @@
-var requireHelper = require('../helper');
+const { requireHelper } = require('../helper');
 var seventyEight = requireHelper('seventy.eight');
 
 describe('#static-properties', function() {
@@ -6,9 +6,9 @@ describe('#static-properties', function() {
   var User = seventyEight.createModel({
     constructor: function User() {},
     schema: {
-      id: true,
-      data: true,
-      json: true,
+      id: { type: 'int', primary: true, autoIncrement: true },
+      data: { type: 'json' },
+      json: { type: 'json' },
     },
     staticProps: {
       activeStates: [0, 1]
@@ -36,8 +36,8 @@ describe('#static-methods', function() {
   var User = seventyEight.createModel({
     constructor: function User() {},
     schema: {
-      id: true,
-      username: true,
+      id: { type: 'int', primary: true, autoIncrement: true },
+      username: { type: 'string' },
     },
     staticMethods: {
       findByUsername: function(username) {
@@ -79,8 +79,8 @@ describe('#options', function() {
       constructor: function WeirdUser() {},
       primaryKey: 'weird_id',
       schema: {
-        weird_id: true,
-        middle_name: true,
+        weird_id: { type: 'int', primary: true, autoIncrement: true },
+        middle_name: { type: 'string' },
       }
     });
   });

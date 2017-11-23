@@ -7,7 +7,7 @@ var deferred = q.defer();
 var sql = fs.readFileSync(path.resolve(__dirname, 'purge.sql')).toString().replace(/\n/g, '');
 
 client.query(sql).then(function() {
-  console.log('DATABASE PURGED');
+  console.log('DATABASE DROPPED');
   client.close();
   deferred.resolve(true);
 }, function(err) {

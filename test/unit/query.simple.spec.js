@@ -1,10 +1,11 @@
-var requireHelper = require('../helper');
+const { requireHelper } = require('../helper');
 var seventyEight = requireHelper('seventy.eight');
 
 describe('#base-static-methods', function(){
 
   var Model = seventyEight.createModel({
-    constructor: function Model() {}
+    constructor: function Model() {},
+    schema: {},
   });
 
   it('should pluralize Classname', function() {

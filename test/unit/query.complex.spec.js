@@ -1,10 +1,11 @@
-var requireHelper = require('../helper');
+const { requireHelper } = require('../helper');
 var seventyEight = requireHelper('seventy.eight');
 
 describe('#static-composition', function() {
 
   var User = seventyEight.createModel({
-    constructor: function User() {}
+    constructor: function User() {},
+    schema: {},
   });
 
   it('should combine all methods in correct order', function() {
@@ -54,4 +55,3 @@ describe('#static-composition', function() {
   });
 
 });
-

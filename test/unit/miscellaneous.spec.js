@@ -1,4 +1,4 @@
-var requireHelper = require('../helper');
+const { requireHelper } = require('../helper');
 var seventyEight = requireHelper('seventy.eight');
 
 describe('#miscellaneous', function(){
@@ -13,7 +13,8 @@ describe('#miscellaneous', function(){
 
   var User = seventyEight.createModel({
     constructor: function User() {},
-    tableName: 'user_tbl'
+    tableName: 'user_tbl',
+    schema: {},
   });
 
   it('should store explicit tableName', function() {

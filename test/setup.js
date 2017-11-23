@@ -10,22 +10,22 @@ var args = [
   '-e', `CREATE DATABASE IF NOT EXISTS ${process.env.DB_SCHEMA}`,
 ];
 
-var createTable = spawn('mysql', args);
+var createDB = spawn('mysql', args);
 console.log(`creating database ${process.env.DB_SCHEMA}`);
 
 var deferred = q.defer();
 
-var createTableLog = '';
+var createDBLog = '';
 
-createTable.stdout.on('data', data => {
-  createTableLog += data;
+createDB.stdout.on('data', data => {
+  createDBLog += data;
 });
 
-createTable.stderr.on('data', data => {
+createDB.stderr.on('data', data => {
   console.log(`create database stderr: ${data}`);
 });
 
-createTable.on('close', code => {
+createDB.on('close', code => {
   if (code === 0) {
     var sql = fs.readFileSync(path.resolve(__dirname, 'seed.sql')).toString().replace(/\n/g, '');
 

@@ -1,4 +1,4 @@
-var requireHelper = require('../helper');
+const { requireHelper } = require('../helper');
 var utils = requireHelper('lib/utils.js');
 
 describe('#utils', function(){

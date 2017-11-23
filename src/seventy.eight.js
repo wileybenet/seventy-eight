@@ -1,46 +1,33 @@
 var q = require('q');
 var client = require('./lib/db.client');
 var _ = require('lodash');
-var syntax = require('./lib/syntax');
+var migrator = require('./lib/migrator');
 var utils = require('./lib/utils');
 var recordDeferred = q.defer();
-var record = {
+var seventyEight = {
   promise: recordDeferred.promise,
 };
 
 var recordStaticMethods = require('./query.builder');
 
-record.const = {};
-record.db = client;
+seventyEight.const = {};
+seventyEight.db = client;
 
-record.resolvedPromise = function(data) {
+seventyEight.db.ping().then(() => recordDeferred.resolve(seventyEight)).catch(console.error);
+
+seventyEight.resolvedPromise = function(data) {
   var deferred = q.defer();
   deferred.resolve(data);
   return deferred.promise;
 };
-record.rejectedPromise = function(err) {
+seventyEight.rejectedPromise = function(err) {
   var deferred = q.defer();
   deferred.reject(err);
   return deferred.promise;
 };
 
-var constDeferred = q.defer();
-
-record.db.query(record.db.formatQuery("SELECT * FROM const")).then(function(data) {
-  _.each(data, function(row) {
-    record.const[row.name] = row.value;
-  });
-
-  constDeferred.resolve(record);
-});
-
-q.all([constDeferred])
-  .then(function() {
-    recordDeferred.resolve(record);
-  });
-
 // base static methods
-record.staticMethods = _.extend(recordStaticMethods, syntax.methods, {
+seventyEight.staticMethods = _.extend(recordStaticMethods, migrator.methods, {
   int(value, dflt) {
     var intVal = parseInt(value);
     return intVal > 0 || intVal < 0 || intVal === 0 ? intVal : dflt !== undefined ? dflt : null;
@@ -56,6 +43,7 @@ record.staticMethods = _.extend(recordStaticMethods, syntax.methods, {
     var pseudoModel = new this.$constructor(id);
     var properties = pseudoModel.beforeSave(_.extend({}, props));
     var whiteListedProperties = pseudoModel.$prepareProps(properties);
+    whiteListedProperties = pseudoModel.$beforeSave(whiteListedProperties);
 
     function error(err) {
       deferred.reject(err);
@@ -65,7 +53,7 @@ record.staticMethods = _.extend(recordStaticMethods, syntax.methods, {
     }
 
     if (_.size(whiteListedProperties)) {
-      record.db.query(record.db.formatQuery("UPDATE ?? SET ? WHERE ?? = ?", [pseudoModel.$tableName, whiteListedProperties, this.$primaryKey, record_id]))
+      seventyEight.db.query(seventyEight.db.formatQuery("UPDATE ?? SET ? WHERE ?? = ?", [pseudoModel.$tableName, whiteListedProperties, this.$primaryKey, record_id]))
         .then(function(data) {
           deferred.resolve(true);
           if (callback) {
@@ -81,7 +69,7 @@ record.staticMethods = _.extend(recordStaticMethods, syntax.methods, {
 });
 
 // base instance methods
-record.instanceMethods = {
+seventyEight.instanceMethods = {
   $whiteList(properties) {
     return _.pick(properties, Object.keys(this.Class.schema));
   },
@@ -90,7 +78,7 @@ record.instanceMethods = {
   },
   $getAt(fields, properties) {
     return fields.map(function(field) {
-      return properties[field] !== undefined ? properties[field] : 'NULL';
+      return typeof properties[field] === 'undefined' ? 'NULL' : properties[field];
     });
   },
   _public(fields) {
@@ -99,16 +87,37 @@ record.instanceMethods = {
     var obj = _.pick(this, function(value, key) {
       if (fields) {
         return Boolean(~fields.indexOf(key));
-      } 
+      }
         return !{ $: true, _: true }[key.substr(0, 1)];
-      
+
     });
     obj.include = function(extraFields) {
       return _.extend({}, obj, _.pick(this_, [].concat(extraFields)));
     };
     return obj;
   },
+  $afterFind() {
+    this.Class.getSchema().forEach(field => {
+      if (field.type === 'json') {
+        try {
+          this[field.name] = JSON.parse(this[`${field.name}__json`]);
+        } catch (err) {
+          this[field.name] = {};
+        }
+        delete this[`${field.name}__json`];
+      }
+    });
+  },
   afterFind(obj) {},
+  $beforeSave(props) {
+    this.Class.getSchema().forEach(field => {
+      if (field.type === 'json') {
+        props[`${field.name}__json`] = JSON.stringify(props[field.name]);
+        delete props[field.name];
+      }
+    });
+    return props;
+  },
   beforeSave(props) {
     return props;
   },
@@ -117,12 +126,14 @@ record.instanceMethods = {
     var deferred = q.defer();
     var properties = this.beforeSave(_.extend({}, props));
     var whiteListedProperties = this.$prepareProps(properties);
+    whiteListedProperties = this.$beforeSave(whiteListedProperties);
 
     if (_.size(whiteListedProperties)) {
-      record.db
-        .query(record.db.formatQuery("UPDATE ?? SET ? WHERE ?? = ?", [this.$tableName, whiteListedProperties, this.$primaryKey, this[this.$primaryKey]]))
+      seventyEight.db
+        .query(seventyEight.db.formatQuery("UPDATE ?? SET ? WHERE ?? = ?", [this.$tableName, whiteListedProperties, this.$primaryKey, this[this.$primaryKey]]))
         .then(function(data) {
           _.extend(this_, whiteListedProperties);
+          this_.$afterFind();
           this_.afterFind();
           deferred.resolve(this_._public());
           if (callback) {
@@ -147,18 +158,25 @@ record.instanceMethods = {
     var deferred = q.defer();
     var properties = this.beforeSave(this);
     var whiteListedProperties = this.$prepareProps(properties);
+    whiteListedProperties = this.$beforeSave(whiteListedProperties);
     var columns = _.keys(whiteListedProperties);
 
     if (_.size(this._public())) {
-      record.db
-        .query(record.db.formatQuery("INSERT INTO ?? (??) VALUES (?) ON DUPLICATE KEY UPDATE ?", [this.$tableName, columns, this.$getAt(columns, whiteListedProperties), whiteListedProperties]))
+      seventyEight.db
+        .query(seventyEight.db.formatQuery("INSERT INTO ?? (??) VALUES (?) ON DUPLICATE KEY UPDATE ?", [this.$tableName, columns, this.$getAt(columns, whiteListedProperties), whiteListedProperties]))
         .then(function(data) {
-          this_[this_.$primaryKey] = data.insertId;
-          this_.afterFind();
-          deferred.resolve(this_._public());
-          if (callback) {
-            callback(null, this_._public());
-          }
+          this_.Class.find(data.insertId).then(model => {
+            _.extend(this_, model);
+            deferred.resolve(this_._public());
+            if (callback) {
+              callback(null, this_._public());
+            }
+          }, function(err) {
+            deferred.reject(err);
+            if (callback) {
+              callback(err);
+            }
+          });
         }, function(err) {
           deferred.reject(err);
           if (callback) {
@@ -175,8 +193,8 @@ record.instanceMethods = {
   },
   delete(callback) {
     var deferred = q.defer();
-    record.db
-      .query(record.db.formatQuery("DELETE FROM ?? WHERE ?? = ?", [this.$tableName, this.$primaryKey, this[this.$primaryKey]]))
+    seventyEight.db
+      .query(seventyEight.db.formatQuery("DELETE FROM ?? WHERE ?? = ?", [this.$tableName, this.$primaryKey, this[this.$primaryKey]]))
       .then(function(data) {
         deferred.resolve(true);
         if (callback) {
@@ -192,33 +210,35 @@ record.instanceMethods = {
   },
 };
 
-// public record API
-record.createModel = function(options) {
+// public seventyEight API
+seventyEight.createModel = function(options) {
   var staticMethod, instanceMethod, staticProp, instanceProp;
   var Model = options.constructor;
   var staticProps = options.staticProps || {};
   var schema = options.schema || {};
   var instanceProps = options.instanceProps || {};
   var primaryKey = options.primaryKey || 'id';
-  var staticMethods = _.extend({}, record.staticMethods, options.staticMethods || {});
-  var instanceMethods = _.extend({}, record.instanceMethods, options.instanceMethods || {});
+  var staticMethods = _.extend({}, seventyEight.staticMethods, options.staticMethods || {});
+  var instanceMethods = _.extend({}, seventyEight.instanceMethods, options.instanceMethods || {});
   var tableName = options.tableName || `${utils.toSnake(Model.name).replace(/y$/g, 'ie')}s`;
   var QueryConstructor = eval(
-    `(function ${Model.name}(row, found) {` +
-      `for (var key in row) {` +
-        `this[key] = row[key];` +
-      `}` +
-      `this.$tableName = tableName;` +
-      `this.$primaryKey = primaryKey;` +
-      `if (found) {` +
-        `this.afterFind();` +
-      `} else {` +
-        `Model.call(this);` +
-      `}` +
-    `})`);
+    `(function ${Model.name}(row, found) {
+      for (var key in row) {
+        this[key] = row[key];
+      }
+      this.$tableName = tableName;
+      this.$primaryKey = primaryKey;
+      if (found) {
+        this.$afterFind();
+        this.afterFind();
+      } else {
+        Model.call(this);
+      }
+    })`);
 
   QueryConstructor.tableName = tableName;
   QueryConstructor.schema = schema;
+  QueryConstructor.db = client;
   QueryConstructor.prototype.Class = QueryConstructor;
 
   function initChain() {
@@ -226,7 +246,7 @@ record.createModel = function(options) {
     return _.extend(deferred, QueryConstructor, staticProps, {
       $constructor: QueryConstructor,
       $primaryKey: primaryKey,
-      $record: record,
+      $record: seventyEight,
       $init: true,
       $singleResult: false,
       $queryParams: {
@@ -273,4 +293,4 @@ record.createModel = function(options) {
   return QueryConstructor;
 };
 
-module.exports = record;
+module.exports = seventyEight;

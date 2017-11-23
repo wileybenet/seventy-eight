@@ -1,4 +1,1 @@
-DROP TABLE IF EXISTS `const`;
-DROP TABLE IF EXISTS `roles`;
-DROP TABLE IF EXISTS `user_roles`;
-DROP TABLE IF EXISTS `users`;
+DROP DATABASE seventy_eight

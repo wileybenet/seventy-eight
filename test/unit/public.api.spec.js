@@ -1,4 +1,4 @@
-var requireHelper = require('../helper');
+const { requireHelper } = require('../helper');
 var seventyEight = requireHelper('seventy.eight');
 
 describe('#methods', function(){
