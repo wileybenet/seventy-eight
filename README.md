@@ -54,7 +54,7 @@ seventyEight.rejectedPromise({ err });
 User.all().then(function(records) {
   records // Array
 }, function(err) {
-  err // MySQL error
+  err // SQL error
 });
 ```
 
@@ -72,7 +72,7 @@ User.select(['id', 'name', 'date_created'])
 User.where({ admin: 1 }).one().then(function(record) {
   record // User instance
 }, function(err) {
-  err // MySQL error
+  err // SQL error
 });
 ```
 

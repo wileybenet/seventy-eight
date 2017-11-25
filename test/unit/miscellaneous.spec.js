@@ -15,15 +15,15 @@ describe('#miscellaneous', function() {
     constructor: function UserRole() {}
   });
 
-  it('should format tableName from constructor name', function() {
+  xit('should format tableName from constructor name', function() {
     expect(UserRole.tableName).toEqual('user_roles');
   });
 
-  it('should store explicit tableName', function() {
+  xit('should store explicit tableName', function() {
     expect(User.tableName).toEqual('user_tbl');
   });
 
-  it('should format types with static `int`', function() {
+  xit('should format types with static `int`', function() {
     expect(User.int('45')).toEqual(45);
     expect(User.int(45)).toEqual(45);
     expect(User.int('')).toEqual(null);
@@ -31,7 +31,7 @@ describe('#miscellaneous', function() {
     expect(User.int(undefined)).toEqual(null);
   });
 
-  it('should format types with static `string`', function() {
+  xit('should format types with static `string`', function() {
     expect(User.string('45')).toEqual('45');
     expect(User.string(45)).toEqual('45');
     expect(User.string('')).toEqual('');

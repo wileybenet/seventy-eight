@@ -1,4 +1,30 @@
-const noop = (prop, def = null) => schema => schema[prop] || def;
+const _ = require('lodash');
+const mappers = require('./migrator.utils.mappers');
+
+const schemaProps = [
+  'name',
+  'type',
+  'length',
+  'required',
+  'default',
+  'autoIncrement',
+  'signed',
+];
+
+const keyProps = [
+  'name',
+  'column',
+  'type',
+  'relation',
+  'foreignColumn',
+];
+
+const schemaKeyBinding = [
+  'primary',
+  'unique',
+  'indexed',
+  'relation',
+];
 
 const typeMapping = {
   int: 'INT',
@@ -9,189 +35,42 @@ const typeMapping = {
   text: 'LONGTEXT',
 };
 
+const applyFieldFilters = mappers.applyFilters('fields', Object.keys(mappers.fields));
+const applyKeyFilters = mappers.applyFilters('keys', keyProps);
+
 const utils = {
-  fields: {
-    name: {
-      default: noop('name'),
-      fromSQL(field) {
-        const re = /__json$/;
-        if (field.Field.match(re)) {
-          return field.Field.replace(re, '');
-        }
-        return field.Field;
-      },
-      toSQL(schemaField) {
-        let fieldName = schemaField.name;
-        if (schemaField.type === 'json') {
-          fieldName = `${schemaField.name}__json`;
-        }
-        return `\`${fieldName}\``;
-      },
-    },
-    type: {
-      mapping: typeMapping,
-      default: noop('type'),
-      fromSQL(field) {
-        try {
-          return {
-            int: 'int',
-            tinyint: 'boolean',
-            varchar: 'string',
-            longtext: field.Field.match(/__json$/) ? 'json' : 'text',
-            datetime: 'time',
-          }[field.Type.match(/^([^(]+)\(?/)[1]];
-        } catch (err) {
-          return null;
-        }
-      },
-      toSQL(schemaField) {
-        return typeMapping[schemaField.type];
-      },
-    },
-    primary: {
-      default: noop('primary', false),
-      fromSQL(field) {
-        return Boolean(field.Key.match(/PRI/));
-      },
-      toSQL(schemaField) {
-        return schemaField.primary ? 'PRIMARY KEY' : '';
-      },
-    },
-    required: {
-      default(schemaField) {
-        if (schemaField.primary) {
-          return true;
-        }
-        return schemaField.required || false;
-      },
-      fromSQL(field) {
-        return field.Null === 'NO';
-      },
-      toSQL(schemaField) {
-        return schemaField.required ? 'NOT NULL' : '';
-      },
-    },
-    default: {
-      default(schemaField) {
-        if (schemaField.autoIncrement) {
-          return null;
-        }
-        return typeof schemaField.default === 'undefined' ? null : schemaField.default;
-      },
-      fromSQL(field) {
-        if (utils.fields.autoIncrement.fromSQL(field)) {
-          return null;
-        }
-        if (field.Type === 'tinyint(1)') {
-          return field.Default === null ? null : field.Default === '1';
-        }
-        if (field.Type.match(/^int/)) {
-          return Number(field.Default);
-        }
-        if (field.Type === 'datetime' && field.Default === 'CURRENT_TIMESTAMP') {
-          return 'now';
-        }
-        return field.Default;
-      },
-      toSQL(schemaField) {
-        const hasDefault = schemaField.default !== null;
-        let defaultValue = schemaField.default;
-        if (defaultValue && (schemaField.type === 'string' || schemaField.type === 'text' || schemaField.type === 'date' || schemaField.type === 'time')) {
-          defaultValue = `'${defaultValue.replace(/'/g, "\\'")}'`;
-        }
-        if (schemaField.type === 'time' && schemaField.default === 'now') {
-          defaultValue = 'CURRENT_TIMESTAMP';
-        }
-        if (schemaField.type === 'date' && schemaField.default === 'today') {
-          defaultValue = 'GETDATE()';
-        }
-        if (schemaField.type === 'boolean' && schemaField.default !== null) {
-          defaultValue = schemaField.default === true ? 1 : 0;
-        }
-        return hasDefault ? `DEFAULT ${defaultValue}` : '';
-      },
-    },
-    autoIncrement: {
-      default: noop('autoIncrement', false),
-      fromSQL(field) {
-        return Boolean(field.Extra.match(/auto_increment/));
-      },
-      toSQL(schemaField) {
-        return schemaField.autoIncrement ? 'AUTO_INCREMENT' : '';
-      },
-    },
-    length: {
-      default(schemaField) {
-        if (schemaField.type === 'string' && !schemaField.length) {
-          return 255;
-        }
-        if (schemaField.type === 'int' && !schemaField.length) {
-          return 11;
-        }
-        if (schemaField.type === 'boolean') {
-          return 1;
-        }
-        return schemaField.length || null;
-      },
-      fromSQL(field) {
-        try {
-          return Number(field.Type.match(/\(([^)]+)\)/)[1]);
-        } catch (err) {
-          return null;
-        }
-      },
-      toSQL(schemaField) {
-        return `${schemaField.length ? `(${schemaField.length})` : ''}`;
-      },
-    },
-  },
-  diff(current, next) {
-    const currentIndex = current.reduce((memo, settings) => {
-      memo[settings.name] = settings;
-      return memo;
-    }, {});
-    const changes = {
-      update: [],
-      create: [],
-      remove: [],
-      noop: [],
-    };
-    next.forEach(nextSettings => {
-      if (currentIndex[nextSettings.name]) {
-        if (utils.identicalFields(nextSettings, currentIndex[nextSettings.name])) {
-          changes.noop.push(nextSettings);
-        } else {
-          nextSettings.primary = null;
-          changes.update.push(nextSettings);
-        }
-        delete currentIndex[nextSettings.name];
-      } else {
-        changes.create.push(nextSettings);
+  schemaDiff: mappers.diff(schemaProps),
+  keyDiff: mappers.diff(keyProps),
+
+  applyKeyDefaults(schema) {
+    return schema.map(schemaField => {
+      if (Object.keys(schemaField).filter(key => schemaKeyBinding.includes(key)).reduce((memo, key) => memo || Boolean(schemaField[key]), false)) {
+        return applyKeyFilters('default', schemaField);
       }
-    });
-    Object.keys(currentIndex).forEach(name => {
-      changes.remove.push(currentIndex[name]);
-    });
-    return changes;
+      return null;
+    }).filter(k => k);
   },
 
-  identicalFields(a, b) {
-    return Object.keys(a).reduce((memo, key) => memo && a[key] === b[key], true) && Object.keys(a).length === Object.keys(b).length;
+  writeKeysToSQL(method) {
+    return keys => keys.map(key => mappers.keys.type.toSQL(key, method));
+  },
+
+  // { name, column, type, foreignColumn }
+  parseKeysFromSQL(indexes) {
+    return _(indexes)
+      .groupBy('KEY_NAME')
+      .toPairs()
+      .map(([, keys]) => applyKeyFilters('fromSQL', keys))
+      .value();
   },
 
   applySchemaDefaults(schemaField) {
-    return Object.keys(utils.fields).reduce((memo, fieldName) => {
-      memo[fieldName] = utils.fields[fieldName].default(schemaField);
-      return memo;
-    }, Object.assign({}, schemaField));
+    return applyFieldFilters('default', schemaField, true);
   },
 
-  writeSchemaToSQL(schemaField, method = 'init') {
-    const field = Object.keys(utils.fields).reduce((memo, fieldName) => {
-      memo[fieldName] = utils.fields[fieldName].toSQL(schemaField);
-      return memo;
-    }, {});
-    const config = `${field.name} ${field.type}${field.length} ${field.required} ${field.primary} ${field.autoIncrement} ${field.default}`.replace(/\s+/g, ' ').trim();
+  writeSchemaToSQL(schemaField, method) {
+    const field = applyFieldFilters('toSQL', schemaField);
+    const config = `${field.name} ${field.type}${field.length} ${field.signed} ${field.required} ${field.autoIncrement} ${field.default}`.replace(/\s+/g, ' ').trim();
     if (method === 'create') {
       return `ADD COLUMN ${config}`;
     }
@@ -204,11 +83,8 @@ const utils = {
     return config;
   },
 
-  parseFieldFromMySQL(sqlField) {
-    return Object.keys(utils.fields).reduce((memo, fieldName) => {
-      memo[fieldName] = utils.fields[fieldName].fromSQL(sqlField);
-      return memo;
-    }, {});
+  parseSchemaFieldFromSQL(sqlField) {
+    return applyFieldFilters('fromSQL', sqlField);
   },
 
   schemaValidationError(schemaFields) {
@@ -219,6 +95,10 @@ const utils = {
     const validPrimary = schemaFields.filter(field => field.primary);
     if (validPrimary.length !== 1) {
       return '1 primary field needed `field: { type: \'<type>\', primary: true }`';
+    }
+    const validPrimaryUnique = schemaFields.filter(field => (field.primary && 1) + (field.unique && 1) + (field.indexed && 1) > 1);
+    if (validPrimaryUnique.length > 0) {
+      return 'field may only be one of [primary, unique, indexed]';
     }
     return false;
   },

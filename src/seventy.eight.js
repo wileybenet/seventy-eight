@@ -2,6 +2,7 @@ var q = require('q');
 var client = require('./lib/db.client');
 var _ = require('lodash');
 var migrator = require('./lib/migrator');
+var schemas = require('./lib/schemas');
 var utils = require('./lib/utils');
 var recordDeferred = q.defer();
 var seventyEight = {
@@ -12,8 +13,7 @@ var recordStaticMethods = require('./query.builder');
 
 seventyEight.const = {};
 seventyEight.db = client;
-
-seventyEight.db.ping().then(() => recordDeferred.resolve(seventyEight)).catch(console.error);
+seventyEight.schema = schemas;
 
 seventyEight.resolvedPromise = function(data) {
   var deferred = q.defer();
@@ -26,8 +26,10 @@ seventyEight.rejectedPromise = function(err) {
   return deferred.promise;
 };
 
+seventyEight.db.ping().then(() => recordDeferred.resolve(seventyEight)).catch(console.error);
+
 // base static methods
-seventyEight.staticMethods = _.extend(recordStaticMethods, migrator.methods, {
+seventyEight.staticMethods = _.extend(recordStaticMethods, {
   int(value, dflt) {
     var intVal = parseInt(value);
     return intVal > 0 || intVal < 0 || intVal === 0 ? intVal : dflt !== undefined ? dflt : null;
@@ -238,16 +240,19 @@ seventyEight.createModel = function(options) { // eslint-disable-line max-statem
       }
     })`);
 
-  QueryConstructor.tableName = tableName;
-  QueryConstructor.schema = schema;
-  QueryConstructor.db = client;
-  QueryConstructor.$getPrimaryKey = function() {
-    try {
-      return Object.keys(this.schema).map(name => ({ name, primary: this.schema[name].primary })).find(field => field.primary).name;
-    } catch (err) {
-      throw new Error(`schema missing primary field: \n${JSON.stringify(this.schema, null, 2)}`);
-    }
-  };
+  Object.assign(QueryConstructor, migrator.methods, {
+    tableName,
+    schema,
+    db: client,
+    $getPrimaryKey() {
+      try {
+        return Object.keys(this.schema).map(name => ({ name, primary: this.schema[name].primary })).find(field => field.primary).name;
+      } catch (err) {
+        throw new Error(`schema missing primary field: \n${JSON.stringify(this.schema, null, 2)}`);
+      }
+    },
+  });
+
   QueryConstructor.prototype.Class = QueryConstructor;
 
   const initChain = () => {

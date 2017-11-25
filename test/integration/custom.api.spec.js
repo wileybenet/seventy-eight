@@ -18,11 +18,11 @@ describe('#static-properties', function() {
     }
   });
 
-  it('should merge static properties', function() {
+  xit('should merge static properties', function() {
     expect(User.activeStates).toEqual([0, 1]);
   });
 
-  it('should merge instance properties', function(done) {
+  xit('should merge instance properties', function(done) {
     User.find(1).then(function(user) {
       expect(user.color).toEqual('red');
       done();
@@ -52,7 +52,7 @@ describe('#static-methods', function() {
     },
   });
 
-  it('should merge static members', function(done) {
+  xit('should merge static members', function(done) {
     var query = User.findByUsername('root');
     query.then(function(user) {
       expect(user.username).toEqual('root');
@@ -60,7 +60,7 @@ describe('#static-methods', function() {
     });
   });
 
-  it('should allow for custom resolutions within static methods', function(done) {
+  xit('should allow for custom resolutions within static methods', function(done) {
     var query = User.customPromise();
     query.then(function(data) {
       expect(data.done).toEqual(true);
@@ -84,7 +84,7 @@ describe('#options', function() {
     });
   });
 
-  it('should lookup records by the primaryKey', function(done) {
+  xit('should lookup records by the primaryKey', function(done) {
     var id = 'sdf0Sjqnpfps9-jfa';
     WeirdUser.find(id).then(function(user) {
       expect(user.weird_id).toEqual(id);
@@ -92,7 +92,7 @@ describe('#options', function() {
     });
   });
 
-  it('should upsert a record', function(done) {
+  xit('should upsert a record', function(done) {
     var id = 'sdf0Sjqnpfps9-jfa';
     var name = 'steve-o';
     var user = new WeirdUser({

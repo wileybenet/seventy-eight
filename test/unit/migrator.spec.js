@@ -1,40 +1,48 @@
 const { requireHelper } = require('../helper');
-var seventyEight = requireHelper('seventy.eight');
-var utils = requireHelper('lib/migrator.utils');
+const seventyEight = requireHelper('seventy.eight');
+const utils = requireHelper('lib/migrator.utils');
+const { schema: { primary, string, time, json } } = seventyEight;
 
 const statements = sql => sql.trim().split(/\s+\n?\s*|\s*\n?\s+/g);
 
 describe('schemas', () => {
-  var User = seventyEight.createModel({
+  const User = seventyEight.createModel({
     constructor: function User() {},
     schema: {
-      id: { type: 'int', primary: true, autoIncrement: true },
-      name: { type: 'string' },
-      data: { type: 'json' },
+      id: primary(),
+      name: string(),
+      data: json(),
     },
   });
 
-  let getCurrentFieldsFn = null;
+  let getSQLSchemaFn = null;
+  let getSQLKeysFn = null;
   beforeEach(() => {
-    getCurrentFieldsFn = User.getCurrentFields;
-    User.getCurrentFields = () => Promise.resolve([
-      utils.applySchemaDefaults({ name: 'id', type: 'int', primary: true, autoIncrement: true }),
-      utils.applySchemaDefaults({ name: 'name', type: 'string', default: 'hello world' }),
-      utils.applySchemaDefaults({ name: 'created', type: 'time', default: 'now' }),
-    ]);
+    const schema = [
+      utils.applySchemaDefaults(primary('id')),
+      utils.applySchemaDefaults(string({}, 'name')),
+      utils.applySchemaDefaults(time({ default: 'now', indexed: true }, 'created')),
+    ];
+    getSQLSchemaFn = User.getSQLSchema;
+    getSQLKeysFn = User.getSQLKeys;
+    User.getSQLSchema = () => Promise.resolve(schema);
+    User.getSQLKeys = () => Promise.resolve(utils.applyKeyDefaults(schema));
   });
 
   afterEach(() => {
-    User.getCurrentFields = getCurrentFieldsFn;
+    User.getSQLSchema = getSQLSchemaFn;
+    User.getSQLKeys = getSQLKeysFn;
   });
 
   it('should generate field create syntax', function(done) {
     User.createTableSyntax().then(sql => {
       expect(statements(sql)).toEqual(statements(`
         CREATE TABLE \`users\` (
-          \`id\` INT(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
+          \`id\` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
           \`name\` VARCHAR(255),
-          \`data__json\` LONGTEXT
+          \`data__json\` LONGTEXT,
+
+          PRIMARY KEY (\`id\`)
         )
       `));
       done();
@@ -42,12 +50,17 @@ describe('schemas', () => {
   });
 
   it('should generate field update syntax', function(done) {
+    User.schema.name.default = 'hello world';
+    User.schema.name.indexed = true;
     User.updateTableSyntax().then(sql => {
       expect(statements(sql)).toEqual(statements(`
         ALTER TABLE \`users\`
-          MODIFY \`name\` VARCHAR(255),
           ADD COLUMN \`data__json\` LONGTEXT,
-          DROP COLUMN \`created\`
+          MODIFY \`name\` VARCHAR(255) DEFAULT 'hello world',
+          DROP COLUMN \`created\`,
+
+          ADD INDEX \`INDEXED_NAME\` (\`name\`),
+          DROP INDEX \`INDEXED_CREATED\`
       `));
       done();
     });
