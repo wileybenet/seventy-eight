@@ -1,10 +1,10 @@
 // const utils = require('./migrator.utils');
 
-const schemas = {
+const field = {
   primary(name = null) {
-    return schemas.int({ autoIncrement: true, required: true, primary: true, signed: false }, name);
+    return field.int({ autoIncrement: true, required: true, primary: true, signed: false }, name);
   },
-  
+
   int({ length = 11, default: def = null, required = false, autoIncrement = false, signed = false, primary = false, unique = false, indexed = false } = {}, name = null) {
     return { type: 'int', length, default: def, required, autoIncrement, signed, primary, unique, indexed, name };
   },
@@ -12,7 +12,7 @@ const schemas = {
     return { type: 'string', length, default: def, required, primary, unique, indexed, name };
   },
   boolean({ default: def = null, indexed = null } = {}, name = null) {
-    return { type: 'boolean', default: def, indexed, name };
+    return { type: 'boolean', length: 1, default: def, indexed, name };
   },
   time({ default: def = null, required = false, unique = false, indexed = false } = {}, name = null) {
     return { type: 'time', default: def, required, unique, indexed, name };
@@ -28,4 +28,4 @@ const schemas = {
   },
 };
 
-module.exports = schemas;
+module.exports = field;

@@ -3,11 +3,11 @@ var seventyEight = requireHelper('seventy.eight');
 
 describe('#methods', function() {
 
-  xit('should have createModel', function() {
+  it('should have createModel', function() {
     expect(typeof seventyEight.createModel).toEqual('function');
   });
 
-  xit('should have rejectedPromise', function(done) {
+  it('should have rejectedPromise', function(done) {
     expect(typeof seventyEight.rejectedPromise).toEqual('function');
     seventyEight.rejectedPromise('this is an error').then(function() {}, function(err) {
       expect(err).toEqual('this is an error');
@@ -15,7 +15,7 @@ describe('#methods', function() {
     });
   });
 
-  xit('should have resolvedPromise', function(done) {
+  it('should have resolvedPromise', function(done) {
     expect(typeof seventyEight.resolvedPromise).toEqual('function');
     seventyEight.resolvedPromise({ resolved: true }).then(function(data) {
       expect(data).toEqual({ resolved: true });
@@ -27,11 +27,11 @@ describe('#methods', function() {
 
 describe('#properties', function() {
 
-  xit('should have const', function() {
+  it('should have const', function() {
     expect(typeof seventyEight.const).toEqual('object');
   });
 
-  xit('should have promise', function() {
+  it('should have promise', function() {
     expect(typeof seventyEight.promise).toEqual('object');
     expect(typeof seventyEight.promise.then).toEqual('function');
   });

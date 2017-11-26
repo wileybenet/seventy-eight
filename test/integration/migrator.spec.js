@@ -1,6 +1,6 @@
 const { requireHelper } = require('../helper');
 var seventyEight = requireHelper('seventy.eight');
-const { schema: { primary, int, string, boolean, json } } = seventyEight;
+const { field: { primary, int, string, boolean, json } } = seventyEight;
 
 describe('basic schema syncTable', () => {
   var UserMigration = seventyEight.createModel({
@@ -22,8 +22,7 @@ describe('basic schema syncTable', () => {
         expect(savedUser.id).toEqual(1);
         expect(savedUser.name).toEqual('test');
         expect(savedUser.data).toEqual({ x: 1 });
-
-        UserMigration.schema.job = { type: 'string', default: 'unemployed' };
+        UserMigration.schema.job = string({ default: 'unemployed' });
         delete UserMigration.schema.data;
         UserMigration.syncTable().then(() => {
           const user2 = new UserMigration({
@@ -34,9 +33,9 @@ describe('basic schema syncTable', () => {
             expect(savedUser2.name).toEqual('boog');
             expect(savedUser2.job).toEqual('unemployed');
             done();
-          });
-        });
-      });
+          }, console.log);
+        }).catch(console.log);
+      }, console.log);
     });
   });
 });
@@ -46,63 +45,99 @@ describe('complex schema syncTable', () => {
     constructor: function RoleMigration() {},
     schema: {
       id: primary(),
-      name: string(),
+      name: string({ unique: true }),
       level: int({ default: 1, required: true }),
-      active: boolean(),
+      active: boolean({ indexed: true }),
     },
   });
 
-  xit('should be idempotent', done => {
+  it('should be idempotent', done => {
     RoleMigration.syncTable()
       .then(() => RoleMigration.syncTable())
       .then(() => RoleMigration.syncTable())
       .then(() => RoleMigration.syncTable())
       .then(() => RoleMigration.syncTable())
       .then(() => RoleMigration.syncTable())
-      .then(() => RoleMigration.getCurrentFields())
-      .then(fields => {
-        expect(fields).toEqual([
-          {
-            name: 'id',
-            type: 'int',
-            primary: true,
-            required: true,
-            default: null,
-            autoIncrement: true,
-            length: 11,
-          },
-          {
-            name: 'name',
-            type: 'string',
-            primary: false,
-            required: false,
-            default: null,
-            autoIncrement: false,
-            length: 255,
-          },
-          {
-            name: 'level',
-            type: 'int',
-            primary: false,
-            required: true,
-            default: 1,
-            autoIncrement: false,
-            length: 11,
-          },
-          {
-            name: 'active',
-            type: 'boolean',
-            primary: false,
-            required: false,
-            default: null,
-            autoIncrement: false,
-            length: 1,
-          },
-        ]);
+      .then(() => RoleMigration.getSQLSchema())
+      .then(({ sqlSchema, sqlKeys }) => {
+        expect(sqlSchema).toEqual([{
+          name: 'id',
+          type: 'int',
+          length: 11,
+          required: true,
+          default: null,
+          autoIncrement: true,
+          signed: false,
+          primary: true,
+          unique: false,
+          indexed: false,
+          relation: null,
+          relationColumn: null,
+          column: 'id',
+        }, {
+          name: 'name',
+          type: 'string',
+          length: 255,
+          required: false,
+          default: null,
+          autoIncrement: false,
+          signed: false,
+          primary: false,
+          unique: true,
+          indexed: false,
+          relation: null,
+          relationColumn: null,
+          column: 'name',
+        }, {
+          name: 'level',
+          type: 'int',
+          length: 11,
+          required: true,
+          default: 1,
+          autoIncrement: false,
+          signed: false,
+          primary: false,
+          unique: false,
+          indexed: false,
+          relation: null,
+          relationColumn: null,
+          column: 'level',
+        }, {
+          name: 'active',
+          type: 'boolean',
+          length: 1,
+          required: false,
+          default: null,
+          autoIncrement: false,
+          signed: false,
+          primary: false,
+          unique: false,
+          indexed: true,
+          relation: null,
+          relationColumn: null,
+          column: 'active',
+        }]);
+        expect(sqlKeys).toEqual([{
+          name: 'PRIMARY',
+          column: '`id`',
+          type: 'primary',
+          relation: null,
+          relationColumn: null,
+        }, {
+          name: 'UNIQUE_NAME',
+          column: '`name`',
+          type: 'unique',
+          relation: null,
+          relationColumn: null,
+        }, {
+          name: 'INDEXED_ACTIVE',
+          column: '`active`',
+          type: 'indexed',
+          relation: null,
+          relationColumn: null,
+        }]);
         done();
       })
-      .catch(err => {
-        throw err;
-      });
+      .catch(console.error);
   });
 });

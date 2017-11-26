@@ -9,6 +9,12 @@ const writeColumnChanges = (changes, method) => {
   return [];
 };
 
+const schemaCommands = changes => ['create', 'update', 'remove'].reduce((memo, method) => memo.concat(writeColumnChanges(changes, method)), []);
+const keyCommands = changes => [
+  ...utils.writeKeysToSQL('add')(changes.create),
+  ...utils.writeKeysToSQL('drop')(changes.remove),
+];
+
 module.exports = {
   methods: {
     getSchema() {
@@ -25,51 +31,32 @@ module.exports = {
     },
     getSQLSchema() {
       return new Promise((resolve, reject) => {
-        this.db.query(schemaQuery(this.tableName)).then(results => {
-          resolve(results.map(utils.parseSchemaFieldFromSQL));
+        Promise.all([
+          this.db.query(schemaQuery(this.tableName)),
+          this.db.query(keyQuery(this.tableName)),
+        ]).then(([schemaResults, keyResults]) => {
+          const sqlKeys = flatMap(keyResults, utils.parseKeysFromSQL);
+          const sqlSchema = schemaResults.map(utils.parseSchemaFieldFromSQL(sqlKeys));
+          resolve({ sqlSchema, sqlKeys });
         }, reject);
       });
-    },
-    getSchemaDiff() {
-      return new Promise((resolve, reject) => {
-        this.getSQLSchema().then(currentSchema => {
-          resolve(utils.schemaDiff(currentSchema, this.getSchema()));
-        }).catch(reject);
-      });
-    },
-    schemaCommands(changes) {
-      return ['create', 'update', 'remove'].reduce((memo, method) => memo.concat(writeColumnChanges(changes, method)), []);
     },
     getKeys() {
       return utils.applyKeyDefaults(this.getSchema());
     },
-    getSQLKeys() {
+    getSchemaDiff() {
       return new Promise((resolve, reject) => {
-        this.db.query(keyQuery(this.tableName)).then(results => {
-          resolve(flatMap(results, utils.parseKeysFromSQL));
-        }, reject);
-      });
-    },
-    getKeyDiff() {
-      return new Promise((resolve, reject) => {
-        this.getSQLKeys().then(currentKeys => {
-          resolve(utils.keyDiff(currentKeys, this.getKeys()));
+        this.getSQLSchema().then(({ sqlSchema, sqlKeys }) => {
+          const keyChanges = utils.keyDiff(sqlKeys, this.getKeys());
+          const schemaChanges = utils.schemaDiff(sqlSchema, this.getSchema());
+          resolve({ schemaChanges, keyChanges });
         }).catch(reject);
       });
     },
-    keyCommands(changes) {
-      return [
-        ...utils.writeKeysToSQL('add')(changes.create),
-        ...utils.writeKeysToSQL('drop')(changes.remove),
-      ];
-    },
     updateTableSyntax() {
       return new Promise((resolve, reject) => {
-        Promise.all([
-          this.getSchemaDiff(),
-          this.getKeyDiff(),
-        ]).then(([schemaChanges, keyChanges]) => {
-          const commands = [...this.schemaCommands(schemaChanges), ...this.keyCommands(keyChanges)];
+        this.getSchemaDiff().then(({ schemaChanges, keyChanges }) => {
+          const commands = [...schemaCommands(schemaChanges), ...keyCommands(keyChanges)];
           if (commands.length) {
             return resolve(`ALTER TABLE \`${this.tableName}\` \n${commands.join(',\n')}`);
           }

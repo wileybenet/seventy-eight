@@ -9,6 +9,7 @@ const schemaProps = [
   'default',
   'autoIncrement',
   'signed',
+  'column',
 ];
 
 const keyProps = [
@@ -16,7 +17,7 @@ const keyProps = [
   'column',
   'type',
   'relation',
-  'foreignColumn',
+  'relationColumn',
 ];
 
 const schemaKeyBinding = [
@@ -65,17 +66,17 @@ const utils = {
   },
 
   applySchemaDefaults(schemaField) {
-    return applyFieldFilters('default', schemaField, true);
+    return applyFieldFilters('default', schemaField);
   },
 
   writeSchemaToSQL(schemaField, method) {
     const field = applyFieldFilters('toSQL', schemaField);
-    const config = `${field.name} ${field.type}${field.length} ${field.signed} ${field.required} ${field.autoIncrement} ${field.default}`.replace(/\s+/g, ' ').trim();
+    const config = `\`${field.column}\` ${field.type}${field.length} ${field.signed} ${field.required} ${field.autoIncrement} ${field.default}`.replace(/\s+/g, ' ').trim();
     if (method === 'create') {
       return `ADD COLUMN ${config}`;
     }
     if (method === 'remove') {
-      return `DROP COLUMN ${field.name}`;
+      return `DROP COLUMN \`${field.column}\``;
     }
     if (method === 'update') {
       return `MODIFY ${config}`;
@@ -83,8 +84,11 @@ const utils = {
     return config;
   },
 
-  parseSchemaFieldFromSQL(sqlField) {
-    return applyFieldFilters('fromSQL', sqlField);
+  parseSchemaFieldFromSQL(keys) {
+    return sqlField => {
+      sqlField.keys = keys.filter(key => key.column.match(`\`${sqlField.Field}\``));
+      return applyFieldFilters('fromSQL', sqlField);
+    };
   },
 
   schemaValidationError(schemaFields) {
@@ -92,10 +96,10 @@ const utils = {
     if (!validTypes) {
       return `invalid field type '${schemaFields.map(field => field.type).filter(type => !Object.keys(typeMapping).includes(type))[0]}'`;
     }
-    const validPrimary = schemaFields.filter(field => field.primary);
-    if (validPrimary.length !== 1) {
-      return '1 primary field needed `field: { type: \'<type>\', primary: true }`';
-    }
+    // const validPrimary = schemaFields.filter(field => field.primary);
+    // if (validPrimary.length !== 1) {
+    //   return '1 primary field needed `field: { type: \'<type>\', primary: true }`';
+    // }
     const validPrimaryUnique = schemaFields.filter(field => (field.primary && 1) + (field.unique && 1) + (field.indexed && 1) > 1);
     if (validPrimaryUnique.length > 0) {
       return 'field may only be one of [primary, unique, indexed]';

@@ -1,12 +1,13 @@
 const _ = require('lodash');
 const db = require('./db.client');
+const noopNull = () => null;
 const noop = (prop, def = null) => schema => schema[prop] || def;
 
 const typeMapping = {
   int: 'INT',
   boolean: 'TINYINT',
   string: 'VARCHAR',
-  time: 'DATETIME',
+  time: 'TIMESTAMP',
   json: 'LONGTEXT',
   text: 'LONGTEXT',
 };
@@ -22,13 +23,7 @@ const mappers = {
         }
         return field.Field;
       },
-      toSQL(schemaField) {
-        let fieldName = schemaField.name;
-        if (schemaField.type === 'json') {
-          fieldName = `${schemaField.name}__json`;
-        }
-        return `\`${fieldName}\``;
-      },
+      toSQL: noopNull,
     },
     type: {
       default: noop('type'),
@@ -39,7 +34,7 @@ const mappers = {
             tinyint: 'boolean',
             varchar: 'string',
             longtext: field.Field.match(/__json$/) ? 'json' : 'text',
-            datetime: 'time',
+            timestamp: 'time',
           }[field.Type.match(/^([^(]+)\(?/)[1]];
         } catch (err) {
           return null;
@@ -93,7 +88,7 @@ const mappers = {
         if (field.Type.match(/^int/)) {
           return Number(field.Default);
         }
-        if (field.Type === 'datetime' && field.Default === 'CURRENT_TIMESTAMP') {
+        if (field.Type === 'timestamp' && field.Default === 'CURRENT_TIMESTAMP') {
           return 'now';
         }
         return field.Default;
@@ -125,10 +120,74 @@ const mappers = {
     signed: {
       default: noop('signed', false),
       fromSQL(field) {
-        return Boolean(field.Type.match(/unsigned/));
+        return field.Type.match(/^int/) ? !field.Type.match(/unsigned/) : false;
       },
       toSQL(schemaField) {
         return schemaField.type === 'int' && !schemaField.signed ? 'UNSIGNED' : '';
+      },
+    },
+    primary: {
+      default: noop('primary', false),
+      fromSQL({ keys: [key = {}] }) {
+        return key.type === 'primary';
+      },
+      toSQL: noopNull,
+    },
+    unique: {
+      default: noop('unique', false),
+      fromSQL({ keys: [key = {}] }) {
+        return key.type === 'unique';
+      },
+      toSQL: noopNull,
+    },
+    indexed: {
+      default: noop('indexed', false),
+      fromSQL({ keys: [key = {}] }) {
+        return key.type === 'indexed';
+      },
+      toSQL: noopNull,
+    },
+    relation: {
+      default: noop('relation'),
+      fromSQL({ keys: [key = {}] }) {
+        if (key.type === 'foreign') {
+          return key.relation;
+        }
+        return null;
+      },
+      toSQL: noopNull,
+    },
+    relationColumn: {
+      default(schemaField) {
+        if (schemaField.relation) {
+          return schemaField.relationColumn || 'id';
+        }
+        return null;
+      },
+      fromSQL({ keys: [key = {}] }) {
+        if (key.type === 'foreign') {
+          return key.relationColumn;
+        }
+        return null;
+      },
+      toSQL: noopNull,
+    },
+    column: {
+      default(schemaField) {
+        return {
+          int: schemaField.name,
+          boolean: schemaField.name,
+          string: schemaField.name,
+          time: schemaField.name,
+          json: `${schemaField.name}__json`,
+          text: schemaField.name,
+        }[schemaField.type];
+      },
+      fromSQL(field) {
+        return field.Field;
+      },
+      toSQL(schemaField) {
+        return schemaField.column;
       },
     },
   },
@@ -147,7 +206,7 @@ const mappers = {
     },
     column: {
       default(schemaField) {
-        return `\`${schemaField.name}\``;
+        return `\`${schemaField.column}\``;
       },
       fromSQL(keys) {
         return keys.map(k => `\`${k.COLUMN_NAME}\``).join(',');
@@ -202,7 +261,7 @@ const mappers = {
       //   DROP FOREIGN KEY `user_libraries_ibfk_2`;
       toSQL(key, method) {
         const index = `KEY \`${key.name}\` (${key.column})`;
-        const foreign = `FOREIGN KEY (${key.column}) REFERENCES \`${key.relation}\` (\`${key.foreignColumn}\`) ON DELETE CASCADE ON UPDATE CASCADE`;
+        const foreign = `FOREIGN KEY (${key.column}) REFERENCES \`${key.relation}\` (\`${key.relationColumn}\`) ON DELETE CASCADE ON UPDATE CASCADE`;
         const dropIndex = `DROP INDEX \`${key.name}\``;
         return {
           init: {
@@ -234,10 +293,10 @@ const mappers = {
         return key.REFERENCED_TABLE_NAME || null;
       },
     },
-    foreignColumn: {
+    relationColumn: {
       default(schemaField) {
         if (schemaField.relation) {
-          return schemaField.foreignColumn || 'id';
+          return schemaField.relationColumn || 'id';
         }
         return null;
       },
@@ -249,10 +308,10 @@ const mappers = {
       },
     },
   },
-  applyFilters: _.curry((type, objects, method, context, extend = false) => objects.reduce((memo, obj) => {
+  applyFilters: _.curry((type, objects, method, context) => objects.reduce((memo, obj) => {
     memo[obj] = mappers[type][obj][method](context);
     return memo;
-  }, extend ? Object.assign({}, context) : {})),
+  }, {})),
   diff: _.curry((keys, current, next) => {
     const changes = {
       update: [],

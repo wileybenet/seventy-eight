@@ -1,7 +1,7 @@
 const { requireHelper } = require('../helper');
 const seventyEight = requireHelper('seventy.eight');
 const utils = requireHelper('lib/migrator.utils');
-const { schema: { primary, string, time, json } } = seventyEight;
+const { field: { primary, string, time, json } } = seventyEight;
 
 const statements = sql => sql.trim().split(/\s+\n?\s*|\s*\n?\s+/g);
 
@@ -25,8 +25,8 @@ describe('schemas', () => {
     ];
     getSQLSchemaFn = User.getSQLSchema;
     getSQLKeysFn = User.getSQLKeys;
-    User.getSQLSchema = () => Promise.resolve(schema);
     User.getSQLKeys = () => Promise.resolve(utils.applyKeyDefaults(schema));
+    User.getSQLSchema = () => new Promise((resolve) => User.getSQLKeys().then(keys => resolve({ sqlSchema: schema, sqlKeys: keys })));
   });
 
   afterEach(() => {
