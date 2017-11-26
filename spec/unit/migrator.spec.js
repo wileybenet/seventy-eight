@@ -1,6 +1,6 @@
-const { requireHelper } = require('../helper');
-const seventyEight = requireHelper('seventy.eight');
-const utils = requireHelper('lib/migrator.utils');
+
+const seventyEight = require('../../src/seventy.eight');
+const utils = require('../../src/lib/migrator.utils');
 const { field: { primary, string, time, json } } = seventyEight;
 
 const statements = sql => sql.trim().split(/\s+\n?\s*|\s*\n?\s+/g);

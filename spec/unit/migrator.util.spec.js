@@ -1,6 +1,6 @@
-const { requireHelper } = require('../helper');
-const { field: { primary, string, time } } = requireHelper('seventy.eight');
-const utils = requireHelper('lib/migrator.utils');
+
+const { field: { primary, string, time } } = require('../../src/seventy.eight');
+const utils = require('../../src/lib/migrator.utils');
 
 describe('schema utils', () => {
 

@@ -4,7 +4,6 @@
  * The client is replaced if it is disconnected.
  */
 
-var colors = require('colors');
 var style = require('ansi-styles');
 var mysql = require('mysql');
 var q = require('q');
@@ -96,13 +95,14 @@ exports.formatQuery = function(str, params) {
 exports.query = function (str, params) {
   var deferred = q.defer();
   pool.getConnection(function(err, connection) {
-    if (err)
+    if (err) {
       return deferred.reject(err);
+    }
 
-    var start = new Date();
+    const start = new Date();
     console.log(log(str, params));
 
-    var interval = spinner();
+    const interval = spinner();
     connection.query(str, params, function(err, data) {
       interval();
       if (err) {

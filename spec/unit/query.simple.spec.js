@@ -1,5 +1,5 @@
-const { requireHelper } = require('../helper');
-var seventyEight = requireHelper('seventy.eight');
+
+var seventyEight = require('../../src/seventy.eight');
 
 describe('#base-static-methods', function(){
 
