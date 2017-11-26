@@ -18,6 +18,7 @@ const keyProps = [
   'type',
   'relation',
   'relationColumn',
+  'sync',
 ];
 
 const schemaKeyBinding = [

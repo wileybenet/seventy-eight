@@ -23,8 +23,8 @@ const field = {
   primary(name = null) {
     return field.int({ autoIncrement: true, required: true, primary: true, signed: false }, name);
   },
-  relation(relation, { type = 'int', length = 11, signed = false, default: def = null, required = false } = {}, name = null) {
-    return { type, length, signed, default: def, required, relation: relation.tableName, name };
+  relation(relation, { type = 'int', length = 11, signed = false, default: def = null, required = false, relationColumn = 'id', sync = false } = {}, name = null) {
+    return { type, length, signed, default: def, required, relation: relation.tableName, relationColumn, sync, name };
   },
 };
 

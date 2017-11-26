@@ -29,6 +29,9 @@ module.exports = {
       }
       return schema;
     },
+    getDefaultSchemaFields() {
+      return this.getSchema().filter(field => field.default !== null || field.autoIncrement).map(field => field.column);
+    },
     getSQLSchema() {
       return new Promise((resolve, reject) => {
         Promise.all([

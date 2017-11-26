@@ -1,10 +1,24 @@
 
 var seventyEight = require('../../src/seventy.eight');
-const { field: { primary, int, string, boolean, json } } = seventyEight;
+const { field: { primary, int, string, boolean, json, relation } } = seventyEight;
 
 describe('basic schema syncTable', () => {
-  var UserMigration = seventyEight.createModel({
+  const AccountMigration = seventyEight.createModel({
+    constructor: function AccountMigration() {},
+    schema: {
+      id: primary(),
+    },
+  });
+  const UserMigration = seventyEight.createModel({
     constructor: function UserMigration() {},
+    schema: {
+      id: primary(),
+      name: string(),
+      data: json({ required: true }),
+    },
+  });
+  const AdminMigration = seventyEight.createModel({
+    constructor: function AdminMigration() {},
     schema: {
       id: primary(),
       name: string(),
@@ -36,6 +50,29 @@ describe('basic schema syncTable', () => {
           }, console.log);
         }).catch(console.log);
       }, console.log);
+    });
+
+  });
+
+  it('should add a foreign key', done => {
+    const test = () => {
+      AdminMigration.schema.account = relation(AccountMigration, { required: true });
+      AdminMigration.syncTable().then(() => {
+        const user = new AdminMigration({
+          name: 'boog',
+          account: 1,
+        });
+        user.save().then(savedUser => {
+          expect(savedUser.id).toEqual(1);
+          expect(savedUser.name).toEqual('boog');
+          expect(savedUser.account).toEqual(1);
+          done();
+        }, console.log);
+      }).catch(console.log);
+    };
+
+    AccountMigration.syncTable().then(() => {
+      new AccountMigration().save().then(test);
     });
   });
 });
@@ -73,6 +110,7 @@ describe('complex schema syncTable', () => {
           indexed: false,
           relation: null,
           relationColumn: null,
+          sync: false,
           column: 'id',
         }, {
           name: 'name',
@@ -87,6 +125,7 @@ describe('complex schema syncTable', () => {
           indexed: false,
           relation: null,
           relationColumn: null,
+          sync: false,
           column: 'name',
         }, {
           name: 'level',
@@ -101,6 +140,7 @@ describe('complex schema syncTable', () => {
           indexed: false,
           relation: null,
           relationColumn: null,
+          sync: false,
           column: 'level',
         }, {
           name: 'active',
@@ -115,6 +155,7 @@ describe('complex schema syncTable', () => {
           indexed: true,
           relation: null,
           relationColumn: null,
+          sync: false,
           column: 'active',
         }]);
         expect(sqlKeys).toEqual([{
@@ -123,18 +164,21 @@ describe('complex schema syncTable', () => {
           type: 'primary',
           relation: null,
           relationColumn: null,
+          sync: false,
         }, {
           name: 'UNIQUE_NAME',
           column: '`name`',
           type: 'unique',
           relation: null,
           relationColumn: null,
+          sync: false,
         }, {
           name: 'INDEXED_ACTIVE',
           column: '`active`',
           type: 'indexed',
           relation: null,
           relationColumn: null,
+          sync: false,
         }]);
         done();
       })

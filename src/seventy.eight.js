@@ -120,20 +120,23 @@ const globalInstanceMethods = {
     const properties = this.beforeSave(this);
     let whiteListedProperties = this.$prepareProps(properties);
     whiteListedProperties = this.$beforeSave(whiteListedProperties);
-    const columns = _.keys(whiteListedProperties);
-
+    let columns = _.keys(whiteListedProperties);
+    const values = this.$getAt(columns, whiteListedProperties);
+    let sql = 'INSERT INTO ?? (??) VALUES ';
     if (columns.length) {
-      seventyEight.db
-        .query(seventyEight.db.formatQuery("INSERT INTO ?? (??) VALUES (?) ON DUPLICATE KEY UPDATE ?", [this.$tableName, columns, this.$getAt(columns, whiteListedProperties), whiteListedProperties]))
-        .then(data => {
-          this.Class.find(data.insertId).then(model => {
-            Object.assign(this, model);
-            deferred.resolve(this);
-          }, deferred.reject);
-        }, deferred.reject);
+      sql += '(?) ON DUPLICATE KEY UPDATE ?';
     } else {
-      deferred.resolve(this);
+      columns = this.Class.getDefaultSchemaFields();
+      sql += `(${columns.map(() => 'NULL').join(', ')})`;
     }
+    seventyEight.db
+      .query(seventyEight.db.formatQuery(sql, [this.$tableName, columns, values, whiteListedProperties]))
+      .then(data => {
+        this.Class.find(data.insertId).then(model => {
+          Object.assign(this, model);
+          deferred.resolve(this);
+        }, deferred.reject);
+      }, deferred.reject);
     return deferred.promise;
   },
   delete() {

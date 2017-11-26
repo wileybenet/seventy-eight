@@ -31,4 +31,12 @@ describe('keys', () => {
     expect(time().type).toEqual('time');
   });
 
+  describe('relation', () => {
+    it('should set a relation tableName', () => {
+      expect(relation(Model).relation).toEqual('models');
+    });
+    it('should set a optional relationColumn', () => {
+      expect(relation(Model, { relationColumn: 'name' }).relationColumn).toEqual('name');
+    });
+  });
 });

@@ -172,6 +172,16 @@ const mappers = {
       },
       toSQL: noopNull,
     },
+    sync: {
+      default: noop('sync', false),
+      fromSQL({ keys: [key = {}] }) {
+        if (key.type === 'foreign') {
+          return key.sync;
+        }
+        return false;
+      },
+      toSQL: noopNull,
+    },
     column: {
       default(schemaField) {
         return {
@@ -261,20 +271,26 @@ const mappers = {
       //   DROP FOREIGN KEY `user_libraries_ibfk_2`;
       toSQL(key, method) {
         const index = `KEY \`${key.name}\` (${key.column})`;
-        const foreign = `FOREIGN KEY (${key.column}) REFERENCES \`${key.relation}\` (\`${key.relationColumn}\`) ON DELETE CASCADE ON UPDATE CASCADE`;
+        // ON DELETE CASCADE ON UPDATE CASCADE
+        const foreignKey = `
+          CONSTRAINT \`${key.name}\`
+          FOREIGN KEY (${key.column})
+          REFERENCES \`${key.relation}\` (\`${key.relationColumn}\`)
+          ${mappers.keys.sync.toSQL(key)}
+        `.trim();
         const dropIndex = `DROP INDEX \`${key.name}\``;
         return {
           init: {
             primary: `PRIMARY KEY (${key.column})`,
             unique: `UNIQUE ${index}`,
             indexed: `${index}`,
-            foreign: `CONSTRAINT \`${key.name}\` ${foreign}`,
+            foreign: foreignKey,
           }[key.type],
           add: {
             primary: `ADD PRIMARY KEY (${key.column})`,
             unique: `ADD UNIQUE INDEX \`${key.name}\` (${key.column})`,
             indexed: `ADD INDEX \`${key.name}\` (${key.column})`,
-            foreign: `ADD ${foreign}`,
+            foreign: `ADD ${foreignKey}`,
           }[key.type],
           drop: {
             primary: dropIndex,
@@ -287,7 +303,7 @@ const mappers = {
     },
     relation: {
       default(schemaField) {
-        return schemaField.type === 'foreign' ? schemaField.relation : null;
+        return schemaField.relation || null;
       },
       fromSQL([key]) {
         return key.REFERENCED_TABLE_NAME || null;
@@ -305,6 +321,15 @@ const mappers = {
           return key.REFERENCED_COLUMN_NAME;
         }
         return null;
+      },
+    },
+    sync: {
+      default: noop('sync', false),
+      fromSQL([key]) {
+        return key.UPDATE_RULE === key.DELETE_RULE === 'CASCADE';
+      },
+      toSQL(key) {
+        return key.sync ? 'ON DELETE CASCADE ON UPDATE CASCADE' : '';
       },
     },
   },

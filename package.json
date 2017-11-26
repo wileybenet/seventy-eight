@@ -7,7 +7,7 @@
     "node": ">=8.0.0"
   },
   "scripts": {
-    "pretest": "node ./spec/setup",
+    "pretest": "npm run posttest && node ./spec/setup",
     "test": "node ./spec/run",
     "posttest": "node ./spec/teardown",
     "prepublish": "npm test"

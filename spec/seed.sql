@@ -57,6 +57,3 @@ CREATE TABLE `weird_users` (
 INSERT INTO `weird_users` (`weird_id`, `middle_name`)
 VALUES
   ('sdf0Sjqnpfps9-jfa', 'goldwater');
-
-
-DROP TABLE IF EXISTS `user_migrations`;
