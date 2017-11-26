@@ -22,7 +22,7 @@ describe('keys', () => {
     expect(relation(Model).type).toEqual('int');
   });
   it('should be type json', () => {
-    expect(json().type).toEqual('asdf');
+    expect(json().type).toEqual('json');
   });
   it('should be type text', () => {
     expect(text().type).toEqual('text');
