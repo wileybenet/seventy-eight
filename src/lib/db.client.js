@@ -61,7 +61,12 @@ function spinner() {
 exports.schema = schema;
 
 exports.escapeKey = pool.escapeId.bind(pool);
-exports.escapeValue = pool.escape.bind(pool);
+exports.escapeValue = value => {
+  if (value === 'NULL') {
+    return value;
+  }
+  return pool.escape(value);
+};
 
 exports.ping = function() {
   return new Promise((resolve, reject) => {

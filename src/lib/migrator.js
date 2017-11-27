@@ -29,6 +29,9 @@ module.exports = {
       }
       return schema;
     },
+    getSchemaColumns() {
+      return this.getSchema().filter(field => !field.autoIncrement).map(field => field.column);
+    },
     getDefaultSchemaFields() {
       return this.getSchema().filter(field => field.default !== null || field.autoIncrement).map(field => field.column);
     },

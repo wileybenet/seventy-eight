@@ -27,7 +27,7 @@ seventyEight.rejectedPromise = function(err) {
   return deferred.promise;
 };
 
-seventyEight.db.ping().then(() => recordDeferred.resolve(seventyEight)).catch(console.error);
+client.ping().then(() => recordDeferred.resolve(seventyEight)).catch(console.error);
 
 // base static methods
 const globalStaticMethods = _.extend(recordStaticMethods, {
@@ -37,6 +37,19 @@ const globalStaticMethods = _.extend(recordStaticMethods, {
   },
   string(value, dflt) {
     return value !== undefined && value !== null ? `${value}` : dflt !== undefined ? dflt : null;
+  },
+  import(objects) {
+    const deferred = q.defer();
+    const columns = this.$constructor.getSchemaColumns();
+    const params = objects.map(obj => {
+      let record = obj;
+      if (!(obj instanceof this.$constructor)) {
+         record = new this.$constructor(obj);
+      }
+      return record.$saveParams(columns);
+    });
+    client.query('INSERT INTO ?? (??) VALUES ?', [this.$constructor.tableName, columns, params.map(({ values }) => values)]).then(deferred.resolve, deferred.reject);
+    return deferred.promise;
   },
   update(record_id, props) {
     const deferred = q.defer();
@@ -49,7 +62,7 @@ const globalStaticMethods = _.extend(recordStaticMethods, {
     whiteListedProperties = pseudoModel.$beforeSave(whiteListedProperties);
 
     if (_.size(whiteListedProperties)) {
-      seventyEight.db.query(seventyEight.db.formatQuery("UPDATE ?? SET ? WHERE ?? = ?", [pseudoModel.$tableName, whiteListedProperties, this.$constructor.$getPrimaryKey(), record_id]))
+      client.query(client.formatQuery("UPDATE ?? SET ? WHERE ?? = ?", [pseudoModel.$tableName, whiteListedProperties, this.$constructor.$getPrimaryKey(), record_id]))
         .then(() => {
           deferred.resolve(true);
         }, deferred.reject);
@@ -71,8 +84,11 @@ const globalInstanceMethods = {
   },
   $getAt(fields, properties) {
     return fields.map(function(field) {
-      return typeof properties[field] === 'undefined' ? 'NULL' : properties[field];
+      return typeof properties[field] === 'undefined' ? null : properties[field];
     });
+  },
+  json() {
+    return _.pickBy(this, (value, prop) => !prop.match(/\$|_/) && typeof value !== 'function');
   },
   $afterFind() {
     const schema = this.Class.getSchema();
@@ -98,8 +114,8 @@ const globalInstanceMethods = {
     whiteListedProperties = this.$beforeSave(whiteListedProperties);
 
     if (_.size(whiteListedProperties)) {
-      seventyEight.db
-        .query(seventyEight.db.formatQuery("UPDATE ?? SET ? WHERE ?? = ?", [this.$tableName, whiteListedProperties, this.$primaryKey, this[this.$primaryKey]]))
+      client
+        .query(client.formatQuery("UPDATE ?? SET ? WHERE ?? = ?", [this.$tableName, whiteListedProperties, this.$primaryKey, this[this.$primaryKey]]))
         .then(() => {
           _.extend(this, whiteListedProperties);
           this.$afterFind();
@@ -116,13 +132,19 @@ const globalInstanceMethods = {
     }
     return deferred.promise;
   },
-  save() {
-    const deferred = q.defer();
+  $saveParams(setColumns = null) {
     const properties = this.beforeSave(this);
     let whiteListedProperties = this.$prepareProps(properties);
     whiteListedProperties = this.$beforeSave(whiteListedProperties);
-    let columns = _.keys(whiteListedProperties);
+    const columns = setColumns || _.keys(whiteListedProperties);
     const values = this.$getAt(columns, whiteListedProperties);
+    return { columns, values, whiteListedProperties };
+  },
+  save() {
+    const deferred = q.defer();
+    const params = this.$saveParams();
+    const { values, whiteListedProperties } = params;
+    let { columns } = params;
     let sql = 'INSERT INTO ?? (??) VALUES ';
     if (columns.length) {
       sql += '(?) ON DUPLICATE KEY UPDATE ?';
@@ -130,8 +152,8 @@ const globalInstanceMethods = {
       columns = this.Class.getDefaultSchemaFields();
       sql += `(${columns.map(() => 'NULL').join(', ')})`;
     }
-    seventyEight.db
-      .query(seventyEight.db.formatQuery(sql, [this.$tableName, columns, values, whiteListedProperties]))
+    client
+      .query(client.formatQuery(sql, [this.$tableName, columns, values, whiteListedProperties]))
       .then(data => {
         this.Class.find(data.insertId).then(model => {
           Object.assign(this, model);
@@ -142,8 +164,8 @@ const globalInstanceMethods = {
   },
   delete() {
     var deferred = q.defer();
-    seventyEight.db
-      .query(seventyEight.db.formatQuery("DELETE FROM ?? WHERE ?? = ?", [this.$tableName, this.$primaryKey, this[this.$primaryKey]]))
+    client
+      .query(client.formatQuery("DELETE FROM ?? WHERE ?? = ?", [this.$tableName, this.$primaryKey, this[this.$primaryKey]]))
       .then(() => {
         deferred.resolve(true);
       }, deferred.reject);
