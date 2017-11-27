@@ -18,7 +18,7 @@ const Account = seventyEight.createModel({
     schema: {
       id: primary(),
       name: string(),
-      data: json(),
+      data: json({ indexed: true }),
       account: relation(Account),
       account2: relation(Account, { sync: true }),
     },
@@ -55,6 +55,7 @@ const Account = seventyEight.createModel({
           \`account2\` INT(11) UNSIGNED,
 
           PRIMARY KEY (\`id\`),
+          KEY \`INDEXED_DATA\` (\`data__json\`),
           CONSTRAINT \`FOREIGN_ACCOUNT\` FOREIGN KEY (\`account\`) REFERENCES \`accounts\` (\`id\`),
           CONSTRAINT \`FOREIGN_ACCOUNT2\` FOREIGN KEY (\`account2\`) REFERENCES \`accounts\` (\`id\`) ON DELETE CASCADE ON UPDATE CASCADE
         )
@@ -75,9 +76,10 @@ const Account = seventyEight.createModel({
           MODIFY \`account\` INT(11) UNSIGNED,
           DROP COLUMN \`created\`,
 
+          DROP INDEX \`INDEXED_CREATED\`,
           ADD INDEX \`INDEXED_NAME\` (\`name\`),
-          ADD CONSTRAINT \`FOREIGN_ACCOUNT2\` FOREIGN KEY (\`account2\`) REFERENCES \`accounts\` (\`id\`) ON DELETE CASCADE ON UPDATE CASCADE,
-          DROP INDEX \`INDEXED_CREATED\`
+          ADD INDEX \`INDEXED_DATA\` (\`data__json\`),
+          ADD CONSTRAINT \`FOREIGN_ACCOUNT2\` FOREIGN KEY (\`account2\`) REFERENCES \`accounts\` (\`id\`) ON DELETE CASCADE ON UPDATE CASCADE
       `));
       done();
     });

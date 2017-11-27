@@ -12,7 +12,7 @@ describe('#miscellaneous', function() {
   });
 
   const UserRole = seventyEight.createModel({
-    constructor: function UserRole() {}
+    constructor: function UserRole() {},
   });
 
   it('should format tableName from constructor name', function() {

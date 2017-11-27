@@ -1,7 +1,16 @@
 const _ = require('lodash');
 const db = require('./db.client');
+
 const noopNull = () => null;
 const noop = (prop, def = null) => schema => schema[prop] || def;
+const wrap = (str, quotes) => `${quotes}${str}${quotes}`;
+
+const PRIMARY = 'primary';
+const UNIQUE = 'unique';
+const INDEXED = 'indexed';
+const FOREIGN = 'foreign';
+
+const CASCADE = 'CASCADE';
 
 const typeMapping = {
   int: 'INT',
@@ -13,6 +22,10 @@ const typeMapping = {
 };
 
 const mappers = {
+  PRIMARY,
+  UNIQUE,
+  INDEXED,
+  FOREIGN,
   fields: {
     name: {
       default: noop('name'),
@@ -127,33 +140,43 @@ const mappers = {
       },
     },
     primary: {
-      default: noop('primary', false),
+      default: noop(PRIMARY, false),
       fromSQL({ keys: [key = {}] }) {
-        return key.type === 'primary';
+        return key.type === PRIMARY;
       },
       toSQL: noopNull,
     },
     unique: {
-      default: noop('unique', false),
-      fromSQL({ keys: [key = {}] }) {
-        return key.type === 'unique';
+      default(schemaField) {
+        if (schemaField.unique) {
+          return schemaField.unique === true ? `UNIQUE_${schemaField.name.toUpperCase()}` : schemaField.unique;
+        }
+        return false;
+      },
+      fromSQL({ keys }) {
+        const key = keys.find(k => k.type === UNIQUE) || {};
+        return key.type === UNIQUE ? key.name : false;
       },
       toSQL: noopNull,
     },
     indexed: {
-      default: noop('indexed', false),
-      fromSQL({ keys: [key = {}] }) {
-        return key.type === 'indexed';
+      default(schemaField) {
+        if (schemaField.indexed) {
+          return schemaField.indexed === true ? `INDEXED_${schemaField.name.toUpperCase()}` : schemaField.indexed;
+        }
+        return false;
+      },
+      fromSQL({ keys }) {
+        const key = keys.find(k => k.type === INDEXED) || {};
+        return key.type === INDEXED ? key.name : false;
       },
       toSQL: noopNull,
     },
     relation: {
       default: noop('relation'),
-      fromSQL({ keys: [key = {}] }) {
-        if (key.type === 'foreign') {
-          return key.relation;
-        }
-        return null;
+      fromSQL({ keys }) {
+        const key = keys.find(k => k.type === FOREIGN) || {};
+        return key.relation || null;
       },
       toSQL: noopNull,
     },
@@ -164,21 +187,17 @@ const mappers = {
         }
         return null;
       },
-      fromSQL({ keys: [key = {}] }) {
-        if (key.type === 'foreign') {
-          return key.relationColumn;
-        }
-        return null;
+      fromSQL({ keys }) {
+        const key = keys.find(k => k.type === FOREIGN) || {};
+        return key.relationColumn || null;
       },
       toSQL: noopNull,
     },
     sync: {
       default: noop('sync', false),
-      fromSQL({ keys: [key = {}] }) {
-        if (key.type === 'foreign') {
-          return key.sync;
-        }
-        return false;
+      fromSQL({ keys }) {
+        const key = keys.find(k => k.type === FOREIGN) || {};
+        return key.sync || false;
       },
       toSQL: noopNull,
     },
@@ -203,75 +222,46 @@ const mappers = {
   },
   keys: {
     name: {
-      default(schemaField) {
-        const type = mappers.keys.type.default(schemaField);
-        if (type === 'primary') {
+      default(schemaFields, type) {
+        const name = schemaFields.map(field => field.name).join('_');
+        if (type === PRIMARY) {
           return 'PRIMARY';
         }
-        return `${type.toUpperCase()}_${schemaField.name.toUpperCase()}`;
+        if (type === UNIQUE || type === INDEXED) {
+          return schemaFields[0][type];
+        }
+        return `${type.toUpperCase()}_${name.toUpperCase()}`;
       },
       fromSQL([key]) {
         return key.KEY_NAME;
       },
     },
     column: {
-      default(schemaField) {
-        return `\`${schemaField.column}\``;
+      default(schemaFields) {
+        return schemaFields.map(field => wrap(field.column, '`')).join(',');
       },
       fromSQL(keys) {
         return keys.map(k => `\`${k.COLUMN_NAME}\``).join(',');
       },
     },
     type: {
-      default(schemaField) {
-        if (schemaField.relation) {
-          return 'foreign';
-        }
-        if (schemaField.unique) {
-          return 'unique';
-        }
-        if (schemaField.primary) {
-          return 'primary';
-        }
-        if (schemaField.indexed) {
-          return 'indexed';
-        }
+      default(schemaFields, type) {
+        return type;
       },
       fromSQL([key]) {
         if (key.REFERENCED_TABLE_NAME) {
-          return 'foreign';
+          return FOREIGN;
         }
         if (key.KEY_NAME === 'PRIMARY') {
-          return 'primary';
+          return PRIMARY;
         }
         if (key.UNIQUE) {
-          return 'unique';
+          return UNIQUE;
         }
-        return 'indexed';
+        return INDEXED;
       },
-      // PRIMARY KEY (`id`),
-      // UNIQUE KEY `user` (`user`,`library`),
-      // KEY `library` (`library`),
-      // CONSTRAINT `user_libraries_ibfk_1` FOREIGN KEY (`user`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-      // CONSTRAINT `user_libraries_ibfk_2` FOREIGN KEY (`library`) REFERENCES `libraries` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-
-      // ALTER TABLE `roles
-      //   ADD FOREIGN KEY (`library`) REFERENCES `libraries` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-      // ALTER TABLE `roles`
-      //   ADD PRIMARY KEY (`name`);
-      // ALTER TABLE `user_libraries`
-      //   ADD UNIQUE INDEX (`user`, `library`);
-      // ALTER TABLE `user_libraries`
-      //   ADD INDEX (`user`);
-
-
-      // ALTER TABLE `roles
-      //   DROP INDEX `name`;
-      // ALTER TABLE `user_libraries`
-      //   DROP FOREIGN KEY `user_libraries_ibfk_2`;
       toSQL(key, method) {
         const index = `KEY \`${key.name}\` (${key.column})`;
-        // ON DELETE CASCADE ON UPDATE CASCADE
         const foreignKey = `
           CONSTRAINT \`${key.name}\`
           FOREIGN KEY (${key.column})
@@ -281,37 +271,37 @@ const mappers = {
         const dropIndex = `DROP INDEX \`${key.name}\``;
         return {
           init: {
-            primary: `PRIMARY KEY (${key.column})`,
-            unique: `UNIQUE ${index}`,
-            indexed: `${index}`,
-            foreign: foreignKey,
+            [PRIMARY]: `PRIMARY KEY (${key.column})`,
+            [UNIQUE]: `UNIQUE ${index}`,
+            [INDEXED]: `${index}`,
+            [FOREIGN]: foreignKey,
           }[key.type],
           add: {
-            primary: `ADD PRIMARY KEY (${key.column})`,
-            unique: `ADD UNIQUE INDEX \`${key.name}\` (${key.column})`,
-            indexed: `ADD INDEX \`${key.name}\` (${key.column})`,
-            foreign: `ADD ${foreignKey}`,
+            [PRIMARY]: `ADD PRIMARY KEY (${key.column})`,
+            [UNIQUE]: `ADD UNIQUE INDEX \`${key.name}\` (${key.column})`,
+            [INDEXED]: `ADD INDEX \`${key.name}\` (${key.column})`,
+            [FOREIGN]: `ADD ${foreignKey}`,
           }[key.type],
           drop: {
-            primary: dropIndex,
-            unique: dropIndex,
-            indexed: dropIndex,
-            foreign: `DROP FOREIGN KEY \`${key.name}\``,
+            [PRIMARY]: dropIndex,
+            [UNIQUE]: dropIndex,
+            [INDEXED]: dropIndex,
+            [FOREIGN]: `DROP FOREIGN KEY \`${key.name}\``,
           }[key.type],
         }[method];
       },
     },
     relation: {
-      default(schemaField) {
-        return schemaField.relation || null;
+      default([schemaField], type) {
+        return type === FOREIGN ? schemaField.relation : null;
       },
       fromSQL([key]) {
         return key.REFERENCED_TABLE_NAME || null;
       },
     },
     relationColumn: {
-      default(schemaField) {
-        if (schemaField.relation) {
+      default([schemaField], type) {
+        if (type === FOREIGN && schemaField.relation) {
           return schemaField.relationColumn || 'id';
         }
         return null;
@@ -324,20 +314,22 @@ const mappers = {
       },
     },
     sync: {
-      default: noop('sync', false),
+      default([schemaField]) {
+        return (schemaField.relation && schemaField.sync) || false;
+      },
       fromSQL([key]) {
-        return key.UPDATE_RULE === key.DELETE_RULE === 'CASCADE';
+        return key.UPDATE_RULE === CASCADE && key.DELETE_RULE === CASCADE;
       },
       toSQL(key) {
         return key.sync ? 'ON DELETE CASCADE ON UPDATE CASCADE' : '';
       },
     },
   },
-  applyFilters: _.curry((type, objects, method, context) => objects.reduce((memo, obj) => {
-    memo[obj] = mappers[type][obj][method](context);
+  applyFilters: _.curry((type, objects, method, context, options = {}) => objects.reduce((memo, obj) => {
+    memo[obj] = mappers[type][obj][method](context, options);
     return memo;
   }, {})),
-  diff: _.curry((keys, current, next) => {
+  diff: _.curry((keys, current, next, update = true) => {
     const changes = {
       update: [],
       create: [],
@@ -352,10 +344,13 @@ const mappers = {
       if (currentIndex[nextSettings.name]) {
         if (mappers.identicalFields(nextSettings, currentIndex[nextSettings.name], keys)) {
           changes.noop.push(nextSettings);
-        } else {
+          delete currentIndex[nextSettings.name];
+        } else if (update) {
           changes.update.push(nextSettings);
+          delete currentIndex[nextSettings.name];
+        } else {
+          changes.create.push(nextSettings);
         }
-        delete currentIndex[nextSettings.name];
       } else {
         changes.create.push(nextSettings);
       }

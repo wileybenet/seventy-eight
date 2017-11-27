@@ -1,27 +1,28 @@
-var q = require('q');
-var client = require('./lib/db.client');
-var _ = require('lodash');
-var migrator = require('./lib/migrator');
-var schemaFilters = require('./lib/schema.filters');
-var fieldTypes = require('./lib/field');
-var recordDeferred = q.defer();
-var seventyEight = {
+const q = require('q');
+const client = require('./lib/db.client');
+const _ = require('lodash');
+const migrator = require('./lib/migrator');
+const schemaFilters = require('./lib/schema.filters');
+const fieldTypes = require('./lib/field');
+const recordDeferred = q.defer();
+const seventyEight = {
   promise: recordDeferred.promise,
 };
 
-var recordStaticMethods = require('./query.builder');
+const recordStaticMethods = require('./query.builder');
+const modelCache = {};
 
 seventyEight.const = {};
 seventyEight.db = client;
 seventyEight.field = fieldTypes;
 
 seventyEight.resolvedPromise = function(data) {
-  var deferred = q.defer();
+  const deferred = q.defer();
   deferred.resolve(data);
   return deferred.promise;
 };
 seventyEight.rejectedPromise = function(err) {
-  var deferred = q.defer();
+  const deferred = q.defer();
   deferred.reject(err);
   return deferred.promise;
 };
@@ -152,12 +153,9 @@ const globalInstanceMethods = {
 
 seventyEight.createModel = function(options) { // eslint-disable-line max-statements
   let staticMethod = null;
-  let instanceMethod = null;
-  let staticProp = null;
-  let instanceProp = null;
   var Model = options.constructor;
   var staticProps = options.staticProps || {};
-  var schema = options.schema || {};
+  var { schema = {} } = options;
   var instanceProps = options.instanceProps || {};
   var staticMethods = _.extend({}, globalStaticMethods, options.staticMethods || {});
   var instanceMethods = _.extend({}, globalInstanceMethods, options.instanceMethods || {});
@@ -188,7 +186,9 @@ seventyEight.createModel = function(options) { // eslint-disable-line max-statem
         throw new Error(`schema missing primary field: \n${JSON.stringify(this.schema, null, 2)}`);
       }
     },
-  });
+  }, staticProps);
+
+  Object.assign(QueryConstructor.prototype, instanceProps, instanceMethods);
 
   QueryConstructor.prototype.Class = QueryConstructor;
 
@@ -218,26 +218,13 @@ seventyEight.createModel = function(options) { // eslint-disable-line max-statem
     return _.isUndefined(ret) ? nextSelf : ret;
   };
 
-  for (staticProp in staticProps) {
-    QueryConstructor[staticProp] = staticProps[staticProp];
-  }
-
   for (staticMethod in staticMethods) {
-    QueryConstructor[staticMethod] = staticMethod[0] === '$' ? staticMethods[staticMethod] : startChain(staticMethods[staticMethod]);
+    if (staticMethods[staticMethod]) {
+      QueryConstructor[staticMethod] = staticMethod[0] === '$' ? staticMethods[staticMethod] : startChain(staticMethods[staticMethod]);
+    }
   }
 
-  for (instanceMethod in instanceMethods) {
-    QueryConstructor.prototype[instanceMethod] = instanceMethods[instanceMethod];
-  }
-
-  for (instanceProp in instanceProps) {
-    QueryConstructor.prototype[instanceProp] = instanceProps[instanceProp];
-  }
-
-  if (!schema) {
-    throw new Error('model requires schema: {}');
-  }
-
+  modelCache[tableName] = QueryConstructor;
   return QueryConstructor;
 };
 

@@ -51,7 +51,6 @@ describe('basic schema syncTable', () => {
         }).catch(console.log);
       }, console.log);
     });
-
   });
 
   it('should add a foreign key', done => {
@@ -78,110 +77,188 @@ describe('basic schema syncTable', () => {
 });
 
 describe('complex schema syncTable', () => {
-  var RoleMigration = seventyEight.createModel({
+  const UserRoleMigration = seventyEight.createModel({
+    constructor: function UserRoleMigration() {},
+    schema: {
+      id: primary(),
+      name: string(),
+    },
+  });
+  const RoleMigration = seventyEight.createModel({
     constructor: function RoleMigration() {},
     schema: {
       id: primary(),
       name: string({ unique: true }),
       level: int({ default: 1, required: true }),
       active: boolean({ indexed: true }),
+      stage: string({ unique: 'stage_skill_idx' }),
+      skill: string({ unique: 'stage_skill_idx' }),
+      user: relation(UserRoleMigration, { indexed: true }),
     },
   });
 
   it('should be idempotent', done => {
-    RoleMigration.syncTable()
-      .then(() => RoleMigration.syncTable())
-      .then(() => RoleMigration.syncTable())
-      .then(() => RoleMigration.syncTable())
-      .then(() => RoleMigration.syncTable())
-      .then(() => RoleMigration.syncTable())
-      .then(() => RoleMigration.getSQLSchema())
-      .then(({ sqlSchema, sqlKeys }) => {
-        expect(sqlSchema).toEqual([{
-          name: 'id',
-          type: 'int',
-          length: 11,
-          required: true,
-          default: null,
-          autoIncrement: true,
-          signed: false,
-          primary: true,
-          unique: false,
-          indexed: false,
-          relation: null,
-          relationColumn: null,
-          sync: false,
-          column: 'id',
-        }, {
-          name: 'name',
-          type: 'string',
-          length: 255,
-          required: false,
-          default: null,
-          autoIncrement: false,
-          signed: false,
-          primary: false,
-          unique: true,
-          indexed: false,
-          relation: null,
-          relationColumn: null,
-          sync: false,
-          column: 'name',
-        }, {
-          name: 'level',
-          type: 'int',
-          length: 11,
-          required: true,
-          default: 1,
-          autoIncrement: false,
-          signed: false,
-          primary: false,
-          unique: false,
-          indexed: false,
-          relation: null,
-          relationColumn: null,
-          sync: false,
-          column: 'level',
-        }, {
-          name: 'active',
-          type: 'boolean',
-          length: 1,
-          required: false,
-          default: null,
-          autoIncrement: false,
-          signed: false,
-          primary: false,
-          unique: false,
-          indexed: true,
-          relation: null,
-          relationColumn: null,
-          sync: false,
-          column: 'active',
-        }]);
-        expect(sqlKeys).toEqual([{
-          name: 'PRIMARY',
-          column: '`id`',
-          type: 'primary',
-          relation: null,
-          relationColumn: null,
-          sync: false,
-        }, {
-          name: 'UNIQUE_NAME',
-          column: '`name`',
-          type: 'unique',
-          relation: null,
-          relationColumn: null,
-          sync: false,
-        }, {
-          name: 'INDEXED_ACTIVE',
-          column: '`active`',
-          type: 'indexed',
-          relation: null,
-          relationColumn: null,
-          sync: false,
-        }]);
-        done();
-      })
-      .catch(console.error);
+    UserRoleMigration.syncTable().then(() => {
+      RoleMigration.syncTable()
+        .then(() => RoleMigration.syncTable())
+        .then(() => RoleMigration.syncTable())
+        .then(() => RoleMigration.syncTable())
+        .then(() => RoleMigration.syncTable())
+        .then(() => RoleMigration.syncTable())
+        .then(() => RoleMigration.getSQLSchema())
+        .then(({ sqlSchema, sqlKeys }) => {
+          expect(sqlSchema).toEqual([{
+            name: 'id',
+            type: 'int',
+            length: 11,
+            required: true,
+            default: null,
+            autoIncrement: true,
+            signed: false,
+            primary: true,
+            unique: false,
+            indexed: false,
+            relation: null,
+            relationColumn: null,
+            sync: false,
+            column: 'id',
+          }, {
+            name: 'name',
+            type: 'string',
+            length: 255,
+            required: false,
+            default: null,
+            autoIncrement: false,
+            signed: false,
+            primary: false,
+            unique: 'UNIQUE_NAME',
+            indexed: false,
+            relation: null,
+            relationColumn: null,
+            sync: false,
+            column: 'name',
+          }, {
+            name: 'level',
+            type: 'int',
+            length: 11,
+            required: true,
+            default: 1,
+            autoIncrement: false,
+            signed: false,
+            primary: false,
+            unique: false,
+            indexed: false,
+            relation: null,
+            relationColumn: null,
+            sync: false,
+            column: 'level',
+          }, {
+            name: 'active',
+            type: 'boolean',
+            length: 1,
+            required: false,
+            default: null,
+            autoIncrement: false,
+            signed: false,
+            primary: false,
+            unique: false,
+            indexed: 'INDEXED_ACTIVE',
+            relation: null,
+            relationColumn: null,
+            sync: false,
+            column: 'active',
+          }, {
+            name: 'stage',
+            type: 'string',
+            length: 255,
+            required: false,
+            default: null,
+            autoIncrement: false,
+            signed: false,
+            primary: false,
+            unique: 'stage_skill_idx',
+            indexed: false,
+            relation: null,
+            relationColumn: null,
+            sync: false,
+            column: 'stage',
+          }, {
+            name: 'skill',
+            type: 'string',
+            length: 255,
+            required: false,
+            default: null,
+            autoIncrement: false,
+            signed: false,
+            primary: false,
+            unique: 'stage_skill_idx',
+            indexed: false,
+            relation: null,
+            relationColumn: null,
+            sync: false,
+            column: 'skill',
+          }, {
+            name: 'user',
+            type: 'int',
+            length: 11,
+            required: false,
+            default: 0,
+            autoIncrement: false,
+            signed: false,
+            primary: false,
+            unique: false,
+            indexed: 'INDEXED_USER',
+            relation: 'user_role_migrations',
+            relationColumn: 'id',
+            sync: false,
+            column: 'user',
+          }]);
+          expect(sqlKeys).toEqual([{
+            name: 'PRIMARY',
+            column: '`id`',
+            type: 'primary',
+            relation: null,
+            relationColumn: null,
+            sync: false,
+          }, {
+            name: 'UNIQUE_NAME',
+            column: '`name`',
+            type: 'unique',
+            relation: null,
+            relationColumn: null,
+            sync: false,
+          }, {
+            name: 'stage_skill_idx',
+            column: '`stage`,`skill`',
+            type: 'unique',
+            relation: null,
+            relationColumn: null,
+            sync: false,
+          }, {
+            name: 'INDEXED_ACTIVE',
+            column: '`active`',
+            type: 'indexed',
+            relation: null,
+            relationColumn: null,
+            sync: false,
+          }, {
+            name: 'INDEXED_USER',
+            column: '`user`',
+            type: 'indexed',
+            relation: null,
+            relationColumn: null,
+            sync: false,
+          }, {
+            name: 'FOREIGN_USER',
+            column: '`user`',
+            type: 'foreign',
+            relation: 'user_role_migrations',
+            relationColumn: 'id',
+            sync: false,
+          }]);
+          done();
+        })
+        .catch(console.error);
+    });
   });
 });

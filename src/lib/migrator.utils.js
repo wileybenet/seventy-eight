@@ -1,5 +1,11 @@
 const _ = require('lodash');
 const mappers = require('./migrator.utils.mappers');
+const {
+  PRIMARY,
+  UNIQUE,
+  INDEXED,
+  FOREIGN,
+} = mappers;
 
 const schemaProps = [
   'name',
@@ -40,24 +46,38 @@ const typeMapping = {
 const applyFieldFilters = mappers.applyFilters('fields', Object.keys(mappers.fields));
 const applyKeyFilters = mappers.applyFilters('keys', keyProps);
 
+const groupByKeys = (schema, field) => {
+  const groups = _(schema).filter(field).groupBy(field).value();
+  const individualKeys = groups.true;
+  delete groups.true;
+  return _.chunk(individualKeys, 1).concat(_.values(groups));
+};
+
+const getFieldKeys = schema => ({
+  primary: [[schema.find(field => field.primary)]],
+  unique: groupByKeys(schema, 'unique'),
+  indexed: groupByKeys(schema, 'indexed'),
+  foreign: schema.filter(field => field.relation).map(field => [field]),
+});
+
 const utils = {
   schemaDiff: mappers.diff(schemaProps),
   keyDiff: mappers.diff(keyProps),
 
   applyKeyDefaults(schema) {
-    return schema.map(schemaField => {
-      if (Object.keys(schemaField).filter(key => schemaKeyBinding.includes(key)).reduce((memo, key) => memo || Boolean(schemaField[key]), false)) {
-        return applyKeyFilters('default', schemaField);
+    const fieldKeysGroups = getFieldKeys(schema);
+    return _.flatMap(fieldKeysGroups, (keySets, type) => {
+      if (keySets.length) {
+        return keySets.map(keySet => applyKeyFilters('default', keySet, type));
       }
       return null;
-    }).filter(k => k);
+    }).filter(key => key);
   },
 
   writeKeysToSQL(method) {
     return keys => keys.map(key => mappers.keys.type.toSQL(key, method));
   },
 
-  // { name, column, type, foreignColumn }
   parseKeysFromSQL(indexes) {
     return _(indexes)
       .groupBy('KEY_NAME')
@@ -97,10 +117,6 @@ const utils = {
     if (!validTypes) {
       return `invalid field type '${schemaFields.map(field => field.type).filter(type => !Object.keys(typeMapping).includes(type))[0]}'`;
     }
-    // const validPrimary = schemaFields.filter(field => field.primary);
-    // if (validPrimary.length !== 1) {
-    //   return '1 primary field needed `field: { type: \'<type>\', primary: true }`';
-    // }
     const validPrimaryUnique = schemaFields.filter(field => (field.primary && 1) + (field.unique && 1) + (field.indexed && 1) > 1);
     if (validPrimaryUnique.length > 0) {
       return 'field may only be one of [primary, unique, indexed]';

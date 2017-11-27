@@ -130,7 +130,8 @@
       "error",
       "all",
       {
-        "nestedBinaryExpressions": false
+        "nestedBinaryExpressions": false,
+        "enforceForArrowConditionals": false
       }
     ],
     "no-floating-decimal": "error",

@@ -6,10 +6,6 @@ const { field: { primary, string, int, time, boolean, json, text, relation } } =
 // const statements = sql => sql.trim().split(/\s+\n?\s*|\s*\n?\s+/g);
 
 describe('keys', () => {
-  const Model = seventyEight.createModel({
-    constructor: function Model() {},
-  });
-
   it('should be type string', () => {
     expect(string().type).toEqual('string');
   });
@@ -19,7 +15,6 @@ describe('keys', () => {
   it('should be type int', () => {
     expect(int().type).toEqual('int');
     expect(primary().type).toEqual('int');
-    expect(relation(Model).type).toEqual('int');
   });
   it('should be type json', () => {
     expect(json().type).toEqual('json');
@@ -32,11 +27,32 @@ describe('keys', () => {
   });
 
   describe('relation', () => {
-    it('should set a relation tableName', () => {
-      expect(relation(Model).relation).toEqual('models');
+    const Model = seventyEight.createModel({
+      constructor: function Model() {},
+      schema: {
+        id: primary(),
+      },
     });
-    it('should set a optional relationColumn', () => {
-      expect(relation(Model, { relationColumn: 'name' }).relationColumn).toEqual('name');
+    const Model2 = seventyEight.createModel({
+      constructor: function Model2() {},
+      schema: {
+        pid: string({ primary: true }),
+      },
+    });
+
+    it('should set a relation defaults from foreign schema', () => {
+      const foreignKey = relation(Model);
+      const foreignKey2 = relation(Model2);
+      expect(foreignKey.relation).toEqual('models');
+      expect(foreignKey.type).toEqual('int');
+      expect(foreignKey.relationColumn).toEqual('id');
+      expect(foreignKey2.relation).toEqual('model_2s');
+      expect(foreignKey2.type).toEqual('string');
+      expect(foreignKey2.relationColumn).toEqual('pid');
+    });
+    it('should set a relationColumn', () => {
+      const foreignKey = relation(Model, { relationColumn: 'name' });
+      expect(foreignKey.relationColumn).toEqual('name');
     });
   });
 });

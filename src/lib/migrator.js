@@ -11,8 +11,8 @@ const writeColumnChanges = (changes, method) => {
 
 const schemaCommands = changes => ['create', 'update', 'remove'].reduce((memo, method) => memo.concat(writeColumnChanges(changes, method)), []);
 const keyCommands = changes => [
-  ...utils.writeKeysToSQL('add')(changes.create),
   ...utils.writeKeysToSQL('drop')(changes.remove),
+  ...utils.writeKeysToSQL('add')(changes.create),
 ];
 
 module.exports = {
@@ -32,6 +32,9 @@ module.exports = {
     getDefaultSchemaFields() {
       return this.getSchema().filter(field => field.default !== null || field.autoIncrement).map(field => field.column);
     },
+    getPrimaryKeyField() {
+      return this.getSchema().find(field => field.primary);
+    },
     getSQLSchema() {
       return new Promise((resolve, reject) => {
         Promise.all([
@@ -50,7 +53,7 @@ module.exports = {
     getSchemaDiff() {
       return new Promise((resolve, reject) => {
         this.getSQLSchema().then(({ sqlSchema, sqlKeys }) => {
-          const keyChanges = utils.keyDiff(sqlKeys, this.getKeys());
+          const keyChanges = utils.keyDiff(sqlKeys, this.getKeys(), true);
           const schemaChanges = utils.schemaDiff(sqlSchema, this.getSchema());
           resolve({ schemaChanges, keyChanges });
         }).catch(reject);

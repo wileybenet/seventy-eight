@@ -1,5 +1,3 @@
-// const utils = require('./migrator.utils');
-
 const field = {
   int({ length = 11, default: def = null, required = false, autoIncrement = false, signed = false, primary = false, unique = false, indexed = false, relation = null } = {}, name = null) {
     return { type: 'int', length, default: def, required, autoIncrement, signed, primary, unique, indexed, relation, name };
@@ -23,8 +21,20 @@ const field = {
   primary(name = null) {
     return field.int({ autoIncrement: true, required: true, primary: true, signed: false }, name);
   },
-  relation(relation, { type = 'int', length = 11, signed = false, default: def = null, required = false, relationColumn = 'id', sync = false } = {}, name = null) {
-    return { type, length, signed, default: def, required, relation: relation.tableName, relationColumn, sync, name };
+  relation(Model, { type, length, signed, default: def, relation, relationColumn, required = false, indexed = false, sync = false } = {}, name = null) {
+    const foreignField = Model.getPrimaryKeyField() || {};
+    return {
+      type: type || foreignField.type,
+      length: length || foreignField.length,
+      signed: signed || foreignField.signed,
+      default: def || foreignField.default,
+      relation: relation || Model.tableName,
+      relationColumn: relationColumn || foreignField.column,
+      required,
+      indexed,
+      sync,
+      name,
+    };
   },
 };
 
