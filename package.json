@@ -6,6 +6,9 @@
   "engines": {
     "node": ">=8.0.0"
   },
+  "bin": {
+    "78": "./src/cli/cmd.js"
+  },
   "scripts": {
     "pretest": "npm run posttest && node ./spec/setup",
     "test": "node ./spec/run",
