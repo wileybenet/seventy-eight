@@ -8,6 +8,8 @@ const client = require('../src/lib/db.client');
 const args = [
   '-u', process.env.DB_USER,
   `-p${process.env.DB_PASSWORD}`,
+  '-h', process.env.DB_HOST,
+  '-P', process.env.DB_PORT,
   '-e', `CREATE DATABASE IF NOT EXISTS ${process.env.DB_SCHEMA}`,
 ];
 
