@@ -14,7 +14,7 @@ describe('basic schema syncTable', () => {
     schema: {
       id: primary(),
       name: string(),
-      data: json({ required: true }),
+      data: json(),
     },
   });
   const AdminMigration = seventyEight.createModel({
@@ -22,7 +22,7 @@ describe('basic schema syncTable', () => {
     schema: {
       id: primary(),
       name: string(),
-      data: json({ required: true }),
+      data: json(),
     },
   });
 
@@ -55,7 +55,7 @@ describe('basic schema syncTable', () => {
 
   it('should add a foreign key', done => {
     const test = () => {
-      AdminMigration.schema.account = relation(AccountMigration, { required: true });
+      AdminMigration.schema.account = relation(AccountMigration);
       AdminMigration.syncTable().then(() => {
         const user = new AdminMigration({
           name: 'boog',
@@ -89,7 +89,7 @@ describe('complex schema syncTable', () => {
     schema: {
       id: primary(),
       name: string({ unique: true }),
-      level: int({ default: 1, required: true }),
+      level: int({ default: 1 }),
       active: boolean({ indexed: true }),
       stage: string({ unique: 'stage_skill_idx' }),
       skill: string({ unique: 'stage_skill_idx' }),
@@ -111,7 +111,6 @@ describe('complex schema syncTable', () => {
             name: 'id',
             type: 'int',
             length: 11,
-            required: true,
             default: null,
             autoIncrement: true,
             signed: false,
@@ -126,7 +125,6 @@ describe('complex schema syncTable', () => {
             name: 'name',
             type: 'string',
             length: 255,
-            required: false,
             default: null,
             autoIncrement: false,
             signed: false,
@@ -141,7 +139,6 @@ describe('complex schema syncTable', () => {
             name: 'level',
             type: 'int',
             length: 11,
-            required: true,
             default: 1,
             autoIncrement: false,
             signed: false,
@@ -156,7 +153,6 @@ describe('complex schema syncTable', () => {
             name: 'active',
             type: 'boolean',
             length: 1,
-            required: false,
             default: null,
             autoIncrement: false,
             signed: false,
@@ -171,7 +167,6 @@ describe('complex schema syncTable', () => {
             name: 'stage',
             type: 'string',
             length: 255,
-            required: false,
             default: null,
             autoIncrement: false,
             signed: false,
@@ -186,7 +181,6 @@ describe('complex schema syncTable', () => {
             name: 'skill',
             type: 'string',
             length: 255,
-            required: false,
             default: null,
             autoIncrement: false,
             signed: false,
@@ -201,7 +195,6 @@ describe('complex schema syncTable', () => {
             name: 'user',
             type: 'int',
             length: 11,
-            required: false,
             default: 0,
             autoIncrement: false,
             signed: false,

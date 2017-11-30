@@ -4,3 +4,5 @@ coverage
 local
 .coveralls.yml
 .DS_Store
+.env*
+.rioenv

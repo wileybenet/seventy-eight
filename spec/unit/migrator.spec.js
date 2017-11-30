@@ -48,11 +48,11 @@ const Account = seventyEight.createModel({
     User.createTableSyntax().then(sql => {
       expect(statements(sql)).toEqual(statements(`
         CREATE TABLE \`users\` (
-          \`id\` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-          \`name\` VARCHAR(255),
-          \`data__json\` LONGTEXT,
-          \`account\` INT(11) UNSIGNED,
-          \`account2\` INT(11) UNSIGNED,
+          \`id\` INT(11) UNSIGNED AUTO_INCREMENT DEFAULT NULL,
+          \`name\` VARCHAR(255) DEFAULT NULL,
+          \`data__json\` LONGTEXT DEFAULT NULL,
+          \`account\` INT(11) UNSIGNED DEFAULT NULL,
+          \`account2\` INT(11) UNSIGNED DEFAULT NULL,
 
           PRIMARY KEY (\`id\`),
           KEY \`INDEXED_DATA\` (\`data__json\`),
@@ -70,10 +70,9 @@ const Account = seventyEight.createModel({
     User.updateTableSyntax().then(sql => {
       expect(statements(sql)).toEqual(statements(`
         ALTER TABLE \`users\`
-          ADD COLUMN \`data__json\` LONGTEXT,
-          ADD COLUMN \`account2\` INT(11) UNSIGNED,
+          ADD COLUMN \`data__json\` LONGTEXT DEFAULT NULL,
+          ADD COLUMN \`account2\` INT(11) UNSIGNED DEFAULT NULL,
           MODIFY \`name\` VARCHAR(255) DEFAULT 'hello world',
-          MODIFY \`account\` INT(11) UNSIGNED,
           DROP COLUMN \`created\`,
 
           DROP INDEX \`INDEXED_CREATED\`,

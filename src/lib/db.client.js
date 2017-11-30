@@ -110,9 +110,7 @@ exports.query = function (str, params) {
         deferred.reject(err);
       } else {
         deferred.resolve(data);
-        if (!process.env.JASMINE) {
-          console.log("\r" + Math.round((+(new Date()) - start )/ 1000).toString().green + ' sec'.green);
-        }
+        console.log("\r" + Math.round((+(new Date()) - start )/ 1000).toString().green + ' sec'.green);
       }
       connection.release();
     });

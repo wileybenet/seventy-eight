@@ -1,9 +1,16 @@
-require('../local/process.env');
+require('dotenv').config();
 const style = require('ansi-styles');
 const { spawn } = require('child_process');
+const coverTests = process.argv[2] === 'coverage';
 
 console.log(`running JASMINE`);
-const jasmine = spawn('jasmine');
+let jasmine = null;
+
+if (coverTests) {
+  jasmine = spawn('istanbul', ['cover', 'jasmine']);
+} else {
+  jasmine = spawn('jasmine');
+}
 
 jasmine.stdout.on('data', data => {
   console.log(`${data}`);

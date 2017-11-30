@@ -1,5 +1,4 @@
-require('../local/process.env');
-
+require('dotenv').config();
 const client = require('../src/lib/db.client');
 const q = require('q');
 const deferred = q.defer();

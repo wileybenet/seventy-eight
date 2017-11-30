@@ -22,20 +22,23 @@ build:
   # Read more about steps on our dev center:
   # http://devcenter.wercker.com/docs/steps/index.html
   steps:
+    - script:
+      name: echo nodejs information
+      code: |
+        echo "node version $(node -v) running"
+        echo "npm version $(npm -v) running"
     - npm-install
     - script:
         name: install global packages
-        code: sudo npm install -g grunt-cli istanbul
+        code: sudo npm install -g jasmine istanbul
     - script:
         name: write coveralls token file
         code: |
           echo "repo_token: $COVERALLS" > .coveralls.yml
-    - npm-test
-
-    # A custom script step, name value is used in the UI
-    # and the code value contains the command that get executed
     - script:
-        name: echo nodejs information
+        name: write empty env file
         code: |
-          echo "node version $(node -v) running"
-          echo "npm version $(npm -v) running"
+          echo "" > .env
+    - script:
+        name: run coverage tests
+        code: npm run coverage

@@ -70,20 +70,20 @@ const mappers = {
         return `${schemaField.length ? `(${schemaField.length})` : ''}`;
       },
     },
-    required: {
-      default(schemaField) {
-        if (schemaField.primary) {
-          return true;
-        }
-        return schemaField.required || false;
-      },
-      fromSQL(field) {
-        return field.Null === 'NO';
-      },
-      toSQL(schemaField) {
-        return schemaField.required ? 'NOT NULL' : '';
-      },
-    },
+    // required: {
+    //   default(schemaField) {
+    //     if (schemaField.primary) {
+    //       return true;
+    //     }
+    //     return schemaField.required || false;
+    //   },
+    //   fromSQL(field) {
+    //     return field.Null === 'NO';
+    //   },
+    //   toSQL(schemaField) {
+    //     return schemaField.required ? 'NOT NULL' : '';
+    //   },
+    // },
     default: {
       default(schemaField) {
         if (schemaField.autoIncrement) {
@@ -118,7 +118,7 @@ const mappers = {
         if (schemaField.type === 'boolean' && schemaField.default !== null) {
           defaultValue = schemaField.default === true ? 1 : 0;
         }
-        return hasDefault ? `DEFAULT ${defaultValue}` : '';
+        return `DEFAULT ${hasDefault ? defaultValue : 'NULL'}`;
       },
     },
     autoIncrement: {

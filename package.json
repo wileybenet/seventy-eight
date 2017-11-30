@@ -13,7 +13,9 @@
     "pretest": "npm run posttest && node ./spec/setup",
     "test": "node ./spec/run",
     "posttest": "node ./spec/teardown",
-    "prepublish": "npm test"
+    "coverage": "npm run test -- coverage",
+    "postcoverage": "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
+    "prepublish": "npm run coverage"
   },
   "repository": {
     "type": "git",
@@ -29,6 +31,7 @@
     "coveralls": "^2.13.3",
     "eslint": "^4.11.0",
     "eslint-plugin-node": "^5.1.1",
+    "istanbul": "^1.1.0-alpha.1",
     "jasmine": "^2.8.0",
     "rewire": "^3.0.2"
   },

@@ -11,7 +11,7 @@ const schemaProps = [
   'name',
   'type',
   'length',
-  'required',
+  // 'required',
   'default',
   'autoIncrement',
   'signed',
@@ -25,13 +25,6 @@ const keyProps = [
   'relation',
   'relationColumn',
   'sync',
-];
-
-const schemaKeyBinding = [
-  'primary',
-  'unique',
-  'indexed',
-  'relation',
 ];
 
 const typeMapping = {
@@ -54,10 +47,10 @@ const groupByKeys = (schema, field) => {
 };
 
 const getFieldKeys = schema => ({
-  primary: [[schema.find(field => field.primary)]],
-  unique: groupByKeys(schema, 'unique'),
-  indexed: groupByKeys(schema, 'indexed'),
-  foreign: schema.filter(field => field.relation).map(field => [field]),
+  [PRIMARY]: [[schema.find(field => field.primary)]],
+  [UNIQUE]: groupByKeys(schema, UNIQUE),
+  [INDEXED]: groupByKeys(schema, INDEXED),
+  [FOREIGN]: schema.filter(field => field.relation).map(field => [field]),
 });
 
 const utils = {
@@ -92,7 +85,7 @@ const utils = {
 
   writeSchemaToSQL(schemaField, method) {
     const field = applyFieldFilters('toSQL', schemaField);
-    const config = `\`${field.column}\` ${field.type}${field.length} ${field.signed} ${field.required} ${field.autoIncrement} ${field.default}`.replace(/\s+/g, ' ').trim();
+    const config = `\`${field.column}\` ${field.type}${field.length} ${field.signed} ${' ' || field.required} ${field.autoIncrement} ${field.default}`.replace(/\s+/g, ' ').trim();
     if (method === 'create') {
       return `ADD COLUMN ${config}`;
     }

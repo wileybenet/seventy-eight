@@ -1,5 +1,4 @@
-require('../local/process.env');
-
+require('dotenv').config();
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
