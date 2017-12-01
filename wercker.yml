@@ -32,7 +32,6 @@ build:
           echo "DB_HOST=$MYSQL_PORT_3306_TCP_ADDR" >> .env
           echo "DB_PORT=$MYSQL_PORT_3306_TCP_PORT" >> .env
           echo "DB_SCHEMA=seventy_eight" >> .env
-          cat .env
     - script:
         name: run coverage tests
         code: npm run coverage

@@ -1,3 +1,10 @@
+node_modules
+npm-debug.log
+coverage
 local
-test
 spec
+.coveralls.yml
+.DS_Store
+.env*
+.rioenv
+.wercker

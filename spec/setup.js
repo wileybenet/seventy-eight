@@ -4,10 +4,10 @@ const path = require('path');
 const fs = require('fs');
 const q = require('q');
 const client = require('../src/lib/db.client');
-const skipCreateDatabase = process.env.CI_BUILD;
+const skipCreateDatabase = false;
+const mysqlCLI = process.env.MYSQL_NAME || 'mysql';
 const deferred = q.defer();
 
-console.log('MYSQL CLI', process.env.MYSQL_NAME);
 
 const createDatabase = () => new Promise((resolve, reject) => {
   const args = [
@@ -17,7 +17,7 @@ const createDatabase = () => new Promise((resolve, reject) => {
     '-P', process.env.DB_PORT,
     '-e', `CREATE DATABASE IF NOT EXISTS ${process.env.DB_SCHEMA}`,
   ];
-  const createDB = spawn('mysql', args);
+  const createDB = spawn(mysqlCLI, args);
 
   createDB.stderr.on('data', data => {
     console.log(`create database stderr: ${data}`);
