@@ -10,14 +10,17 @@ const render = options => modelTemplate.replace(/\{\{([^}]+)\}\}/g, (str, match)
 
 module.exports = {
   createModel(modelName) {
-    const filePath = `${modelDir}/${modelName}.js`;
-    const file = render({ modelName });
-    console.log(`${green('Creating')} model ${modelName}: ${filePath}`);
-    console.log(filePath);
-    if (fs.existsSync(filePath)) {
-      console.log(`${modelName} model already exists`);
-    } else {
-      fs.writeFileSync(filePath, file);
-    }
+    return new Promise((resolve, reject) => {
+      const filePath = `${modelDir}/${modelName}.js`;
+      const file = render({ modelName });
+      console.log(`${green('Creating')} model ${modelName}: ${filePath}`);
+      console.log(filePath);
+      if (fs.existsSync(filePath)) {
+        reject(`${modelName} model already exists`);
+      } else {
+        fs.writeFileSync(filePath, file);
+        resolve(green('Done'));
+      }
+    });
   },
 };
