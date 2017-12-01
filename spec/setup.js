@@ -5,7 +5,6 @@ const fs = require('fs');
 const q = require('q');
 const client = require('../src/lib/db.client');
 const skipCreateDatabase = process.env.CI_BUILD;
-const mysqlCLI = process.env.MYSQL_NAME || 'mysql';
 const deferred = q.defer();
 
 
@@ -17,7 +16,7 @@ const createDatabase = () => new Promise((resolve, reject) => {
     '-P', process.env.DB_PORT,
     '-e', `CREATE DATABASE IF NOT EXISTS ${process.env.DB_SCHEMA}`,
   ];
-  const createDB = spawn(mysqlCLI, args);
+  const createDB = spawn('mysql', args);
 
   createDB.stderr.on('data', data => {
     console.log(`create database stderr: ${data}`);

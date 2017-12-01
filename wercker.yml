@@ -17,6 +17,9 @@ build:
         name: install global packages
         code: sudo npm install -g jasmine istanbul
     - script:
+        name: install mysql
+        code: yum install mysql
+    - script:
         name: write coveralls token file
         code: |
           echo "repo_token: $COVERALLS" > .coveralls.yml
