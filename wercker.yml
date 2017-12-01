@@ -2,7 +2,9 @@ build:
   services:
     - id: mysql
       env:
-        MYSQL_ROOT_PASSWORD: password
+        MYSQL_DATABASE: seventy_eight
+        MYSQL_USER: seventy_eight
+        MYSQL_PASSWORD: seventy_eight
   box:
     id: node:8.4.0
   steps:
@@ -26,11 +28,11 @@ build:
         name: write env file
         code: |
           echo "CI_BUILD=true" > .env
+          echo "DB_USER=$MYSQL_USER" >> .env
+          echo "DB_PASSWORD=$MYSQL_PASSWORD" >> .env
           echo "DB_HOST=$MYSQL_PORT_3306_TCP_ADDR" >> .env
+          echo "DB_PORT=$MYSQL_PORT_3306_TCP_PORT" >> .env
           echo "DB_SCHEMA=$MYSQL_DATABASE" >> .env
-    - script:
-        name: show env
-        code: |
           cat .env
     - script:
         name: run coverage tests

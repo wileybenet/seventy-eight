@@ -7,8 +7,6 @@ const client = require('../src/lib/db.client');
 const skipCreateDatabase = process.env.CI_BUILD;
 const deferred = q.defer();
 
-console.log(process.env);
-
 const createDatabase = () => new Promise((resolve, reject) => {
   const args = [
     '-u', process.env.DB_USER,
