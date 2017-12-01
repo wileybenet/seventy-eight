@@ -16,6 +16,6 @@ const command = cmdOptions[cmd];
 if (command) {
   command(...options).then(seventyEight.db.close).catch(seventyEight.db.close);
 } else {
-  console.log(`${error('ERROR:')} unknown command '${cmd}', options:\n${Object.keys(cmdOptions).join('\n')}`);
+  console.log(`${error('ERROR:')} unknown command '${cmd || '<empty>'}', options:\n${Object.keys(cmdOptions).join('\n')}`);
   seventyEight.db.close();
 }
