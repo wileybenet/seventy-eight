@@ -26,7 +26,7 @@ describe('#static-query', function() {
     query.then(function(users) {
       expect(users.length > 0).toEqual(true);
       done();
-    });
+    }, done.fail);
   });
 
   it('should retreive a single instance with one()', function(done) {
@@ -34,7 +34,7 @@ describe('#static-query', function() {
     query.then(function(user) {
       expect(user.username).toEqual('root');
       done();
-    });
+    }, done.fail);
   });
 
   it('should format response json into `data` property', function(done) {
@@ -42,7 +42,7 @@ describe('#static-query', function() {
     query.then(function(user) {
       expect(user.data).toEqual({ test: true });
       done();
-    });
+    }, done.fail);
   });
 
   it('should return Error object for misformatted queries', function(done) {
@@ -50,7 +50,7 @@ describe('#static-query', function() {
     query.then(done.fail, function(err) {
       expect(err.constructor.name).toEqual('Error');
       done();
-    });
+    }, done.fail);
   });
 
   it('should save a new row', function(done) {
@@ -58,7 +58,7 @@ describe('#static-query', function() {
     role.save().then(function() {
       expect(role.id).toEqual(4);
       done();
-    });
+    }, done.fail);
   });
 
   it('should format data with beforeSave when saving', function(done) {
@@ -78,9 +78,7 @@ describe('#static-query', function() {
       user.update({ active: false }).then(savedUser => {
         expect(savedUser.active).toEqual(false);
         done();
-      }, function(err) {
-        console.log(err);
-      });
+      }, done.fail);
     });
   });
 
@@ -100,8 +98,8 @@ describe('#static-query', function() {
         expect(success).toEqual(true);
         expect(role.name).toEqual('removed');
         done();
-      }, err => console.log(err));
-    }, err => console.log(err));
+      }, done.fail);
+    }, done.fail);
   });
 
   it('should delete an existing row', function(done) {
