@@ -28,11 +28,11 @@ build:
         name: write env file
         code: |
           echo "CI_BUILD=true" > .env
-          echo "DB_USER=$MYSQL_USER" >> .env
-          echo "DB_PASSWORD=$MYSQL_PASSWORD" >> .env
+          echo "DB_USER=seventy_eight" >> .env
+          echo "DB_PASSWORD=seventy_eight" >> .env
           echo "DB_HOST=$MYSQL_PORT_3306_TCP_ADDR" >> .env
           echo "DB_PORT=$MYSQL_PORT_3306_TCP_PORT" >> .env
-          echo "DB_SCHEMA=$MYSQL_DATABASE" >> .env
+          echo "DB_SCHEMA=seventy_eight" >> .env
           cat .env
     - script:
         name: run coverage tests
