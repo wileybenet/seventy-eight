@@ -23,7 +23,6 @@ build:
     - script:
         name: write env file
         code: |
-          echo "CI_BUILD=true" > .env
           echo "DB_USER=root" >> .env
           echo "DB_PASSWORD=$MYSQL_ENV_MYSQL_ROOT_PASSWORD" >> .env
           echo "DB_HOST=$MYSQL_PORT_3306_TCP_ADDR" >> .env
