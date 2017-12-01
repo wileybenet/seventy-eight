@@ -3,8 +3,7 @@ build:
     - id: mysql
       env:
         MYSQL_DATABASE: seventy_eight
-        MYSQL_USER: seventy_eight
-        MYSQL_PASSWORD: seventy_eight
+        MYSQL_ROOT_PASSWORD: root
   box:
     id: node:8.4.0
   steps:
@@ -28,8 +27,8 @@ build:
         name: write env file
         code: |
           echo "CI_BUILD=true" > .env
-          echo "DB_USER=seventy_eight" >> .env
-          echo "DB_PASSWORD=seventy_eight" >> .env
+          echo "DB_USER=root" >> .env
+          echo "DB_PASSWORD=$MYSQL_ENV_MYSQL_ROOT_PASSWORD" >> .env
           echo "DB_HOST=$MYSQL_PORT_3306_TCP_ADDR" >> .env
           echo "DB_PORT=$MYSQL_PORT_3306_TCP_PORT" >> .env
           echo "DB_SCHEMA=seventy_eight" >> .env
