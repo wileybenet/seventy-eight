@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const q = require('q');
 const client = require('../src/lib/db.client');
-const skipCreateDatabase = false;
+const skipCreateDatabase = process.env.CI_BUILD;
 const mysqlCLI = process.env.MYSQL_NAME || 'mysql';
 const deferred = q.defer();
 

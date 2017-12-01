@@ -14,9 +14,6 @@ build:
         echo "npm version $(npm -v) running"
     - npm-install
     - script:
-        name: install local packages
-        code: sudo npm install dotenv
-    - script:
         name: install global packages
         code: sudo npm install -g jasmine istanbul
     - script:
