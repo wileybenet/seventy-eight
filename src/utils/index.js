@@ -9,5 +9,5 @@ module.exports = {
     }
     return '';
   }),
-  modelDir: path.resolve(__dirname, '../../../models'),
+  modelDir: path.resolve(__dirname, '../../../../models'),
 };
