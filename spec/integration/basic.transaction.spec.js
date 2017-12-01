@@ -47,10 +47,7 @@ describe('#static-query', function() {
 
   it('should return Error object for misformatted queries', function(done) {
     var query = User.joins("INNER JOINER doesn't_exist ON nothing");
-    query.then(function(users) {
-      expect(users.constructor.name).toEqual('User');
-      done();
-    }, function(err) {
+    query.then(done.fail, function(err) {
       expect(err.constructor.name).toEqual('Error');
       done();
     });
@@ -72,9 +69,7 @@ describe('#static-query', function() {
         expect(u.data).toEqual(data);
         done();
       });
-    }, function(err) {
-      console.log(err);
-    });
+    }, done.fail);
   });
 
   it('should update an existing row via update()', function(done) {
@@ -95,9 +90,7 @@ describe('#static-query', function() {
       user.save().then(function() {
         expect(user.data.update).toEqual('viaSave');
         done();
-      }, function(err) {
-        console.log(err);
-      });
+      }, done.fail);
     });
   });
 
