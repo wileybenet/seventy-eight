@@ -12,16 +12,17 @@ const cmdOptions = {
 };
 
 const command = cmdOptions[cmd];
+const closeDB = () => seventyEight.db.close(() => console.log('database connection terminated'));
 
 if (command) {
   command(...options).then(msg => {
     console.log(msg);
-    seventyEight.db.close();
+    closeDB();
   }).catch(msg => {
     console.error(msg);
-    seventyEight.db.close();
+    closeDB();
   });
 } else {
   console.log(`${error('ERROR:')} unknown command '${cmd || '<empty>'}', options:\n${Object.keys(cmdOptions).join('\n')}`);
-  seventyEight.db.close();
+  closeDB();
 }
