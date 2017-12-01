@@ -16,7 +16,6 @@ const createDatabase = () => new Promise((resolve, reject) => {
     '-e', `CREATE DATABASE IF NOT EXISTS ${process.env.DB_SCHEMA}`,
   ];
   const createDB = spawn('mysql', args);
-  console.log(`creating database ${process.env.DB_SCHEMA}`);
 
   createDB.stderr.on('data', data => {
     console.log(`create database stderr: ${data}`);
@@ -46,8 +45,10 @@ const seedDatabase = () => new Promise((resolve, reject) => {
 });
 
 if (skipCreateDatabase) {
+  console.log(`skipping db creation`);
   seedDatabase().then(deferred.resolve).catch(console.error);
 } else {
+  console.log(`creating database ${process.env.DB_SCHEMA}`);
   createDatabase().then(seedDatabase).then(deferred.resolve).catch(console.error);
 }
 
