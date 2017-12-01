@@ -1,6 +1,6 @@
 
 var seventyEight = require('../../src/seventy.eight');
-const { field: { primary, int, string, boolean, json, relation } } = seventyEight;
+const { field: { primary, int, string, boolean, json, time, relation } } = seventyEight;
 
 describe('basic schema syncTable', () => {
   const AccountMigration = seventyEight.createModel({
@@ -23,6 +23,7 @@ describe('basic schema syncTable', () => {
       id: primary(),
       name: string(),
       data: json(),
+      created: time({ default: 'now' }),
     },
   });
 

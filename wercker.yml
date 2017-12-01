@@ -17,7 +17,7 @@ build:
         name: install global packages
         code: sudo npm install -g jasmine istanbul
     - install-packages:
-        packages: mysql
+        packages: mysql-server
     - script:
         name: write coveralls token file
         code: |
