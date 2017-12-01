@@ -6,14 +6,14 @@ const [, , cmd, ...options] = process.argv;
 const error = color('red');
 
 const cmdOptions = {
-  'create-model': require('./commands/create.model').createModel,
-  'sync-table': require('./commands/sync.table').syncTable,
+  'create-model': () => require('./commands/create.model').createModel,
+  'sync-table': () => require('./commands/sync.table').syncTable,
 };
 
 const command = cmdOptions[cmd];
 
 if (command) {
-  command(...options).then(msg => {
+  command()(...options).then(msg => {
     console.log(msg);
   }).catch(msg => {
     console.log(`${error('Error:')} ${msg}`);
