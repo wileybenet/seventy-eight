@@ -8,6 +8,7 @@ box:
  services:
    - id: mysql
      env:
+       MYSQL_DATABASE: seventy_eight
        MYSQL_ROOT_PASSWORD: root
 # This is the build pipeline. Pipelines are the core of wercker
 # Read more about pipelines on our dev center
