@@ -16,8 +16,8 @@ if (command) {
   command(...options).then(msg => {
     console.log(msg);
   }).catch(msg => {
-    console.error(msg);
+    console.log(`${error('Error:')} ${msg}`);
   });
 } else {
-  console.log(`${error('ERROR:')} unknown command '${cmd || '<empty>'}', options:\n${Object.keys(cmdOptions).join('\n')}`);
+  console.log(`${error('Error:')} unknown command '${cmd || '<empty>'}', options:\n${Object.keys(cmdOptions).join('\n')}`);
 }

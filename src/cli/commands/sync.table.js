@@ -10,12 +10,16 @@ const getAllRelations = Model => {
 
 module.exports = {
   syncTable(modelName) {
-    console.log(`not implemented`);
-    // load model
-    // introspect Model.getSchema()
-    const Model = load(modelName);
-    const relations = getAllRelations(Model);
-    const tree = _.uniq(relations.reverse());
-    console.log(`Syncing ${modelName} and it's relations (${tree.map(n => n.$constructor.name)})`);
+    return new Promise((resolve, reject) => {
+      console.log(`not implemented`);
+      // load model
+      // introspect Model.getSchema()
+      const Model = load(modelName);
+      const relations = getAllRelations(Model);
+      const tree = _.uniq(relations.reverse());
+      console.log(`Syncing ${modelName} and it's relations (${tree.map(n => n.$constructor.name)})`);
+      resolve();
+      seventyEight.db.close();
+    });
   },
 };
