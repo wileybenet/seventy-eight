@@ -47,7 +47,11 @@ build:
     - script:
         name: write empty env file
         code: |
-          echo "CI_BUILD=true" > .env
+          echo "CI_BUILD=true\nDB_HOST=$MYSQL_PORT_3306_TCP_ADDR\nDB_SCHEMA=$MYSQL_DATABASE" > .env
+    - script:
+        name: show env
+        code: |
+          cat .env
     - script:
         name: run coverage tests
         code: npm run coverage
