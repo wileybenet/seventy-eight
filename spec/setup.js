@@ -23,6 +23,10 @@ const createDatabase = () => new Promise((resolve, reject) => {
     console.log(`create database stderr: ${data}`);
   });
 
+  createDB.on('error', code => {
+    console.log(`create database error exit: ${code}`);
+  });
+
   createDB.on('close', code => {
     if (code === 0) {
       resolve();
