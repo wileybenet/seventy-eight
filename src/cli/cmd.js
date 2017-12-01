@@ -12,7 +12,7 @@ const cmdOptions = {
 };
 
 const command = cmdOptions[cmd];
-const closeDB = () => seventyEight.db.close(() => console.log('database connection terminated'));
+const closeDB = seventyEight.db.close;
 
 if (command) {
   command(...options).then(msg => {

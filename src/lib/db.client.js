@@ -119,7 +119,7 @@ exports.query = function (str, params) {
 };
 
 exports.close = function(callbackFn) {
-  pool.end(callbackFn);
+  setTimeout(() => pool.end(callbackFn), 0);
 };
 
 exports.getDate = function(dayShift) {
