@@ -47,7 +47,7 @@ build:
     - script:
         name: write empty env file
         code: |
-          echo "" > .env
+          echo "CI_BUILD=true" > .env
     - script:
         name: run coverage tests
         code: npm run coverage
