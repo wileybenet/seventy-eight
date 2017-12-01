@@ -48,7 +48,7 @@ const Account = seventyEight.createModel({
     User.createTableSyntax().then(sql => {
       expect(statements(sql)).toEqual(statements(`
         CREATE TABLE \`users\` (
-          \`id\` INT(11) UNSIGNED AUTO_INCREMENT DEFAULT NULL,
+          \`id\` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
           \`name\` VARCHAR(255) DEFAULT NULL,
           \`data__json\` LONGTEXT DEFAULT NULL,
           \`account\` INT(11) UNSIGNED DEFAULT NULL,

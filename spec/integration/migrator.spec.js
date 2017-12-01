@@ -120,6 +120,7 @@ describe('complex schema syncTable', () => {
             indexed: false,
             relation: null,
             relationColumn: null,
+            required: true,
             sync: false,
             column: 'id',
           }, {
@@ -134,6 +135,7 @@ describe('complex schema syncTable', () => {
             indexed: false,
             relation: null,
             relationColumn: null,
+            required: false,
             sync: false,
             column: 'name',
           }, {
@@ -148,6 +150,7 @@ describe('complex schema syncTable', () => {
             indexed: false,
             relation: null,
             relationColumn: null,
+            required: false,
             sync: false,
             column: 'level',
           }, {
@@ -162,6 +165,7 @@ describe('complex schema syncTable', () => {
             indexed: 'INDEXED_ACTIVE',
             relation: null,
             relationColumn: null,
+            required: false,
             sync: false,
             column: 'active',
           }, {
@@ -176,6 +180,7 @@ describe('complex schema syncTable', () => {
             indexed: false,
             relation: null,
             relationColumn: null,
+            required: false,
             sync: false,
             column: 'stage',
           }, {
@@ -190,6 +195,7 @@ describe('complex schema syncTable', () => {
             indexed: false,
             relation: null,
             relationColumn: null,
+            required: false,
             sync: false,
             column: 'skill',
           }, {
@@ -204,6 +210,7 @@ describe('complex schema syncTable', () => {
             indexed: 'INDEXED_USER',
             relation: 'user_role_migrations',
             relationColumn: 'id',
+            required: false,
             sync: false,
             column: 'user',
           }]);

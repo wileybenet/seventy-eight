@@ -19,7 +19,7 @@ const field = {
   },
 
   primary(name = null) {
-    return field.int({ autoIncrement: true, primary: true, signed: false }, name);
+    return field.int({ autoIncrement: true, primary: true, required: true, signed: false }, name);
   },
   relation(Model, { type, length, signed, default: def, relation, relationColumn, indexed = false, sync = false } = {}, name = null) {
     const foreignField = Model.getPrimaryKeyField() || {};
