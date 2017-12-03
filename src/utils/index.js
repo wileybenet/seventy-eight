@@ -8,5 +8,7 @@ module.exports = {
     }
     return '';
   }),
+  indent: '\n  ',
   modelDir: `${process.cwd()}/models`,
+  migrationDir: `${process.cwd()}/migrations`,
 };

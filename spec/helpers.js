@@ -2,6 +2,9 @@ const seventyEight = require('../src/seventy.eight');
 const { field: { primary, int, string, boolean, text, json, time, relation } } = seventyEight;
 
 module.exports = {
+  statements(sql) {
+    return sql.trim().split(/\s+\n?\s*|\s*\n?\s+/g);
+  },
   buildFullSchema() {
     return new Promise((resolve, reject) => { // eslint-disable-line max-statements
       const PageMigration = seventyEight.createModel({

@@ -1,9 +1,8 @@
 
 const seventyEight = require('../../src/seventy.eight');
 const utils = require('../../src/lib/migrator.utils');
+const { statements } = require('../helpers');
 const { field: { primary, string, time, json, relation } } = seventyEight;
-
-const statements = sql => sql.trim().split(/\s+\n?\s*|\s*\n?\s+/g);
 
 describe('schemas', () => {
 

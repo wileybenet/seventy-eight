@@ -1,4 +1,6 @@
+const fs = require('fs');
 const { flatMap } = require('lodash');
+const { migrationDir, indent } = require('../utils');
 const utils = require('./migrator.utils');
 const { schemaQuery, keyQuery } = require('./sql/schemas');
 
@@ -14,6 +16,19 @@ const keyCommands = changes => [
   ...utils.writeKeysToSQL('drop')(changes.remove),
   ...utils.writeKeysToSQL('add')(changes.create),
 ];
+
+const writeMigration = sql => new Promise((resolve, reject) => {
+  // if (sql) {
+  //   fs.writeFile(`${migrationDir}/migration.sql`, err => {
+  //     if (err) {
+  //       return reject(err);
+  //     }
+  //     resolve();
+  //   });
+  // } else {
+  //   resolve();
+  // }
+});
 
 module.exports = {
   methods: {
@@ -67,7 +82,7 @@ module.exports = {
         this.getSchemaDiff().then(({ schemaChanges, keyChanges }) => {
           const commands = [...schemaCommands(schemaChanges), ...keyCommands(keyChanges)];
           if (commands.length) {
-            return resolve(`ALTER TABLE \`${this.tableName}\` \n${commands.join(',\n')}`);
+            return resolve(`ALTER TABLE \`${this.tableName}\` ${indent}${commands.join(`,${indent}`)}`);
           }
           resolve();
         }, reject);
@@ -77,7 +92,22 @@ module.exports = {
       const columns = this.getSchema().map(utils.writeSchemaToSQL);
       const keys = utils.writeKeysToSQL('init')(this.getKeys());
       const fields = [...columns, ...keys];
-      return Promise.resolve(`CREATE TABLE \`${this.tableName}\` (\n${fields.join(',\n')}\n)`);
+      return Promise.resolve(`CREATE TABLE \`${this.tableName}\` (${indent}${fields.join(`,${indent}`)}\n)`);
+    },
+    migrationSyntax() {
+      return new Promise((resolve, reject) => {
+        this.db.query(`SELECT 1 FROM \`${this.tableName}\``)
+          .then(() => this.updateTableSyntax(), () => this.createTableSyntax())
+          .then(resolve, reject);
+      });
+    },
+    makeMigration() {
+      return new Promise((resolve, reject) => {
+        this.migrationSyntax()
+          .then(writeMigration)
+          .then(resolve)
+          .catch(reject);
+      });
     },
     syncTable() {
       return new Promise((resolve, reject) => {
@@ -91,9 +121,7 @@ module.exports = {
             resolve(true);
           }, reject);
         };
-        this.db.query(`SELECT 1 FROM \`${this.tableName}\``)
-          .then(() => this.updateTableSyntax(), () => this.createTableSyntax())
-          .then(execute, reject);
+        this.migrationSyntax().then(execute).catch(reject);
       });
     },
   },

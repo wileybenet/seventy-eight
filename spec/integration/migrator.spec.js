@@ -1,6 +1,5 @@
-
-var seventyEight = require('../../src/seventy.eight');
-const { field: { primary, int, string, boolean, text, json, time, relation } } = seventyEight;
+const seventyEight = require('../../src/seventy.eight');
+const { field: { primary, int, string, boolean, json, time, relation } } = seventyEight;
 
 describe('basic schema syncTable', () => {
   const AccountMigration = seventyEight.createModel({
@@ -208,7 +207,7 @@ describe('complex schema syncTable', () => {
             name: 'user',
             type: 'int',
             length: 11,
-            default: 0,
+            default: null,
             autoIncrement: false,
             signed: false,
             primary: false,
@@ -227,6 +226,7 @@ describe('complex schema syncTable', () => {
             type: 'primary',
             relation: null,
             relationColumn: null,
+            keyLength: null,
             sync: false,
           }, {
             name: 'UNIQUE_NAME',
@@ -234,6 +234,7 @@ describe('complex schema syncTable', () => {
             type: 'unique',
             relation: null,
             relationColumn: null,
+            keyLength: null,
             sync: false,
           }, {
             name: 'stage_skill_idx',
@@ -241,6 +242,7 @@ describe('complex schema syncTable', () => {
             type: 'unique',
             relation: null,
             relationColumn: null,
+            keyLength: null,
             sync: false,
           }, {
             name: 'INDEXED_ACTIVE',
@@ -248,6 +250,7 @@ describe('complex schema syncTable', () => {
             type: 'indexed',
             relation: null,
             relationColumn: null,
+            keyLength: null,
             sync: false,
           }, {
             name: 'INDEXED_USER',
@@ -255,6 +258,7 @@ describe('complex schema syncTable', () => {
             type: 'indexed',
             relation: null,
             relationColumn: null,
+            keyLength: null,
             sync: false,
           }, {
             name: 'FOREIGN_USER',
@@ -262,6 +266,7 @@ describe('complex schema syncTable', () => {
             type: 'foreign',
             relation: 'user_role_migrations',
             relationColumn: 'id',
+            keyLength: null,
             sync: false,
           }]);
           done();

@@ -12,10 +12,10 @@ const field = {
     return { type: 'time', default: def, unique: false, indexed, name };
   },
   text({ indexed = false, keyLength = null } = {}, name = null) {
-    return { type: 'text', required: true, indexed, keyLength, name };
+    return { type: 'text', indexed, keyLength, name };
   },
   json({ indexed = false, keyLength = null } = {}, name = null) {
-    return { type: 'json', required: true, indexed, keyLength, name };
+    return { type: 'json', indexed, keyLength, name };
   },
 
   primary(name = null) {

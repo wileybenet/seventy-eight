@@ -1,5 +1,6 @@
 const _ = require('lodash');
 const db = require('./db.client');
+const { indent } = require('../utils');
 
 const noopNull = () => null;
 const noopPick = (prop, def = null) => schema => schema[prop] || def;
@@ -288,12 +289,12 @@ const mappers = {
       },
       toSQL(key, method) {
         const index = `KEY \`${key.name}\` (${key.column}${key.keyLength ? `(${key.keyLength})` : ''})`;
-        const foreignKey = `
-          CONSTRAINT \`${key.name}\`
+        const foreignKey =
+         `CONSTRAINT \`${key.name}\`
           FOREIGN KEY (${key.column})
           REFERENCES \`${key.relation}\` (\`${key.relationColumn}\`)
           ${mappers.keys.sync.toSQL(key)}
-        `.trim();
+         `.replace(/\n\s*/g, `${indent}  `).trim();
         const dropIndex = `DROP INDEX \`${key.name}\``;
         return {
           init: {
