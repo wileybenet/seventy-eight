@@ -1,5 +1,4 @@
 const _ = require('lodash');
-const path = require('path');
 const style = require('ansi-styles');
 
 module.exports = {
@@ -9,5 +8,5 @@ module.exports = {
     }
     return '';
   }),
-  modelDir: path.resolve(__dirname, '../../../../models'),
+  modelDir: `${process.cwd()}/models`,
 };

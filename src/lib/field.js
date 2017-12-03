@@ -8,14 +8,14 @@ const field = {
   boolean({ default: def = null, indexed = null } = {}, name = null) {
     return { type: 'boolean', length: 1, default: def, indexed, name };
   },
-  time({ default: def = null, unique = false, indexed = false } = {}, name = null) {
-    return { type: 'time', default: def, unique, indexed, name };
+  time({ default: def = null, indexed = false } = {}, name = null) {
+    return { type: 'time', default: def, unique: false, indexed, name };
   },
-  text({ default: def = null, indexed = false } = {}, name = null) {
-    return { type: 'text', default: def, indexed, name };
+  text({ indexed = false, keyLength = null } = {}, name = null) {
+    return { type: 'text', required: true, indexed, keyLength, name };
   },
-  json({ default: def = null, indexed = false } = {}, name = null) {
-    return { type: 'json', default: def, indexed, name };
+  json({ indexed = false, keyLength = null } = {}, name = null) {
+    return { type: 'json', required: true, indexed, keyLength, name };
   },
 
   primary(name = null) {

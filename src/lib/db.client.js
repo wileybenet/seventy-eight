@@ -21,10 +21,10 @@ var pool = mysql.createPool({
   multipleStatements: true
 });
 
-var totalConnections = 0;
+let totalConnections = 0;
 
 pool.on('connection', function () {
-  totalConnections++;
+  totalConnections += 1;
   console.log('new connection made:', totalConnections, 'active');
 });
 
@@ -34,25 +34,42 @@ pool.on('enqueue', function () {
 
 const cyan = color('cyan');
 
-function log(str, params) {
-  if (params)
-    str = mysql.format(str, params);
-  var notification = (/^\w+/).exec(str);
-  if (!process.env.DEBUG) return (notification ? cyan(notification[0]) : 'QUERY: null');
-  if (process.env.DEBUG) return (str.replace(/( [A-Z_]+|[A-Z_]+ )/g, function(s, m) { return cyan(m); }));
-}
-function spinner() {
-  if (!process.env.DEBUG) return function() {};
-  var count = 0;
-  var spinner = ['\\', '|', '/', '-', '\\', '|', '/', '-'];
-  var intval = setInterval(function() {
-    process.stdout.write("\r" + spinner[count%8]);
-    count++;
-  }, 75);
-  return function() {
-    clearInterval(intval);
+const log = (str, params) => {
+  let formattedStr = str;
+  if (params) {
+    formattedStr = mysql.format(str, params);
+  }
+  const notification = (/^\w+/).exec(formattedStr);
+  if (process.env.DEBUG) {
+    return formattedStr.replace(/( [A-Z_]+|[A-Z_]+ )/g, (s, m) => cyan(m));
+  }
+  return notification ? cyan(notification[0]) : 'QUERY: null';
+};
+
+const spinner = () => {
+  if (!process.env.DEBUG) {
+    return () => {};
+  }
+  let count = 0;
+  let interval = null;
+  let spinning = false;
+  const character = ['\\', '|', '/', '-', '\\', '|', '/', '-'];
+  const startSpinning = () => {
+    interval = setInterval(() => {
+      process.stdout.write(`\r${character[count % 8]}`);
+      count += 1;
+    }, 75);
+    spinning = true;
   };
-}
+  const delay = setTimeout(startSpinning, 10000);
+  return () => {
+    if (spinning) {
+      clearInterval(interval);
+    } else {
+      clearTimeout(delay);
+    }
+  };
+};
 
 exports.schema = schema;
 
@@ -104,10 +121,10 @@ exports.query = function (str, params) {
     console.log(log(str, params));
 
     const interval = spinner();
-    connection.query(str, params, function(err, data) {
+    connection.query(str, params, function(error, data) {
       interval();
-      if (err) {
-        deferred.reject(err);
+      if (error) {
+        deferred.reject(error);
       } else {
         deferred.resolve(data);
         console.log("\r" + Math.round((+(new Date()) - start )/ 1000).toString().green + ' sec'.green);

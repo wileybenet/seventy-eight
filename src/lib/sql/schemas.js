@@ -22,7 +22,8 @@ module.exports = {
       SELECT
         COLUMN_NAME,
         INDEX_NAME AS 'KEY_NAME',
-        IF(NON_UNIQUE, 0, 1) AS 'UNIQUE'
+        IF(NON_UNIQUE, 0, 1) AS 'UNIQUE',
+        SUB_PART AS 'LENGTH'
       FROM
         INFORMATION_SCHEMA.STATISTICS
       WHERE

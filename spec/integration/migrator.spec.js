@@ -1,6 +1,6 @@
 
 var seventyEight = require('../../src/seventy.eight');
-const { field: { primary, int, string, boolean, json, time, relation } } = seventyEight;
+const { field: { primary, int, string, boolean, text, json, time, relation } } = seventyEight;
 
 describe('basic schema syncTable', () => {
   const AccountMigration = seventyEight.createModel({
@@ -48,9 +48,9 @@ describe('basic schema syncTable', () => {
             expect(savedUser2.name).toEqual('boog');
             expect(savedUser2.job).toEqual('unemployed');
             done();
-          }, console.log);
-        }).catch(console.log);
-      }, console.log);
+          }, done.fail);
+        }).catch(done.fail);
+      }, done.fail);
     });
   });
 
@@ -67,13 +67,13 @@ describe('basic schema syncTable', () => {
           expect(savedUser.name).toEqual('boog');
           expect(savedUser.account).toEqual(1);
           done();
-        }, console.log);
-      }).catch(console.log);
+        }, done.fail);
+      }).catch(done.fail);
     };
 
     AccountMigration.syncTable().then(() => {
       new AccountMigration().save().then(test);
-    });
+    }).catch(done.fail);
   });
 });
 
@@ -121,6 +121,7 @@ describe('complex schema syncTable', () => {
             relation: null,
             relationColumn: null,
             required: true,
+            keyLength: null,
             sync: false,
             column: 'id',
           }, {
@@ -136,6 +137,7 @@ describe('complex schema syncTable', () => {
             relation: null,
             relationColumn: null,
             required: false,
+            keyLength: null,
             sync: false,
             column: 'name',
           }, {
@@ -151,6 +153,7 @@ describe('complex schema syncTable', () => {
             relation: null,
             relationColumn: null,
             required: false,
+            keyLength: null,
             sync: false,
             column: 'level',
           }, {
@@ -166,6 +169,7 @@ describe('complex schema syncTable', () => {
             relation: null,
             relationColumn: null,
             required: false,
+            keyLength: null,
             sync: false,
             column: 'active',
           }, {
@@ -181,6 +185,7 @@ describe('complex schema syncTable', () => {
             relation: null,
             relationColumn: null,
             required: false,
+            keyLength: null,
             sync: false,
             column: 'stage',
           }, {
@@ -196,6 +201,7 @@ describe('complex schema syncTable', () => {
             relation: null,
             relationColumn: null,
             required: false,
+            keyLength: null,
             sync: false,
             column: 'skill',
           }, {
@@ -211,6 +217,7 @@ describe('complex schema syncTable', () => {
             relation: 'user_role_migrations',
             relationColumn: 'id',
             required: false,
+            keyLength: null,
             sync: false,
             column: 'user',
           }]);

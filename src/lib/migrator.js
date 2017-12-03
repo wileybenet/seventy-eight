@@ -19,7 +19,7 @@ module.exports = {
   methods: {
     getSchema() {
       const schema = Object.keys(this.schema).map(name => {
-        var schemaField = this.schema[name];
+        const schemaField = this.schema[name];
         schemaField.name = schemaField.name || name;
         return utils.applySchemaDefaults(schemaField);
       });
@@ -84,11 +84,11 @@ module.exports = {
         const execute = syntax => {
           if (!syntax) {
             console.log(`No changes for table ${this.tableName}`);
-            return resolve();
+            return resolve(false);
           }
           this.db.query(syntax).then(() => {
             console.log(`Updated and synchronized table ${this.tableName}`);
-            resolve();
+            resolve(true);
           }, reject);
         };
         this.db.query(`SELECT 1 FROM \`${this.tableName}\``)

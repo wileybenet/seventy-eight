@@ -2,8 +2,12 @@ const _ = require('lodash');
 const db = require('./db.client');
 
 const noopNull = () => null;
-const noop = (prop, def = null) => schema => schema[prop] || def;
+const noopPick = (prop, def = null) => schema => schema[prop] || def;
 const wrap = (str, quotes) => `${quotes}${str}${quotes}`;
+const throwError = err => {
+  throw new Error(err);
+};
+const enforceType = (type, context, match = null) => value => (typeof value === type ? value : throwError(`${context} must be a ${match || type} (not: \`${value}\`)`));
 
 const PRIMARY = 'primary';
 const UNIQUE = 'unique';
@@ -28,7 +32,7 @@ const mappers = {
   FOREIGN,
   fields: {
     name: {
-      default: noop('name'),
+      default: noopPick('name'),
       fromSQL(field) {
         const re = /__json$/;
         if (field.Field.match(re)) {
@@ -39,7 +43,7 @@ const mappers = {
       toSQL: noopNull,
     },
     type: {
-      default: noop('type'),
+      default: noopPick('type'),
       fromSQL(field) {
         try {
           return {
@@ -58,7 +62,7 @@ const mappers = {
       },
     },
     length: {
-      default: noop('length'),
+      default: noopPick('length'),
       fromSQL(field) {
         try {
           return Number(field.Type.match(/\(([^)]+)\)/)[1]);
@@ -89,7 +93,15 @@ const mappers = {
         if (schemaField.autoIncrement) {
           return null;
         }
-        return typeof schemaField.default === 'undefined' ? null : schemaField.default;
+        if (typeof schemaField.default === 'undefined' || schemaField.default === null) {
+          return null;
+        }
+        return {
+          int: enforceType('number', '`int` default'),
+          string: enforceType('string', '`string` default'),
+          boolean: enforceType('boolean', '`boolean` default'),
+          time: enforceType('string', '`date` default', 'string'),
+        }[schemaField.type](schemaField.default);
       },
       fromSQL(field) {
         if (mappers.fields.autoIncrement.fromSQL(field)) {
@@ -98,7 +110,7 @@ const mappers = {
         if (field.Type === 'tinyint(1)') {
           return field.Default === null ? null : field.Default === '1';
         }
-        if (field.Type.match(/^int/)) {
+        if (field.Type.match(/^int/) && field.Default !== null) {
           return Number(field.Default);
         }
         if (field.Type === 'timestamp' && field.Default === 'CURRENT_TIMESTAMP') {
@@ -109,20 +121,18 @@ const mappers = {
       toSQL(schemaField) {
         const hasDefault = schemaField.default !== null;
         let defaultValue = schemaField.default;
-        if (defaultValue && (schemaField.type === 'string' || schemaField.type === 'text' || schemaField.type === 'date' || schemaField.type === 'time')) {
-          defaultValue = db.escapeValue(defaultValue);
-        }
         if (schemaField.type === 'time' && schemaField.default === 'now') {
           defaultValue = 'CURRENT_TIMESTAMP';
-        }
-        if (schemaField.type === 'boolean' && schemaField.default !== null) {
+        } else if (schemaField.type === 'boolean' && schemaField.default !== null) {
           defaultValue = schemaField.default === true ? 1 : 0;
+        } else if (defaultValue && (schemaField.type === 'string' || schemaField.type === 'text' || schemaField.type === 'time')) {
+          defaultValue = db.escapeValue(defaultValue);
         }
         return schemaField.required ? '' : `DEFAULT ${hasDefault ? defaultValue : 'NULL'}`;
       },
     },
     autoIncrement: {
-      default: noop('autoIncrement', false),
+      default: noopPick('autoIncrement', false),
       fromSQL(field) {
         return Boolean(field.Extra.match(/auto_increment/));
       },
@@ -131,7 +141,7 @@ const mappers = {
       },
     },
     signed: {
-      default: noop('signed', false),
+      default: noopPick('signed', false),
       fromSQL(field) {
         return field.Type.match(/^int/) ? !field.Type.match(/unsigned/) : false;
       },
@@ -140,7 +150,7 @@ const mappers = {
       },
     },
     primary: {
-      default: noop(PRIMARY, false),
+      default: noopPick(PRIMARY, false),
       fromSQL({ keys: [key = {}] }) {
         return key.type === PRIMARY;
       },
@@ -173,7 +183,7 @@ const mappers = {
       toSQL: noopNull,
     },
     relation: {
-      default: noop('relation'),
+      default: noopPick('relation'),
       fromSQL({ keys }) {
         const key = keys.find(k => k.type === FOREIGN) || {};
         return key.relation || null;
@@ -193,8 +203,16 @@ const mappers = {
       },
       toSQL: noopNull,
     },
+    keyLength: {
+      default: noopPick('keyLength'),
+      fromSQL({ keys }) {
+        const key = keys.find(k => k.keyLength) || {};
+        return key.keyLength || null;
+      },
+      toSQL: noopNull,
+    },
     sync: {
-      default: noop('sync', false),
+      default: noopPick('sync', false),
       fromSQL({ keys }) {
         const key = keys.find(k => k.type === FOREIGN) || {};
         return key.sync || false;
@@ -244,6 +262,14 @@ const mappers = {
         return keys.map(k => `\`${k.COLUMN_NAME}\``).join(',');
       },
     },
+    keyLength: {
+      default([schemaField]) {
+        return schemaField.keyLength || null;
+      },
+      fromSQL([key]) {
+        return Number(key.length) || null;
+      },
+    },
     type: {
       default(schemaFields, type) {
         return type;
@@ -261,7 +287,7 @@ const mappers = {
         return INDEXED;
       },
       toSQL(key, method) {
-        const index = `KEY \`${key.name}\` (${key.column})`;
+        const index = `KEY \`${key.name}\` (${key.column}${key.keyLength ? `(${key.keyLength})` : ''})`;
         const foreignKey = `
           CONSTRAINT \`${key.name}\`
           FOREIGN KEY (${key.column})

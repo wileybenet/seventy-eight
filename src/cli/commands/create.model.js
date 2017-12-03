@@ -15,7 +15,7 @@ module.exports = {
       const file = render({ modelName });
       console.log(`${green('Creating')} model ${modelName}: ${filePath}`);
       if (fs.existsSync(filePath)) {
-        reject(`${modelName} model already exists`);
+        reject(new Error(`${modelName} model already exists`));
       } else {
         fs.writeFileSync(filePath, file);
         resolve(green('Done'));

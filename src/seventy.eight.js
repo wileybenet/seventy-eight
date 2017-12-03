@@ -250,4 +250,6 @@ seventyEight.createModel = function(options) { // eslint-disable-line max-statem
   return QueryConstructor;
 };
 
+seventyEight.getModel = tableName => modelCache[tableName] || null;
+
 module.exports = seventyEight;

@@ -11,7 +11,7 @@ const schemaProps = [
   'name',
   'type',
   'length',
-  // 'required',
+  'required',
   'default',
   'autoIncrement',
   'signed',
@@ -25,6 +25,7 @@ const keyProps = [
   'relation',
   'relationColumn',
   'sync',
+  'keyLength',
 ];
 
 const typeMapping = {
@@ -109,6 +110,10 @@ const utils = {
     const validTypes = schemaFields.reduce((memo, field) => memo && Object.keys(typeMapping).includes(field.type), true);
     if (!validTypes) {
       return `invalid field type '${schemaFields.map(field => field.type).filter(type => !Object.keys(typeMapping).includes(type))[0]}'`;
+    }
+    const validPrimary = schemaFields.filter(field => field.primary);
+    if (validPrimary.length !== 1) {
+      return 'schema must include 1 primary field';
     }
     const validPrimaryUnique = schemaFields.filter(field => (field.primary && 1) + (field.unique && 1) + (field.indexed && 1) > 1);
     if (validPrimaryUnique.length > 0) {
