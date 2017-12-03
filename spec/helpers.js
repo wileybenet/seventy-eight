@@ -33,7 +33,7 @@ module.exports = {
       };
 
       const timeParams = {
-        default: [null, 'now'],
+        default: [null, 'now', '2017-08-31 00:00:00'],
         indexed: [true, null],
       };
 

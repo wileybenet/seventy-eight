@@ -122,6 +122,10 @@ const mappers = {
       toSQL(schemaField) {
         const hasDefault = schemaField.default !== null;
         let defaultValue = schemaField.default;
+        let modifier = '';
+        if (schemaField.type === 'time') {
+          modifier = 'NULL';
+        }
         if (schemaField.type === 'time' && schemaField.default === 'now') {
           defaultValue = 'CURRENT_TIMESTAMP';
         } else if (schemaField.type === 'boolean' && schemaField.default !== null) {
@@ -129,7 +133,7 @@ const mappers = {
         } else if (defaultValue && (schemaField.type === 'string' || schemaField.type === 'text' || schemaField.type === 'time')) {
           defaultValue = db.escapeValue(defaultValue);
         }
-        return schemaField.required ? '' : `DEFAULT ${hasDefault ? defaultValue : 'NULL'}`;
+        return schemaField.required ? '' : `${modifier} DEFAULT ${hasDefault ? defaultValue : 'NULL'}`;
       },
     },
     autoIncrement: {
