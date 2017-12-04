@@ -1,4 +1,6 @@
 node_modules
+spec/cli/models
+spec/cli/migrations
 npm-debug.log
 coverage
 local

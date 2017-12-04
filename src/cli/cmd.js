@@ -16,9 +16,18 @@ process.env.NODE_ENV = 'CLI';
 
 const error = color('red');
 
+const disconnect = () => {
+  if (process.env.CONNECTED_TO_78) {
+    require('../seventy.eight').db.close();
+  }
+};
+
 const cmdOptions = {
-  'create-model': () => require('./commands/create.model').createModel,
-  'sync-table': () => require('./commands/sync.table').syncTable,
+  'init': () => require('./commands/sync').init,
+  'create-model': () => require('./commands/model').createModel,
+  'sync-table': () => require('./commands/sync').syncTable,
+  'make-migrations': () => require('./commands/sync').makeMigrations,
+  'run-migrations': () => require('./commands/sync').runMigrations,
 };
 
 const command = cmdOptions[cmd];
@@ -32,8 +41,10 @@ try {
 if (command) {
   command()(...options).then(msg => {
     console.log(msg);
+    disconnect();
   }).catch(err => {
     console.log(error('Error:'), err);
+    disconnect();
   });
 } else {
   console.log(`${error('Error:')} unknown command '${cmd || '<empty>'}', options:\n${Object.keys(cmdOptions).join('\n')}`);

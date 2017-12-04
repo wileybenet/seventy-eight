@@ -56,8 +56,8 @@ module.exports = {
     getSQLSchema() {
       return new Promise((resolve, reject) => {
         Promise.all([
-          this.db.query(schemaQuery(this.tableName)),
-          this.db.query(keyQuery(this.tableName)),
+          this.db.query(schemaQuery(this.tableName), null, true),
+          this.db.query(keyQuery(this.tableName), null, true),
         ]).then(([schemaResults, keyResults]) => {
           const sqlKeys = flatMap(keyResults, utils.parseKeysFromSQL);
           const sqlSchema = schemaResults.map(utils.parseSchemaFieldFromSQL(sqlKeys));
@@ -96,28 +96,18 @@ module.exports = {
     },
     migrationSyntax() {
       return new Promise((resolve, reject) => {
-        this.db.query(`SELECT 1 FROM \`${this.tableName}\``)
+        this.db.query(`SELECT 1 FROM ??`, [this.tableName], true)
           .then(() => this.updateTableSyntax(), () => this.createTableSyntax())
           .then(resolve, reject);
-      });
-    },
-    makeMigration() {
-      return new Promise((resolve, reject) => {
-        this.migrationSyntax()
-          .then(writeMigration)
-          .then(resolve)
-          .catch(reject);
       });
     },
     syncTable() {
       return new Promise((resolve, reject) => {
         const execute = syntax => {
           if (!syntax) {
-            console.log(`No changes for table ${this.tableName}`);
             return resolve(false);
           }
           this.db.query(syntax).then(() => {
-            console.log(`Updated and synchronized table ${this.tableName}`);
             resolve(true);
           }, reject);
         };

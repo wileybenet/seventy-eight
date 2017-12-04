@@ -25,7 +25,7 @@ let totalConnections = 0;
 
 pool.on('connection', function () {
   totalConnections += 1;
-  console.log('new connection made:', totalConnections, 'active');
+  // console.log('new connection made:', totalConnections, 'active');
 });
 
 pool.on('enqueue', function () {
@@ -33,6 +33,7 @@ pool.on('enqueue', function () {
 });
 
 const cyan = color('cyan');
+const green = color('green');
 
 const log = (str, params) => {
   let formattedStr = str;
@@ -50,6 +51,7 @@ const spinner = () => {
   if (!process.env.DEBUG) {
     return () => {};
   }
+  const start = new Date();
   let count = 0;
   let interval = null;
   let spinning = false;
@@ -68,6 +70,7 @@ const spinner = () => {
     } else {
       clearTimeout(delay);
     }
+    green(`\r${Math.round((Number(new Date()) - start) / 1000).toString()} sec`);
   };
 };
 
@@ -110,29 +113,27 @@ exports.formatQuery = function(str, params) {
   return queryString;
 };
 
-exports.query = function (str, params) {
-  var deferred = q.defer();
-  pool.getConnection(function(err, connection) {
-    if (err) {
-      return deferred.reject(err);
-    }
-
-    const start = new Date();
-    console.log(log(str, params));
-
-    const interval = spinner();
-    connection.query(str, params, function(error, data) {
-      interval();
-      if (error) {
-        deferred.reject(error);
-      } else {
-        deferred.resolve(data);
-        console.log("\r" + Math.round((+(new Date()) - start )/ 1000).toString().green + ' sec'.green);
+exports.query = function (str, params, silent = false) {
+  return new Promise((resolve, reject) => {
+    pool.getConnection(function(err, connection) {
+      if (err) {
+        return reject(err);
       }
-      connection.release();
+
+      if (!silent) {
+        console.log(log(str, params));
+      }
+      const interval = spinner();
+      connection.query(str, params, function(error, data) {
+        interval();
+        if (error) {
+          return reject(error);
+        }
+        resolve(data);
+        connection.release();
+      });
     });
   });
-  return deferred.promise;
 };
 
 exports.close = function(callbackFn) {

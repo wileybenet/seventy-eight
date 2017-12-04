@@ -112,25 +112,30 @@ var api = {
   },
   where(condition) {
     if (condition) {
- this.$queryParams.where.push(formatWhere(...[].concat(condition)));
-}
+      this.$queryParams.where.push(formatWhere(...[].concat(condition)));
+    }
   },
   limit(size) {
     this.$queryParams.limit = Number(size);
   },
   then(cbFn, errFn) {
-    var this_ = this;
     var query = this.$renderSql();
 
-    this.$record.db
-      .query(query)
-      .then(function(data) {
-        if (cbFn) {
- cbFn.call(this_, instantiateResponse.call(this_, data));
-}
-      }, errFn);
+    this.$currentQuery = this.$record.db
+      .query(query);
+
+    this.$currentQuery.then(data => {
+      if (cbFn) {
+       cbFn.call(this, instantiateResponse.call(this, data));
+      }
+    }, errFn);
 
     this.$init = false;
+  },
+  catch(errFn) {
+    if (this.$currentQuery) {
+      this.$currentQuery.catch(errFn);
+    }
   },
   $renderSql() {
     var query = '';
