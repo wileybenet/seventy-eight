@@ -1,6 +1,6 @@
 // const { field: { primary, string, time } } = require('../../src/seventy.eight');
 const _ = require('lodash');
-const mappers = require('../../src/lib/migrator.utils.mappers');
+const mappers = require('../../src/lib/migrator.utils.mappers').getMappers({ namespace: 'Mouse' });
 const { keys } = mappers;
 
 const testCase = _.curry((method, prop, cases) => {
@@ -19,18 +19,18 @@ describe('keys', () => {
 
   describe('defaults', () => {
     const singleFields = [{ name: 'user', column: 'user_data', relation: 'users', relationColumn: 'id', sync: true, unique: 'custom_unique', indexed: 'custom_index' }];
-    const multiFields = [{ name: 'user', column: 'user_data', indexed: 'INDEXED_USER_ACCOUNT', unique: 'unique_user_account' }, { name: 'account', column: 'account_data' }];
+    const multiFields = [{ name: 'user', column: 'user_data', indexed: 'INDEXED_MOUSE_USER_ACCOUNT', unique: 'unique_user_account' }, { name: 'account', column: 'account_data' }];
     const defaultCase = testCase('default');
 
     defaultCase('name')([
       [singleFields, 'PRIMARY', 'primary'],
       [singleFields, 'custom_index', 'indexed'],
       [singleFields, 'custom_unique', 'unique'],
-      [singleFields, 'FOREIGN_USER', 'foreign'],
+      [singleFields, 'FOREIGN_MOUSE_USER', 'foreign'],
       [multiFields, 'PRIMARY', 'primary'],
-      [multiFields, 'INDEXED_USER_ACCOUNT', 'indexed'],
+      [multiFields, 'INDEXED_MOUSE_USER_ACCOUNT', 'indexed'],
       [multiFields, 'unique_user_account', 'unique'],
-      [multiFields, 'FOREIGN_USER_ACCOUNT', 'foreign'],
+      [multiFields, 'FOREIGN_MOUSE_USER_ACCOUNT', 'foreign'],
     ]);
 
     defaultCase('column')([
@@ -91,19 +91,19 @@ describe('keys', () => {
       DELETE_RULE: null,
     }, config);
     const primary = [e({ COLUMN_NAME: 'id', KEY_NAME: 'PRIMARY' })];
-    const unique = [e({ COLUMN_NAME: 'user', KEY_NAME: 'UNIQUE_USER', UNIQUE: 1 })];
+    const unique = [e({ COLUMN_NAME: 'user', KEY_NAME: 'UNIQUE_MOUSE_USER', UNIQUE: 1 })];
     const unique2 = [
-      e({ COLUMN_NAME: 'user', KEY_NAME: 'UNIQUE_USER_ACCOUNT', UNIQUE: 1 }),
-      e({ COLUMN_NAME: 'account', KEY_NAME: 'UNIQUE_USER_ACCOUNT', UNIQUE: 1 }),
+      e({ COLUMN_NAME: 'user', KEY_NAME: 'UNIQUE_MOUSE_USER_ACCOUNT', UNIQUE: 1 }),
+      e({ COLUMN_NAME: 'account', KEY_NAME: 'UNIQUE_MOUSE_USER_ACCOUNT', UNIQUE: 1 }),
     ];
-    const indexed = [e({ COLUMN_NAME: 'user', KEY_NAME: 'INDEXED_USER' })];
+    const indexed = [e({ COLUMN_NAME: 'user', KEY_NAME: 'INDEXED_MOUSE_USER' })];
     const indexed2 = [
-      e({ COLUMN_NAME: 'user', KEY_NAME: 'INDEXED_USER_ACCOUNT' }),
-      e({ COLUMN_NAME: 'account', KEY_NAME: 'INDEXED_USER_ACCOUNT' }),
+      e({ COLUMN_NAME: 'user', KEY_NAME: 'INDEXED_MOUSE_USER_ACCOUNT' }),
+      e({ COLUMN_NAME: 'account', KEY_NAME: 'INDEXED_MOUSE_USER_ACCOUNT' }),
     ];
     const foreign = [e({
       COLUMN_NAME: 'user',
-      KEY_NAME: 'FOREIGN_USER',
+      KEY_NAME: 'FOREIGN_MOUSE_USER',
       REFERENCED_TABLE_NAME: 'users',
       REFERENCED_COLUMN_NAME: 'id',
       UPDATE_RULE: 'CASCADE',
@@ -113,11 +113,11 @@ describe('keys', () => {
 
     fromSQLCase('name')([
       [primary, 'PRIMARY'],
-      [unique, 'UNIQUE_USER'],
-      [unique2, 'UNIQUE_USER_ACCOUNT'],
-      [indexed, 'INDEXED_USER'],
-      [indexed2, 'INDEXED_USER_ACCOUNT'],
-      [foreign, 'FOREIGN_USER'],
+      [unique, 'UNIQUE_MOUSE_USER'],
+      [unique2, 'UNIQUE_MOUSE_USER_ACCOUNT'],
+      [indexed, 'INDEXED_MOUSE_USER'],
+      [indexed2, 'INDEXED_MOUSE_USER_ACCOUNT'],
+      [foreign, 'FOREIGN_MOUSE_USER'],
     ]);
 
     fromSQLCase('column')([

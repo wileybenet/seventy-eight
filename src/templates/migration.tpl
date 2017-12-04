@@ -1,10 +1,8 @@
 // manipulate data after appying the sql migration
-// const data = async ({ Model }) => {
+// exports.data = async ({ Model }) => {
 //   await Model.all();
 // };
 
-const sql = `
+exports.sql = `
   {{sql}}
 `;
-
-module.exports = { sql/*, data*/ };

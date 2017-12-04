@@ -197,7 +197,7 @@ seventyEight.createModel = function(options) { // eslint-disable-line max-statem
       }
     })`);
 
-  Object.assign(QueryConstructor, migrator.methods, {
+  Object.assign(QueryConstructor, migrator.getMethods({ namespace: Model.name }), {
     tableName,
     schema,
     db: client,

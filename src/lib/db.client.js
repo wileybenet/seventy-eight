@@ -1,39 +1,22 @@
-/**
- * @fileOverview A simple example module that exposes a getClient function.
- *
- * The client is replaced if it is disconnected.
- */
-
-var style = require('ansi-styles');
-var mysql = require('mysql');
-var q = require('q');
+const mysql = require('mysql');
 const { color } = require('../utils');
 
-var schema;
+let schema = null;
 
 var pool = mysql.createPool({
-  host     : process.env.DB_HOST || 'localhost',
-  port     : process.env.DB_PORT || '3000',
-  user     : process.env.DB_USER || 'root',
-  password : process.env.DB_PASSWORD || 'root',
-  database : (schema = process.env.DB_SCHEMA || null),
+  host: process.env.DB_HOST || 'localhost',
+  port: process.env.DB_PORT || '3000',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || 'root',
+  database: schema = process.env.DB_SCHEMA || null,
   connectionLimit: 100,
-  multipleStatements: true
+  multipleStatements: true,
 });
 
-let totalConnections = 0;
-
-pool.on('connection', function () {
-  totalConnections += 1;
-  // console.log('new connection made:', totalConnections, 'active');
-});
-
-pool.on('enqueue', function () {
-  console.log('waiting for available connection slot');
-});
 
 const cyan = color('cyan');
 const green = color('green');
+let totalConnections = 0;
 
 const log = (str, params) => {
   let formattedStr = str;
@@ -41,11 +24,23 @@ const log = (str, params) => {
     formattedStr = mysql.format(str, params);
   }
   const notification = (/^\w+/).exec(formattedStr);
+  let logString = notification ? cyan(notification[0]) : 'QUERY: null';
   if (process.env.DEBUG) {
-    return formattedStr.replace(/( [A-Z_]+|[A-Z_]+ )/g, (s, m) => cyan(m));
+    logString = formattedStr.replace(/( [A-Z_]+|[A-Z_]+ )/g, (s, m) => cyan(m));
   }
-  return notification ? cyan(notification[0]) : 'QUERY: null';
+  if (process.env.NODE_ENV !== 'CLI') {
+    console.log(logString);
+  }
 };
+
+pool.on('connection', function () {
+  totalConnections += 1;
+  log('new connection made:', totalConnections, 'active');
+});
+
+pool.on('enqueue', function () {
+  log('waiting for available connection slot');
+});
 
 const spinner = () => {
   if (!process.env.DEBUG) {
@@ -94,7 +89,7 @@ exports.ping = function() {
         if (err) {
           reject(err);
         }
-        console.log('connected to mysql:', exports.getDate());
+        log('connected to mysql:', exports.getDate());
         connection.release();
         resolve();
       });
@@ -103,7 +98,10 @@ exports.ping = function() {
 };
 
 exports.getClient = function(cbFn) {
-  pool.getConnection(function(err, connection) {
+  pool.getConnection((err, connection) => {
+    if (err) {
+      return cbFn(err);
+    }
     cbFn(connection);
   });
 };
@@ -121,7 +119,7 @@ exports.query = function (str, params, silent = false) {
       }
 
       if (!silent) {
-        console.log(log(str, params));
+        log(str, params);
       }
       const interval = spinner();
       connection.query(str, params, function(error, data) {

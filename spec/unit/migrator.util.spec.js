@@ -1,6 +1,6 @@
 
 const { field: { primary, string, time } } = require('../../src/seventy.eight');
-const utils = require('../../src/lib/migrator.utils');
+const utils = require('../../src/lib/migrator.utils').getUtils({ namespace: 'CherryStem' });
 
 describe('schema utils', () => {
 

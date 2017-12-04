@@ -39,8 +39,8 @@ describe('syncTable -> updateTable', () => {
       Grif.migrationSyntax().then(migration => {
         expect(statements(migration)).toEqual(statements(`
           ALTER TABLE \`grifs\`
-            ADD COLUMN \`active\` TINYINT(1) DEFAULT 0,
-            MODIFY \`name\` VARCHAR(36) DEFAULT NULL,
+            ADD COLUMN \`active\` TINYINT(1) NULL DEFAULT 0,
+            MODIFY \`name\` VARCHAR(36) NULL DEFAULT NULL,
             DROP COLUMN \`age\`
         `));
         done();

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* eslint-disable node/shebang */
-const { color } = require('../utils');
+const { color, log } = require('../utils');
 // program
 //   .command('setup [env]')
 //   .description('run setup commands for all envs')
@@ -15,11 +15,14 @@ const [, , cmd, ...options] = process.argv;
 process.env.NODE_ENV = 'CLI';
 
 const error = color('red');
+const logG = log('green');
+const logR = log('red');
 
 const disconnect = () => {
   if (process.env.CONNECTED_TO_78) {
     require('../seventy.eight').db.close();
   }
+  console.log(``);
 };
 
 const cmdOptions = {
@@ -32,20 +35,22 @@ const cmdOptions = {
 
 const command = cmdOptions[cmd];
 
+console.log(``);
+
 try {
   require('dotenv').config();
 } catch (err) {
-  console.log(error('Error:'), 'seventy-eight requires a dotenv configuration');
+  logR(error('Error:'), 'seventy-eight requires a dotenv configuration');
 }
 
 if (command) {
   command()(...options).then(msg => {
-    console.log(msg);
+    logG(msg);
     disconnect();
   }).catch(err => {
-    console.log(error('Error:'), err);
+    logR(error('Error:'), err);
     disconnect();
   });
 } else {
-  console.log(`${error('Error:')} unknown command '${cmd || '<empty>'}', options:\n${Object.keys(cmdOptions).join('\n')}`);
+  logR(error('Error:'), `unknown command '${cmd || '<empty>'}', options:\n${Object.keys(cmdOptions).join('\n  ')}`);
 }

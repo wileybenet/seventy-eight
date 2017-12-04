@@ -30,6 +30,9 @@ const utils = {
     const modelTemplate = fs.readFileSync(path.resolve(__dirname, `../templates/${name}.tpl`)).toString();
     return options => modelTemplate.replace(/\{\{([^}]+)\}\}/g, (str, match) => options[match]);
   },
+  log(clr) {
+    return (...args) => console.log(utils.color(clr)(`  78`), ...args);
+  },
 };
 
 module.exports = utils;

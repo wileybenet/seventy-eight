@@ -15,7 +15,7 @@
     "posttest": "node ./spec/teardown",
     "coverage": "npm run test -- coverage",
     "postcoverage": "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
-    "prepublish": "npm run coverage"
+    "prepare": "npm run coverage"
   },
   "repository": {
     "type": "git",
