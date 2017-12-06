@@ -272,7 +272,7 @@ const getMappers = ({ namespace }) => {
           return schemaField.keyLength || null;
         },
         fromSQL([key]) {
-          return Number(key.length) || null;
+          return Number(key.LENGTH) || null;
         },
       },
       type: {
@@ -345,8 +345,8 @@ const getMappers = ({ namespace }) => {
         },
       },
       sync: {
-        default([schemaField]) {
-          return (schemaField.relation && schemaField.sync) || false;
+        default([schemaField], type) {
+          return (type === FOREIGN && schemaField.sync) || false;
         },
         fromSQL([key]) {
           return key.UPDATE_RULE === CASCADE && key.DELETE_RULE === CASCADE;

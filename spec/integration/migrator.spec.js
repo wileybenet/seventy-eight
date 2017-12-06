@@ -1,7 +1,21 @@
+const { statements } = require('../helpers');
 const seventyEight = require('../../src/seventy.eight');
 const { field: { primary, int, string, boolean, json, time, relation } } = seventyEight;
 
 describe('basic schema syncTable', () => {
+  const LeadMigration = seventyEight.createModel({
+    constructor: function LeadMigration() {},
+    schema: {
+      id: primary(),
+    },
+  });
+  const CopperMigration = seventyEight.createModel({
+    constructor: function CopperMigration() {},
+    schema: {
+      id: primary(),
+      lead: relation(LeadMigration, { indexed: true }),
+    },
+  });
   const AccountMigration = seventyEight.createModel({
     constructor: function AccountMigration() {},
     schema: {
@@ -73,6 +87,27 @@ describe('basic schema syncTable', () => {
     AccountMigration.syncTable().then(() => {
       new AccountMigration().save().then(test);
     }).catch(done.fail);
+  });
+
+  it('should replace a changed foreign key', done => {
+    LeadMigration.syncTable()
+      .then(() => CopperMigration.syncTable())
+      .then(() => {
+        CopperMigration.schema.lead = relation(LeadMigration, { indexed: true, sync: true });
+        return CopperMigration.migrationSyntax();
+      })
+      .then(migration => {
+        expect(statements(migration)).toEqual(statements(`
+          ALTER TABLE \`copper_migrations\`
+            DROP FOREIGN KEY \`FOREIGN_COPPERMIGRATION_LEAD\`,
+            ADD CONSTRAINT \`FOREIGN_COPPERMIGRATION_LEAD\`
+              FOREIGN KEY (\`lead\`)
+              REFERENCES \`lead_migrations\` (\`id\`)
+              ON DELETE CASCADE ON UPDATE CASCADE
+        `));
+        done();
+      })
+      .catch(done.fail);
   });
 });
 

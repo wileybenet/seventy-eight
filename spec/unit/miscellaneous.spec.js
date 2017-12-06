@@ -3,6 +3,8 @@ var seventyEight = require('../../src/seventy.eight');
 
 describe('#miscellaneous', function() {
 
+  const obj = {};
+
   const User = seventyEight.createModel({
     constructor: function User() {},
     tableName: 'user_tbl',
@@ -19,6 +21,10 @@ describe('#miscellaneous', function() {
     expect(UserRole.tableName).toEqual('user_roles');
   });
 
+  it('should throw if model not loaded', function() {
+    expect(() => seventyEight.getModel('balogna')).toThrow();
+  });
+
   it('should store explicit tableName', function() {
     expect(User.tableName).toEqual('user_tbl');
   });
@@ -28,7 +34,7 @@ describe('#miscellaneous', function() {
     expect(User.int(45)).toEqual(45);
     expect(User.int('')).toEqual(null);
     expect(User.int(null, 0)).toEqual(0);
-    expect(User.int(undefined)).toEqual(null);
+    expect(User.int(obj.undef)).toEqual(null);
   });
 
   it('should format types with static `string`', function() {
@@ -38,7 +44,7 @@ describe('#miscellaneous', function() {
     expect(User.string(null)).toEqual(null);
     expect(User.string(null, '')).toEqual('');
     expect(User.string('null')).toEqual('null');
-    expect(User.string(undefined)).toEqual(null);
+    expect(User.string(obj.undef)).toEqual(null);
   });
 
 });

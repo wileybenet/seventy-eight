@@ -4,13 +4,17 @@ const _ = require('lodash');
 const migrator = require('./lib/migrator');
 const schemaFilters = require('./lib/schema.filters');
 const fieldTypes = require('./lib/field');
+const { prefix } = require('./utils');
 const recordDeferred = q.defer();
 const seventyEight = {
   promise: recordDeferred.promise,
 };
 
 const recordStaticMethods = require('./query.builder');
-const modelCache = {};
+const modelCache = {
+  byClass: {},
+  byTable: {},
+};
 
 seventyEight.const = {};
 seventyEight.db = client;
@@ -31,16 +35,17 @@ client.ping().then(() => recordDeferred.resolve(seventyEight)).catch(console.err
 
 // base static methods
 const globalStaticMethods = _.extend(recordStaticMethods, {
-  int(value, dflt) {
+  int(value, dflt = null) {
     var intVal = parseInt(value, 10);
-    return intVal > 0 || intVal < 0 || intVal === 0 ? intVal : dflt !== undefined ? dflt : null;
+    return intVal > 0 || intVal < 0 || intVal === 0 ? intVal : dflt;
   },
-  string(value, dflt) {
-    return value !== undefined && value !== null ? `${value}` : dflt !== undefined ? dflt : null;
+  string(value, dflt = null) {
+    return typeof value !== 'undefined' && value !== null ? `${value}` : dflt;
   },
   import(objects) {
     const deferred = q.defer();
-    const columns = this.$constructor.getSchemaColumns();
+    const schema = this.$constructor.getSchema();
+    const columns = schema.map(field => field.column);
     const params = objects.map(obj => {
       let record = obj;
       if (!(obj instanceof this.$constructor)) {
@@ -48,7 +53,18 @@ const globalStaticMethods = _.extend(recordStaticMethods, {
       }
       return record.$saveParams(columns);
     });
-    client.query('INSERT INTO ?? (??) VALUES ?', [this.$constructor.tableName, columns, params.map(({ values }) => values)]).then(deferred.resolve, deferred.reject);
+    const nonPrimaryColumns = schema.filter(f => !f.primary).map(field => field.column);
+    const updateSyntax = nonPrimaryColumns.map(() => `?? = VALUES(??)`).join(', ');
+    const query = `INSERT INTO ?? (??) VALUES ? ${nonPrimaryColumns.length ? `ON DUPLICATE KEY UPDATE ${updateSyntax}` : ''}`;
+    const injection = [
+      this.$constructor.tableName,
+      columns,
+      params.map(({ values }) => values),
+      ...nonPrimaryColumns.reduce((memo, column) => memo.concat([column, column]), []),
+    ];
+    client.query(query, injection)
+      .then(deferred.resolve)
+      .catch(deferred.reject);
     return deferred.promise;
   },
   update(record_id, props) {
@@ -246,10 +262,19 @@ seventyEight.createModel = function(options) { // eslint-disable-line max-statem
     }
   }
 
-  modelCache[tableName] = QueryConstructor;
+  modelCache.byTable[tableName] = modelCache.byClass[Model.name] = QueryConstructor; // eslint-disable-line no-multi-assign
   return QueryConstructor;
 };
 
-seventyEight.getModel = tableName => modelCache[tableName] || null;
+seventyEight.getModel = name => {
+  if (modelCache.byTable[name] || modelCache.byClass[name]) {
+    return modelCache.byTable[name] || modelCache.byClass[name];
+  }
+  const cacheJSON = {
+    tables: Object.keys(modelCache.byTable),
+    classes: Object.keys(modelCache.byClass),
+  };
+  throw new Error(`${prefix('red')} getModel('${name}') could not find a matching loaded model\nmodel cache:\n${JSON.stringify(cacheJSON, null, 2)}`);
+};
 
 module.exports = seventyEight;

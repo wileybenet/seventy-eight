@@ -1,6 +1,6 @@
 /* eslint-disable no-sync */
 const fs = require('fs-extra');
-const { log, indent, modelDir, migrationDir, makeModelDir, makeMigrationDir, getTemplate } = require('../../utils');
+const { log, indent, modelDir, migrationDir, makeModelDir, makeMigrationDir, dataDir, getTemplate } = require('../../utils');
 const _ = require('lodash');
 const seventyEight = require('../../seventy.eight');
 const { getModel, field: { primary, string } } = seventyEight;
@@ -10,20 +10,41 @@ const logG = log('green');
 process.env.CONNECTED_TO_78 = true;
 
 const LAST_MIGRATION = 'last_migration';
-const NEEDS_INIT = 'please run `78 init` before making migrations';
+const NEEDS_INIT = action => `please run \`78 init\` before ${action}`;
 
 const migrationTemplate = getTemplate('migration');
 
 const escapeTicks = str => str.replace(/`/g, '\\`');
 
-const pad = (num, zeros) => {
-  const backwards = `${num}`.split('').reverse().join('');
-  return `${backwards}00000000`.substr(0, zeros).split('').reverse().join('');
+const pad = zeros => num => {
+  const padded = `00000000000${num}`;
+  return padded.substr(padded.length - zeros);
 };
 
-const inSerial = async (items, promiser) => {
-  for (const item of items) {
-    await promiser(item); // eslint-disable-line no-await-in-loop
+const padMigrationNumber = pad(5);
+
+const inSerial = async (items, promiser, asTransaction) => {
+  const evaluate = async () => {
+    for (const item of items) {
+      try {
+        await promiser(item); // eslint-disable-line no-await-in-loop
+      } catch (err) {
+        throw err;
+      }
+    }
+  };
+  // not working yet, ignoring data changes when inside transaction block
+  if (asTransaction) {
+    // await seventyEight.db.startTransaction();
+    try {
+      await evaluate();
+    } catch (err) {
+      await seventyEight.db.rollback();
+      throw err;
+    }
+    // await seventyEight.db.commit();
+  } else {
+    await evaluate();
   }
 };
 
@@ -40,14 +61,19 @@ const orderByRelation = Models => {
     }
     return false;
   });
-  const addRelations = modelGroup => modelGroup.forEach(Model => {
+
+  const addToOrderedList = Model => {
+    const relations = Model.getRelations().map(getModel);
+    if (relations.length) {
+      relations.forEach(addToOrderedList);
+    }
     if (modelIndex[Model.name]) {
       delete modelIndex[Model.name];
-      addRelations(Model.getRelations().map(getModel));
       order.push(Model);
     }
-  });
-  addRelations(models);
+  };
+  models.forEach(addToOrderedList);
+
   return order;
 };
 
@@ -125,6 +151,7 @@ module.exports = {
     });
   },
   syncTable(modelName) {
+    // deprecated
     return new Promise((resolve, reject) => {
       if (!modelName) {
         return reject('model name required, run `78 sync-table <ModelName>`');
@@ -143,6 +170,31 @@ module.exports = {
             .then(seventyEight.db.close);
         })
         .catch(reject);
+    });
+  },
+  syncData() {
+    return new Promise((resolve, reject) => {
+      SeventyEightSetting.all()
+        .then(() => {
+          getAllModels()
+            .then(Models => {
+              const modelData = orderByRelation(Models).map(Model => {
+                const jsonFile = `${dataDir}/${Model.name}.json`;
+                if (fs.existsSync(jsonFile)) {
+                  try {
+                    const data = require(jsonFile);
+                    return [Model, data];
+                  } catch (err) {
+                    throw new Error(`failed to import ${Model.name}.json, invalid JSON \n\n  ${err.message}`);
+                  }
+                }
+                return null;
+              }).filter(x => x);
+              return inSerial(modelData, ([Model, data]) => Model.import(data), true);
+            })
+            .then(() => resolve(`synchronized data`))
+            .catch(reject);
+        }, () => reject(NEEDS_INIT('syncing data')));
     });
   },
   makeMigrations(migrationName) {
@@ -170,7 +222,7 @@ module.exports = {
               SeventyEightSetting.where({ setting_name: LAST_MIGRATION }).one()
                 .then(migrationSetting => {
                   if (!migrationSetting) {
-                    return reject(NEEDS_INIT);
+                    return reject(NEEDS_INIT('making migrations'));
                   }
                   getAllMigrationsAfter(Number(migrationSetting.setting_value))
                     .then(migrations => {
@@ -178,14 +230,13 @@ module.exports = {
                         return reject('there are unapplied migrations, please run `78 run-migrations` before creating new migrations');
                       }
                       const migrationNumber = Number(migrationSetting.setting_value) + 1;
-                      const fileName = `${pad(migrationNumber, 5)}${migrationName ? `_${migrationName}` : ''}.js`;
+                      const fileName = `${padMigrationNumber(migrationNumber)}${migrationName ? `_${migrationName}` : ''}.js`;
                       fs.writeFile(`${migrationDir}/${fileName}`, migrationTemplate({ sql: escapeTicks(sql) }))
                         .then(() => resolve(`created migration file: migrations/${fileName}`))
                         .catch(reject);
                     })
                     .catch(reject);
-                })
-                .catch(() => reject(NEEDS_INIT));
+                }, () => reject(NEEDS_INIT('making migrations')));
             })
             .catch(reject);
         })
@@ -199,49 +250,30 @@ module.exports = {
       SeventyEightSetting.where({ setting_name: LAST_MIGRATION }).one()
         .then(foundSetting => {
           if (!foundSetting) {
-            return reject(NEEDS_INIT);
+            return reject(NEEDS_INIT('running migrations'));
           }
           migrationSetting = foundSetting;
           const lastMigrationId = migrationSetting.setting_value ? Number(migrationSetting.setting_value) : 0;
-          logG(`db currently at migration [${lastMigrationId}]`);
+          logG(`db currently at migration [ ${lastMigrationId} ]`);
           getAllMigrationsAfter(lastMigrationId)
             .then(migrations => {
               if (!migrations) {
-                return resolve('db already up-to-date, no new migrations to run');
+                return resolve('db up-to-date, no new migrations');
               }
               return migrations;
             })
             .then(migrations => {
-              getAllModels()
-                .then(Models => Models.reduce((memo, Model) => {
-                  memo[Model.name] = Model;
-                  return memo;
-                }, {}))
-                .then(modelIndex => {
-                  newMigrationId = migrations.lastId;
-                  const migrationFiles = readMigrationFiles(migrations.files);
-                  return inSerial(migrationFiles, ({ sql, data = null }) => new Promise((serialResolve, serialReject) => {
-                    seventyEight.db.query(sql)
-                      .then(() => {
-                        let dataPromise = Promise.resolve(null);
-                        if (typeof data === 'function') {
-                          dataPromise = data(modelIndex);
-                        }
-                        return dataPromise;
-                      })
-                      .then(serialResolve)
-                      .catch(serialReject);
-                  }));
-                })
-                .then(() => {
-                  logG(`db upgraded to migration [${newMigrationId}]`);
-                  return migrationSetting.update({ setting_value: newMigrationId });
-                })
-                .then(() => resolve('migration complete'))
-                .catch(reject);
+              newMigrationId = migrations.lastId;
+              const migrationFiles = readMigrationFiles(migrations.files);
+              return inSerial(migrationFiles, ({ sql }) => seventyEight.db.query(sql));
             })
+            .then(() => {
+              logG(`db upgraded to migration  [ ${newMigrationId} ]`);
+              return migrationSetting.update({ setting_value: newMigrationId });
+            })
+            .then(() => resolve('migration complete'))
             .catch(reject);
-        }, () => reject(NEEDS_INIT));
+        }, () => reject(NEEDS_INIT('running migrations')));
     });
   },
 };

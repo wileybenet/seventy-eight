@@ -1,3 +1,5 @@
+const { prefix } = require('../utils');
+
 const field = {
   int({ length = 11, default: def = null, autoIncrement = false, signed = false, primary = false, unique = false, indexed = false, relation = null } = {}, name = null) {
     return { type: 'int', length, default: def, autoIncrement, signed, primary, unique, indexed, relation, name };
@@ -22,7 +24,14 @@ const field = {
     return field.int({ autoIncrement: true, primary: true, required: true, signed: false }, name);
   },
   relation(Model, { type, length, signed, default: def, relation, relationColumn, indexed = false, sync = false } = {}, name = null) {
-    const foreignField = Model.getPrimaryKeyField() || {};
+    let foreignField = {};
+    try {
+      foreignField = Model.getPrimaryKeyField();
+      foreignField.type; // eslint-disable-line no-unused-expressions
+    } catch (err) {
+      throw new Error(`${prefix('red')}: relation could not be properly linked (potentially due to circular dependencies)
+                      JSON(Relation) = ${JSON.stringify(Model, null, 2)}`);
+    }
     return {
       type: type || foreignField.type,
       length: length || foreignField.length,

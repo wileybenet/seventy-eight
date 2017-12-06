@@ -31,9 +31,6 @@ module.exports = {
         }
         return schema;
       },
-      getSchemaColumns() {
-        return this.getSchema().filter(field => !field.autoIncrement).map(field => field.column);
-      },
       getDefaultSchemaFields() {
         return this.getSchema().filter(field => field.default !== null || field.autoIncrement).map(field => field.column);
       },
@@ -61,7 +58,7 @@ module.exports = {
       getSchemaDiff() {
         return new Promise((resolve, reject) => {
           this.getSQLSchema().then(({ sqlSchema, sqlKeys }) => {
-            const keyChanges = utils.keyDiff(sqlKeys, this.getKeys(), true);
+            const keyChanges = utils.keyDiff(sqlKeys, this.getKeys(), false);
             const schemaChanges = utils.schemaDiff(sqlSchema, this.getSchema());
             resolve({ schemaChanges, keyChanges });
           }).catch(reject);

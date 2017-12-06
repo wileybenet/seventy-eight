@@ -71,9 +71,9 @@ describe('keys', () => {
     ]);
 
     defaultCase('sync')([
-      [singleFields, true, 'primary'],
-      [singleFields, true, 'indexed'],
-      [singleFields, true, 'unique'],
+      [singleFields, false, 'primary'],
+      [singleFields, false, 'indexed'],
+      [singleFields, false, 'unique'],
       [singleFields, true, 'foreign'],
       [multiFields, false, 'unique'],
       [multiFields, false, 'indexed'],

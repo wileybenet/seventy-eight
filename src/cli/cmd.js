@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* eslint-disable node/shebang */
-const { color, log } = require('../utils');
+const { color, log, indent } = require('../utils');
 // program
 //   .command('setup [env]')
 //   .description('run setup commands for all envs')
@@ -20,7 +20,8 @@ const logR = log('red');
 
 const disconnect = () => {
   if (process.env.CONNECTED_TO_78) {
-    require('../seventy.eight').db.close();
+    const seventyEight = require('../seventy.eight');
+    seventyEight.promise.then(seventyEight.db.close);
   }
   console.log(``);
 };
@@ -28,7 +29,8 @@ const disconnect = () => {
 const cmdOptions = {
   'init': () => require('./commands/sync').init,
   'create-model': () => require('./commands/model').createModel,
-  'sync-table': () => require('./commands/sync').syncTable,
+  // 'sync-table': () => require('./commands/sync').syncTable,
+  'sync-data': () => require('./commands/sync').syncData,
   'make-migrations': () => require('./commands/sync').makeMigrations,
   'run-migrations': () => require('./commands/sync').runMigrations,
 };
@@ -48,9 +50,9 @@ if (command) {
     logG(msg);
     disconnect();
   }).catch(err => {
-    logR(error('Error:'), err);
+    logR(error('Error:'), err || err);
     disconnect();
   });
 } else {
-  logR(error('Error:'), `unknown command '${cmd || '<empty>'}', options:\n${Object.keys(cmdOptions).join('\n  ')}`);
+  logR(error('Error:'), `unknown command '${cmd || '<empty>'}', options:${indent}  ${Object.keys(cmdOptions).join(`${indent}  `)}`);
 }

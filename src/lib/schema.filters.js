@@ -1,14 +1,21 @@
 const noop = val => val;
 
-const pad = val => (val > 9 ? val : `0${val}`); // eslint-disable-line no-extra-parens
+const pad = val => (val > 9 ? val : `0${val}`);
 
-const toUTC = date => {
-  const y = date.getUTCFullYear();
-  const m = pad(date.getUTCMonth() + 1);
-  const d = pad(date.getUTCDate());
-  const h = pad(date.getUTCHours());
-  const mm = pad(date.getUTCMinutes());
-  const s = pad(date.getUTCSeconds());
+const toUTC = (date = null) => {
+  if (!date) {
+    return null;
+  }
+  let dateObj = date;
+  if (!dateObj.getUTCFullYear) {
+    dateObj = new Date(date);
+  }
+  const y = dateObj.getUTCFullYear();
+  const m = pad(dateObj.getUTCMonth() + 1);
+  const d = pad(dateObj.getUTCDate());
+  const h = pad(dateObj.getUTCHours());
+  const mm = pad(dateObj.getUTCMinutes());
+  const s = pad(dateObj.getUTCSeconds());
   return `${y}-${m}-${d} ${h}:${mm}:${s}`;
 };
 
@@ -43,7 +50,7 @@ module.exports = {
       text: noop,
       json: val => {
         delete model[schemaField.name];
-        return JSON.stringify(val);
+        return val === null ? null : JSON.stringify(val);
       },
     }[schemaField.type](model[schemaField.name])];
   },

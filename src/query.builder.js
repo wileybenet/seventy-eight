@@ -133,6 +133,7 @@ var api = {
     this.$init = false;
   },
   catch(errFn) {
+    // TODO not working ??
     if (this.$currentQuery) {
       this.$currentQuery.catch(errFn);
     }

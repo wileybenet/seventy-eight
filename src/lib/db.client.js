@@ -26,7 +26,7 @@ const log = (str, params) => {
   const notification = (/^\w+/).exec(formattedStr);
   let logString = notification ? cyan(notification[0]) : 'QUERY: null';
   if (process.env.DEBUG) {
-    logString = formattedStr.replace(/( [A-Z_]+|[A-Z_]+ )/g, (s, m) => cyan(m));
+    logString = formattedStr.replace(/( [A-Z_]{3,}|[A-Z_]{3,} |[A-Z_]{3,}$)/g, (s, m) => cyan(m));
   }
   if (process.env.NODE_ENV !== 'CLI') {
     console.log(logString);
@@ -35,7 +35,7 @@ const log = (str, params) => {
 
 pool.on('connection', function () {
   totalConnections += 1;
-  log('new connection made:', totalConnections, 'active');
+  log(`new connection made: ${totalConnections} active`);
 });
 
 pool.on('enqueue', function () {
@@ -65,11 +65,12 @@ const spinner = () => {
     } else {
       clearTimeout(delay);
     }
-    green(`\r${Math.round((Number(new Date()) - start) / 1000).toString()} sec`);
+    // log(green(`\r${((Number(new Date()) - start) / 1000).toFixed(3)} sec`));
   };
 };
 
 exports.schema = schema;
+exports.format = mysql.format.bind(mysql);
 
 exports.escapeKey = pool.escapeId.bind(pool);
 exports.escapeValue = value => {
@@ -132,6 +133,18 @@ exports.query = function (str, params, silent = false) {
       });
     });
   });
+};
+
+exports.startTransaction = async () => {
+  await exports.query('START TRANSACTION');
+};
+
+exports.rollback = async () => {
+  await exports.query('ROLLBACK');
+};
+
+exports.commit = async () => {
+  await exports.query('COMMIT');
 };
 
 exports.close = function(callbackFn) {

@@ -4,6 +4,8 @@ const fs = require('fs-extra');
 const _ = require('lodash');
 const style = require('ansi-styles');
 
+const PREFIX_78 = `78`;
+
 const createDirIfNotExists = dir => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir);
@@ -20,6 +22,7 @@ const utils = {
   indent: '\n  ',
   modelDir: `${process.cwd()}/models`,
   migrationDir: `${process.cwd()}/migrations`,
+  dataDir: `${process.cwd()}/data`,
   makeModelDir() {
     createDirIfNotExists(utils.modelDir);
   },
@@ -31,7 +34,10 @@ const utils = {
     return options => modelTemplate.replace(/\{\{([^}]+)\}\}/g, (str, match) => options[match]);
   },
   log(clr) {
-    return (...args) => console.log(utils.color(clr)(`  78`), ...args);
+    return (...args) => console.log(`  ${utils.prefix(clr)}`, ...args);
+  },
+  prefix(clr) {
+    return utils.color(clr)(PREFIX_78);
   },
 };
 
