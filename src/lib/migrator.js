@@ -13,11 +13,13 @@ module.exports = {
       return [];
     };
 
+    const alterSyntax = (tableName, commands) => `ALTER TABLE \`${tableName}\` ${indent}${commands.join(`,${indent}`)};`;
+
     const schemaCommands = changes => ['create', 'update', 'remove'].reduce((memo, method) => memo.concat(writeColumnChanges(changes, method)), []);
-    const keyCommands = changes => [
-      ...utils.writeKeysToSQL('drop')(changes.remove),
-      ...utils.writeKeysToSQL('add')(changes.create),
-    ];
+    const keyCommands = changes => ({
+      drops: utils.writeKeysToSQL('drop')(changes.remove),
+      adds: utils.writeKeysToSQL('add')(changes.create),
+    });
     return {
       getSchema() {
         const schema = Object.keys(this.schema).map(name => {
@@ -67,11 +69,16 @@ module.exports = {
       updateTableSyntax() {
         return new Promise((resolve, reject) => {
           this.getSchemaDiff().then(({ schemaChanges, keyChanges }) => {
-            const commands = [...schemaCommands(schemaChanges), ...keyCommands(keyChanges)];
+            const keyCmds = keyCommands(keyChanges);
+            const commands = [...schemaCommands(schemaChanges), ...keyCmds.drops];
+            const queries = [];
             if (commands.length) {
-              return resolve(`ALTER TABLE \`${this.tableName}\` ${indent}${commands.join(`,${indent}`)}`);
+              queries.push(alterSyntax(this.tableName, commands));
             }
-            resolve();
+            if (keyCmds.adds.length) {
+              queries.push(alterSyntax(this.tableName, keyCmds.adds));
+            }
+            resolve(queries.join('\n') || null);
           }, reject);
         });
       },

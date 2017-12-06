@@ -206,13 +206,14 @@ module.exports = {
             .then(syntaxes => {
               let change = false;
               const sql = syntaxes
-                .map((syntax, index) => {
+                .map((syntax) => {
                   if (syntax) {
                     change = true;
                     return `${syntax};`;
                   }
-                  return `/* ${Models[index].Model.tableName} (no changes) */`;
+                  return null;
                 })
+                .filter(x => x)
                 .join('\n\n')
                 .replace(/\n/g, indent);
 

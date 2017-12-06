@@ -41,7 +41,7 @@ describe('syncTable -> updateTable', () => {
           ALTER TABLE \`grifs\`
             ADD COLUMN \`active\` TINYINT(1) NULL DEFAULT 0,
             MODIFY \`name\` VARCHAR(36) NULL DEFAULT NULL,
-            DROP COLUMN \`age\`
+            DROP COLUMN \`age\`;
         `));
         done();
       });

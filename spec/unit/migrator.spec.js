@@ -72,11 +72,15 @@ const Account = seventyEight.createModel({
           ADD COLUMN \`account2\` INT(11) UNSIGNED NULL DEFAULT NULL,
           MODIFY \`name\` VARCHAR(255) NULL DEFAULT 'hello world',
           DROP COLUMN \`created\`,
+          DROP INDEX \`INDEXED_USER_CREATED\`;
 
-          DROP INDEX \`INDEXED_USER_CREATED\`,
+        ALTER TABLE \`users\`
           ADD INDEX \`INDEXED_USER_NAME\` (\`name\`),
           ADD INDEX \`INDEXED_USER_DATA\` (\`data__json\`),
-          ADD CONSTRAINT \`FOREIGN_USER_ACCOUNT2\` FOREIGN KEY (\`account2\`) REFERENCES \`accounts\` (\`id\`) ON DELETE CASCADE ON UPDATE CASCADE
+          ADD CONSTRAINT \`FOREIGN_USER_ACCOUNT2\`
+            FOREIGN KEY (\`account2\`)
+            REFERENCES \`accounts\` (\`id\`)
+            ON DELETE CASCADE ON UPDATE CASCADE;
       `));
       done();
     });

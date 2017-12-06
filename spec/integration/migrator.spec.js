@@ -99,12 +99,19 @@ describe('basic schema syncTable', () => {
       .then(migration => {
         expect(statements(migration)).toEqual(statements(`
           ALTER TABLE \`copper_migrations\`
-            DROP FOREIGN KEY \`FOREIGN_COPPERMIGRATION_LEAD\`,
+            DROP FOREIGN KEY \`FOREIGN_COPPERMIGRATION_LEAD\`;
+          ALTER TABLE \`copper_migrations\`
             ADD CONSTRAINT \`FOREIGN_COPPERMIGRATION_LEAD\`
               FOREIGN KEY (\`lead\`)
               REFERENCES \`lead_migrations\` (\`id\`)
-              ON DELETE CASCADE ON UPDATE CASCADE
+              ON DELETE CASCADE ON UPDATE CASCADE;
         `));
+        return seventyEight.db.query(migration);
+      })
+      .then(() => CopperMigration.migrationSyntax())
+      .then(migration => {
+        console.log(migration);
+        expect(Boolean(migration)).toBe(false);
         done();
       })
       .catch(done.fail);
