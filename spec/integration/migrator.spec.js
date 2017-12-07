@@ -110,6 +110,7 @@ describe('complex schema syncTable', () => {
       name: string({ unique: true }),
       level: int({ default: 1 }),
       active: boolean({ indexed: true }),
+      data: json(),
       stage: string({ unique: 'stage_skill_idx' }),
       skill: string({ unique: 'stage_skill_idx' }),
       user: relation(UserRoleMigration, { indexed: true }),
@@ -139,6 +140,7 @@ describe('complex schema syncTable', () => {
       relationColumn: null,
       required: true,
       keyLength: null,
+      comment: {},
       sync: false,
       column: 'id',
     }, {
@@ -155,6 +157,7 @@ describe('complex schema syncTable', () => {
       relationColumn: null,
       required: false,
       keyLength: null,
+      comment: {},
       sync: false,
       column: 'name',
     }, {
@@ -171,6 +174,7 @@ describe('complex schema syncTable', () => {
       relationColumn: null,
       required: false,
       keyLength: null,
+      comment: {},
       sync: false,
       column: 'level',
     }, {
@@ -187,8 +191,26 @@ describe('complex schema syncTable', () => {
       relationColumn: null,
       required: false,
       keyLength: null,
+      comment: {},
       sync: false,
       column: 'active',
+    }, {
+      name: 'data',
+      type: 'json',
+      length: null,
+      default: null,
+      autoIncrement: false,
+      signed: false,
+      primary: false,
+      unique: false,
+      indexed: false,
+      relation: null,
+      relationColumn: null,
+      required: false,
+      keyLength: null,
+      comment: { type: 'json' },
+      sync: false,
+      column: 'data',
     }, {
       name: 'stage',
       type: 'string',
@@ -203,6 +225,7 @@ describe('complex schema syncTable', () => {
       relationColumn: null,
       required: false,
       keyLength: null,
+      comment: {},
       sync: false,
       column: 'stage',
     }, {
@@ -219,6 +242,7 @@ describe('complex schema syncTable', () => {
       relationColumn: null,
       required: false,
       keyLength: null,
+      comment: {},
       sync: false,
       column: 'skill',
     }, {
@@ -235,6 +259,7 @@ describe('complex schema syncTable', () => {
       relationColumn: 'id',
       required: false,
       keyLength: null,
+      comment: {},
       sync: false,
       column: 'user',
     }]);

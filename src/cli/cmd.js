@@ -50,7 +50,7 @@ if (command) {
     logG(msg);
     disconnect();
   }).catch(err => {
-    logR(error('Error:'), err || err);
+    logR(error('Error:'), err.message || err);
     disconnect();
   });
 } else {

@@ -35,13 +35,13 @@ CREATE TABLE `users` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `username` varchar(255) NOT NULL DEFAULT '',
   `password` varchar(255) DEFAULT NULL,
-  `data__json` varchar(255) DEFAULT NULL,
+  `data` varchar(255) DEFAULT NULL COMMENT 'type:json',
   `active` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `USERNAMEIDX` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-INSERT INTO `users` (`id`, `username`, `password`, `data__json`, `active`)
+INSERT INTO `users` (`id`, `username`, `password`, `data`, `active`)
 VALUES
   (1,'root','$2a$10$xb6OlUSgar.Lx1toO3UnB.yE0RwoqYAdLtM5MdG628o/dFmeqG3XC','{\"test\": true}',1),
   (2,'home','good','{\"test2\": true}',0);

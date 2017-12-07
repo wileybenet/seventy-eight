@@ -88,7 +88,7 @@ const getUtils = context => {
 
     writeSchemaToSQL(schemaField, method) {
       const field = applyFieldFilters('toSQL', schemaField);
-      const config = `\`${field.column}\` ${field.type}${field.length} ${field.signed} ${field.required} ${field.autoIncrement} ${field.default}`.replace(/\s+/g, ' ').trim();
+      const config = `\`${field.column}\` ${field.type}${field.length} ${field.signed} ${field.required} ${field.autoIncrement} ${field.default} ${field.comment}`.replace(/\s+/g, ' ').trim();
       if (method === 'create') {
         return `ADD COLUMN ${config}`;
       }
@@ -103,7 +103,7 @@ const getUtils = context => {
 
     parseSchemaFieldFromSQL(keys) {
       return sqlField => {
-        sqlField.keys = keys.filter(key => key.column.match(`\`${sqlField.Field}\``));
+        sqlField.keys = keys.filter(key => key.column.match(`\`${sqlField.COLUMN_NAME}\``));
         return applyFieldFilters('fromSQL', sqlField);
       };
     },

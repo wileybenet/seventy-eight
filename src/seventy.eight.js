@@ -159,11 +159,9 @@ const globalInstanceMethods = {
 seventyEight.createModel = function(options) { // eslint-disable-line max-statements
   const Model = options.constructor;
   const { schema = {} } = options;
-  const staticProps = options.staticProps || {};
-  const staticMethods = Object.assign({}, globalStaticMethods, options.staticMethods || {});
-  const instanceProps = options.instanceProps || {};
-  const queryMethods = _.extend({}, chainQueryMethods.queryMethods, options.queryMethods || {});
-  const instanceMethods = _.extend({}, globalInstanceMethods, options.instanceMethods || {});
+  const staticMembers = Object.assign({}, globalStaticMethods, options.static || {});
+  const instanceMembers = _.extend({}, globalInstanceMethods, options.instance || {});
+  const queryMethods = _.extend({}, chainQueryMethods.queryMethods, options.query || {});
   const tableName = options.tableName || `${_.snakeCase(Model.name).replace(/y$/g, 'ie')}s`;
   const QueryConstructor = eval( // eslint-disable-line no-eval
     `(function ${Model.name}(row, found) {
@@ -191,9 +189,9 @@ seventyEight.createModel = function(options) { // eslint-disable-line max-statem
         throw new Error(`schema missing primary field: \n${JSON.stringify(this.schema, null, 2)}`);
       }
     },
-  }, chainQueryMethods.evaluation, staticProps, staticMethods);
+  }, chainQueryMethods.evaluation, staticMembers);
 
-  Object.assign(QueryConstructor.prototype, instanceProps, instanceMethods);
+  Object.assign(QueryConstructor.prototype, instanceMembers);
 
   QueryConstructor.prototype.Class = QueryConstructor;
 
@@ -205,19 +203,19 @@ seventyEight.createModel = function(options) { // eslint-disable-line max-statem
     $queryParams: chainQueryMethods.getBase(),
   });
 
-  const startChain = fn => function(...args) {
+  const chainable = fn => function(...args) {
     const context = this.$chainInitialized ? this : initChain(); // eslint-disable-line no-invalid-this
     const nextSelf = _.extend({}, context);
     const ret = fn.apply(nextSelf, args);
     if (_.isUndefined(ret)) {
       return nextSelf;
     }
-    throw new Error(`queryMethod ${Model.name}.${fn.name}() CANNOT return a value, call this.<otherQueryMethod>() (returns are permitted from staticMethods)`);
+    throw new Error(`queryMethod ${Model.name}.${fn.name}() CANNOT return a value, call this.<otherQueryMethod>() (returns are permitted from static)`);
   };
 
   for (const queryMethod in queryMethods) {
     if (queryMethods[queryMethod]) {
-      QueryConstructor[queryMethod] = startChain(queryMethods[queryMethod]);
+      QueryConstructor[queryMethod] = chainable(queryMethods[queryMethod]);
     }
   }
 

@@ -1,4 +1,4 @@
-const _ = require('lodash');
+const { curry, size } = require('lodash');
 const db = require('./db.client');
 const { indent } = require('../utils');
 
@@ -32,25 +32,25 @@ const getMappers = ({ namespace }) => {
       name: {
         default: noopPick('name'),
         fromSQL(field) {
-          const re = /__json$/;
-          if (field.Field.match(re)) {
-            return field.Field.replace(re, '');
-          }
-          return field.Field;
+          return field.COLUMN_NAME;
         },
         toSQL: noopNull,
       },
       type: {
         default: noopPick('type'),
         fromSQL(field) {
+          const { type } = mappers.fields.comment.fromSQL(field);
+          if (type) {
+            return type;
+          }
           try {
             return {
               int: 'int',
               tinyint: 'boolean',
               varchar: 'string',
-              longtext: field.Field.match(/__json$/) ? 'json' : 'text',
+              longtext: 'text',
               timestamp: 'time',
-            }[field.Type.match(/^([^(]+)\(?/)[1]];
+            }[field.COLUMN_TYPE.match(/^([^(]+)\(?/)[1]];
           } catch (err) {
             return null;
           }
@@ -59,11 +59,38 @@ const getMappers = ({ namespace }) => {
           return typeMapping[schemaField.type];
         },
       },
+      comment: {
+        default(schemaField) {
+          const comment = {};
+          if (schemaField.type === 'json') {
+            comment.type = 'json';
+          }
+          return comment;
+        },
+        fromSQL(field) {
+          const comment = field.COLUMN_COMMENT;
+          if (comment) {
+            return comment.split('|').reduce((memo, pair) => {
+              const [k, v] = pair.split(':');
+              memo[k] = v;
+              return memo;
+            }, {});
+          }
+          return {};
+        },
+        toSQL(schemaField) {
+          if (size(schemaField.comment)) {
+            const comment = Object.keys(schemaField.comment).map(k => `${k}:${schemaField.comment[k]}`).join('|');
+            return `COMMENT '${comment}'`;
+          }
+          return '';
+        },
+      },
       length: {
         default: noopPick('length'),
         fromSQL(field) {
           try {
-            return Number(field.Type.match(/\(([^)]+)\)/)[1]);
+            return Number(field.COLUMN_TYPE.match(/\(([^)]+)\)/)[1]);
           } catch (err) {
             return null;
           }
@@ -80,7 +107,7 @@ const getMappers = ({ namespace }) => {
           return schemaField.required || false;
         },
         fromSQL(field) {
-          return field.Null === 'NO';
+          return field.IS_NULLABLE === 'NO';
         },
         toSQL(schemaField) {
           return schemaField.required ? 'NOT NULL' : 'NULL';
@@ -105,16 +132,16 @@ const getMappers = ({ namespace }) => {
           if (mappers.fields.autoIncrement.fromSQL(field)) {
             return null;
           }
-          if (field.Type === 'tinyint(1)') {
-            return field.Default === null ? null : field.Default === '1';
+          if (field.COLUMN_TYPE === 'tinyint(1)') {
+            return field.COLUMN_DEFAULT === null ? null : field.COLUMN_DEFAULT === '1';
           }
-          if (field.Type.match(/^int/) && field.Default !== null) {
-            return Number(field.Default);
+          if (field.COLUMN_TYPE.match(/^int/) && field.COLUMN_DEFAULT !== null) {
+            return Number(field.COLUMN_DEFAULT);
           }
-          if (field.Type === 'timestamp' && field.Default === 'CURRENT_TIMESTAMP') {
+          if (field.COLUMN_TYPE === 'timestamp' && field.COLUMN_DEFAULT === 'CURRENT_TIMESTAMP') {
             return 'now';
           }
-          return field.Default;
+          return field.COLUMN_DEFAULT;
         },
         toSQL(schemaField) {
           const hasDefault = schemaField.default !== null;
@@ -139,7 +166,7 @@ const getMappers = ({ namespace }) => {
       autoIncrement: {
         default: noopPick('autoIncrement', false),
         fromSQL(field) {
-          return Boolean(field.Extra.match(/auto_increment/));
+          return Boolean(field.EXTRA.match(/auto_increment/));
         },
         toSQL(schemaField) {
           return schemaField.autoIncrement ? 'AUTO_INCREMENT' : '';
@@ -148,7 +175,7 @@ const getMappers = ({ namespace }) => {
       signed: {
         default: noopPick('signed', false),
         fromSQL(field) {
-          return field.Type.match(/^int/) ? !field.Type.match(/unsigned/) : false;
+          return field.COLUMN_TYPE.match(/^int/) ? !field.COLUMN_TYPE.match(/unsigned/) : false;
         },
         toSQL(schemaField) {
           return schemaField.type === 'int' && !schemaField.signed ? 'UNSIGNED' : '';
@@ -226,17 +253,10 @@ const getMappers = ({ namespace }) => {
       },
       column: {
         default(schemaField) {
-          return {
-            int: schemaField.name,
-            boolean: schemaField.name,
-            string: schemaField.name,
-            time: schemaField.name,
-            json: `${schemaField.name}__json`,
-            text: schemaField.name,
-          }[schemaField.type];
+          return schemaField.name;
         },
         fromSQL(field) {
-          return field.Field;
+          return field.COLUMN_NAME;
         },
         toSQL(schemaField) {
           return schemaField.column;
@@ -356,11 +376,11 @@ const getMappers = ({ namespace }) => {
         },
       },
     },
-    applyFilters: _.curry((type, objects, method, context, options = {}) => objects.reduce((memo, obj) => {
+    applyFilters: curry((type, objects, method, context, options = {}) => objects.reduce((memo, obj) => {
       memo[obj] = mappers[type][obj][method](context, options);
       return memo;
     }, {})),
-    diff: _.curry((keys, current, next, update = true) => {
+    diff: curry((keys, current, next, update = true) => {
       const changes = {
         update: [],
         create: [],

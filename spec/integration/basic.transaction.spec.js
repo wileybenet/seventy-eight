@@ -10,7 +10,6 @@ describe('#static-query', function() {
       data: json(),
       active: boolean(),
     },
-    instanceMethods: {},
   });
 
   const Role = seventyEight.createModel({

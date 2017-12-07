@@ -1,6 +1,11 @@
 module.exports = {
   schemaQuery(table) {
-    return `DESCRIBE \`${table}\``;
+    return `
+      SELECT *
+      FROM information_schema.columns
+      WHERE table_name = '${table}'
+        AND table_schema = '${process.env.DB_SCHEMA}';
+    `;
   },
   keyQuery(table) {
     // SELECT

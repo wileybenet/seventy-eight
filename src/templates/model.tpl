@@ -6,4 +6,7 @@ module.exports = seventyEight.createModel({
   schema: {
     id: primary(),
   },
+  query: {},
+  static: {},
+  instance: {},
 });

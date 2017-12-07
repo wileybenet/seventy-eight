@@ -9,12 +9,12 @@ module.exports = seventyEight.createModel({
   constructor: function User(props) {
 
   },
-  queryMethods: {
+  query: {
     findByUsername: function(username) {
       return this.where({ username: username }).one();
     }
   },
-  instanceMethods: {
+  instance: {
     hasRole: function(role) {
       return !!_.intersection([].concat(role), this.roles.split(',')).length;
     }
@@ -133,7 +133,7 @@ module.exports = seventyEight.createModel({
   constructor: function User(props) {
     this.data_field = props.data;
   },
-  instanceMethods: {
+  instance: {
     afterFind: function() {
       this.data = JSON.parse(this.json);
     }
@@ -150,7 +150,7 @@ module.exports = seventyEight.createModel({
   constructor: function User(props) {
 
   },
-  instanceMethods: {
+  instance: {
     beforeSave: function(props) {
       props.json = JSON.stringify(props.data);
       return props;

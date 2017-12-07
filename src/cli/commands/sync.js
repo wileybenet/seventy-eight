@@ -49,12 +49,11 @@ const inSerial = async (items, promiser, asTransaction) => {
 };
 
 const orderByRelation = Models => {
-  const models = Models.map(({ Model }) => Model);
-  const modelIndex = models.reduce((memo, Model) => {
+  const modelIndex = Models.reduce((memo, Model) => {
     memo[Model.name] = Model;
     return memo;
   }, {});
-  const order = models.filter(Model => {
+  const order = Models.filter(Model => {
     if (!Model.getSchema().find(field => field.relation)) {
       delete modelIndex[Model.name];
       return true;
@@ -72,30 +71,17 @@ const orderByRelation = Models => {
       order.push(Model);
     }
   };
-  models.forEach(addToOrderedList);
+  Models.forEach(addToOrderedList);
 
   return order;
 };
 
-const requireModel = name => new Promise((resolve, reject) => {
-  try {
-    const Model = require(`${modelDir}/${name}`);
-    resolve({ Model });
-  } catch (err) {
-    reject(err);
-  }
-});
+const requireModel = name => require(`${modelDir}/${name}`);
 
-const getAllModels = () => new Promise((resolve, reject) => {
-  fs.readdir(modelDir, (err, items) => {
-    if (err) {
-      return reject(err);
-    }
-    Promise.all(items.filter(item => item.match(/\.js$/)).map(model => requireModel(model)))
-      .then(resolve)
-      .catch(reject);
-  });
-});
+const getAllModels = async () => {
+  const items = await fs.readdir(modelDir);
+  return items.filter(item => item.match(/\.js$/)).map(requireModel);
+};
 
 const getAllRelations = Model => {
   const relations = Model.getSchema().filter(field => field.relation).map(({ relation }) => getModel(relation));
@@ -135,20 +121,12 @@ const SeventyEightSetting = seventyEight.createModel({
 });
 
 module.exports = {
-  init() {
-    return new Promise((resolve, reject) => {
-      makeModelDir();
-      makeMigrationDir();
-      SeventyEightSetting
-        .syncTable()
-        .then(() => Promise.all([
-           new SeventyEightSetting({ setting_name: LAST_MIGRATION, setting_value: 0 }).save(),
-         ]))
-         .then(() => {
-           resolve('initialized');
-         })
-        .catch(reject);
-    });
+  async init() {
+    makeModelDir();
+    makeMigrationDir();
+    await SeventyEightSetting.syncTable();
+    await new SeventyEightSetting({ setting_name: LAST_MIGRATION, setting_value: 0 }).save();
+    return 'initialized';
   },
   syncTable(modelName) {
     // deprecated
@@ -172,109 +150,92 @@ module.exports = {
         .catch(reject);
     });
   },
-  syncData() {
-    return new Promise((resolve, reject) => {
-      SeventyEightSetting.all()
-        .then(() => {
-          getAllModels()
-            .then(Models => {
-              const modelData = orderByRelation(Models).map(Model => {
-                const jsonFile = `${dataDir}/${Model.name}.json`;
-                if (fs.existsSync(jsonFile)) {
-                  try {
-                    const data = require(jsonFile);
-                    return [Model, data];
-                  } catch (err) {
-                    throw new Error(`failed to import ${Model.name}.json, invalid JSON \n\n  ${err.message}`);
-                  }
-                }
-                return null;
-              }).filter(x => x);
-              return inSerial(modelData, ([Model, data]) => Model.import(data), true);
-            })
-            .then(() => resolve(`synchronized data`))
-            .catch(reject);
-        }, () => reject(NEEDS_INIT('syncing data')));
-    });
+  async syncData() {
+    try {
+      SeventyEightSetting.all().exec();
+    } catch (err) {
+      throw new Error(NEEDS_INIT('syncing data'));
+    }
+    const Models = await getAllModels();
+    const modelData = orderByRelation(Models).map(Model => {
+      const jsonFile = `${dataDir}/${Model.name}.json`;
+      if (fs.existsSync(jsonFile)) {
+        try {
+          const data = require(jsonFile);
+          return [Model, data];
+        } catch (err) {
+          throw new Error(`failed to import ${Model.name}.json, invalid JSON \n\n  ${err.message}`);
+        }
+      }
+      return null;
+    }).filter(x => x);
+    await inSerial(modelData, ([Model, data]) => Model.import(data), true);
+    return 'synchronized data';
   },
-  makeMigrations(migrationName) {
-    return new Promise((resolve, reject) => {
-      makeMigrationDir();
-      getAllModels()
-        .then(Models => {
-          Promise.all(orderByRelation(Models).map(Model => Model.migrationSyntax()))
-            .then(syntaxes => {
-              let change = false;
-              const sql = syntaxes
-                .map((syntax) => {
-                  if (syntax) {
-                    change = true;
-                    return `${syntax};`;
-                  }
-                  return null;
-                })
-                .filter(x => x)
-                .join('\n\n')
-                .replace(/\n/g, indent);
+  async makeMigrations(migrationName) { // eslint-disable-line max-statements
+    const initMsg = 'making migrations';
+    makeMigrationDir();
+    const Models = await getAllModels();
+    const syntaxes = await Promise.all(orderByRelation(Models).map(Model => Model.migrationSyntax()));
+    let change = false;
+    const sql = syntaxes
+      .map((syntax) => {
+        if (syntax) {
+          change = true;
+          return `${syntax}`;
+        }
+        return null;
+      })
+      .filter(x => x)
+      .join('\n\n')
+      .replace(/\n/g, indent);
 
-              if (!change) {
-                return reject('no changes to model schemas found');
-              }
-              SeventyEightSetting.where({ setting_name: LAST_MIGRATION }).one()
-                .then(migrationSetting => {
-                  if (!migrationSetting) {
-                    return reject(NEEDS_INIT('making migrations'));
-                  }
-                  getAllMigrationsAfter(Number(migrationSetting.setting_value))
-                    .then(migrations => {
-                      if (migrations !== null) {
-                        return reject('there are unapplied migrations, please run `78 run-migrations` before creating new migrations');
-                      }
-                      const migrationNumber = Number(migrationSetting.setting_value) + 1;
-                      const fileName = `${padMigrationNumber(migrationNumber)}${migrationName ? `_${migrationName}` : ''}.js`;
-                      fs.writeFile(`${migrationDir}/${fileName}`, migrationTemplate({ sql: escapeTicks(sql) }))
-                        .then(() => resolve(`created migration file: migrations/${fileName}`))
-                        .catch(reject);
-                    })
-                    .catch(reject);
-                }, () => reject(NEEDS_INIT('making migrations')));
-            })
-            .catch(reject);
-        })
-        .catch(reject);
-    });
+    if (!change) {
+      throw new Error('no changes to model schemas found');
+    }
+
+    let migrationSetting = null;
+    try {
+      migrationSetting = await SeventyEightSetting.where({ setting_name: LAST_MIGRATION }).one().exec();
+      if (!migrationSetting) {
+        throw new Error(NEEDS_INIT(initMsg));
+      }
+    } catch (err) {
+      throw new Error(NEEDS_INIT(initMsg));
+    }
+
+    const migrations = await getAllMigrationsAfter(Number(migrationSetting.setting_value));
+    if (migrations !== null) {
+      throw new Error('there are unapplied migrations, please run `78 run-migrations` before creating new migrations');
+    }
+
+    const migrationNumber = Number(migrationSetting.setting_value) + 1;
+    const fileName = `${padMigrationNumber(migrationNumber)}${migrationName ? `_${migrationName}` : ''}.js`;
+    await fs.writeFile(`${migrationDir}/${fileName}`, migrationTemplate({ sql: escapeTicks(sql) }));
+    return `created migration file: migrations/${fileName}`;
   },
-  runMigrations() {
-    return new Promise((resolve, reject) => {
-      let migrationSetting = null;
-      let newMigrationId = null;
-      SeventyEightSetting.where({ setting_name: LAST_MIGRATION }).one()
-        .then(foundSetting => {
-          if (!foundSetting) {
-            return reject(NEEDS_INIT('running migrations'));
-          }
-          migrationSetting = foundSetting;
-          const lastMigrationId = migrationSetting.setting_value ? Number(migrationSetting.setting_value) : 0;
-          logG(`db currently at migration [ ${lastMigrationId} ]`);
-          getAllMigrationsAfter(lastMigrationId)
-            .then(migrations => {
-              if (!migrations) {
-                return resolve('db up-to-date, no new migrations');
-              }
-              return migrations;
-            })
-            .then(migrations => {
-              newMigrationId = migrations.lastId;
-              const migrationFiles = readMigrationFiles(migrations.files);
-              return inSerial(migrationFiles, ({ sql }) => seventyEight.db.query(sql));
-            })
-            .then(() => {
-              logG(`db upgraded to migration  [ ${newMigrationId} ]`);
-              return migrationSetting.update({ setting_value: newMigrationId });
-            })
-            .then(() => resolve('migration complete'))
-            .catch(reject);
-        }, () => reject(NEEDS_INIT('running migrations')));
-    });
+  async runMigrations() {
+    const initMsg = 'running migrations';
+    let setting = null;
+    try {
+      setting = await SeventyEightSetting.where({ setting_name: LAST_MIGRATION }).one().exec();
+      if (!setting) {
+        throw new Error(NEEDS_INIT(initMsg));
+      }
+    } catch (err) {
+      throw new Error(NEEDS_INIT(initMsg));
+    }
+    const lastMigrationId = setting.setting_value ? Number(setting.setting_value) : 0;
+    logG(`db currently at migration [ ${lastMigrationId} ]`);
+    const migrations = await getAllMigrationsAfter(lastMigrationId);
+    if (!migrations) {
+      return 'db up-to-date, no new migrations';
+    }
+    const newMigrationId = migrations.lastId;
+    const migrationFiles = readMigrationFiles(migrations.files);
+    await inSerial(migrationFiles, ({ sql }) => seventyEight.db.query(sql));
+    logG(`db upgraded to migration  [ ${newMigrationId} ]`);
+    await setting.update({ setting_value: newMigrationId });
+    return 'migration complete';
   },
 };

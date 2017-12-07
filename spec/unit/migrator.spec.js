@@ -52,12 +52,12 @@ const Account = seventyEight.createModel({
       CREATE TABLE \`users\` (
         \`id\` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
         \`name\` VARCHAR(255) NULL DEFAULT NULL,
-        \`data__json\` LONGTEXT NULL,
+        \`data\` LONGTEXT NULL COMMENT 'type:json',
         \`account\` INT(11) UNSIGNED NULL DEFAULT NULL,
         \`account2\` INT(11) UNSIGNED NULL DEFAULT NULL,
 
         PRIMARY KEY (\`id\`),
-        KEY \`INDEXED_USER_DATA\` (\`data__json\`(5)),
+        KEY \`INDEXED_USER_DATA\` (\`data\`(5)),
         CONSTRAINT \`FOREIGN_USER_ACCOUNT\` FOREIGN KEY (\`account\`) REFERENCES \`accounts\` (\`id\`),
         CONSTRAINT \`FOREIGN_USER_ACCOUNT2\` FOREIGN KEY (\`account2\`) REFERENCES \`accounts\` (\`id\`) ON DELETE CASCADE ON UPDATE CASCADE
       )
@@ -70,7 +70,7 @@ const Account = seventyEight.createModel({
     const sql = await User.updateTableSyntax();
     expect(statements(sql)).toEqual(statements(`
       ALTER TABLE \`users\`
-        ADD COLUMN \`data__json\` LONGTEXT NULL,
+        ADD COLUMN \`data\` LONGTEXT NULL COMMENT 'type:json',
         ADD COLUMN \`account2\` INT(11) UNSIGNED NULL DEFAULT NULL,
         MODIFY \`name\` VARCHAR(255) NULL DEFAULT 'hello world',
         DROP COLUMN \`created\`,
@@ -78,7 +78,7 @@ const Account = seventyEight.createModel({
 
       ALTER TABLE \`users\`
         ADD INDEX \`INDEXED_USER_NAME\` (\`name\`),
-        ADD INDEX \`INDEXED_USER_DATA\` (\`data__json\`),
+        ADD INDEX \`INDEXED_USER_DATA\` (\`data\`),
         ADD CONSTRAINT \`FOREIGN_USER_ACCOUNT2\`
           FOREIGN KEY (\`account2\`)
           REFERENCES \`accounts\` (\`id\`)

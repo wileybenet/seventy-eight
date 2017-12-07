@@ -11,10 +11,10 @@ describe('#static-properties', function() {
       data: json(),
       json: json(),
     },
-    staticProps: {
+    static: {
       activeStates: [0, 1],
     },
-    instanceProps: {
+    instance: {
       color: 'red',
     },
   });
@@ -38,7 +38,7 @@ describe('#static-methods', function() {
       id: primary(),
       username: string(),
     },
-    queryMethods: {
+    query: {
       findByUsername(username) {
         this.where({ username }).one();
       },
@@ -52,15 +52,18 @@ describe('#static-methods', function() {
 
 });
 
-describe('#instance-properties', () => {
+describe('#instance', () => {
   const User = seventyEight.createModel({
     constructor: function User() {},
     schema: {
       id: primary(),
       username: string(),
     },
-    instanceProps: {
+    instance: {
       level: '37 and a half',
+      initials() {
+        return this.username.substr(0, 2).toUpperCase();
+      },
     },
   });
 
@@ -68,21 +71,6 @@ describe('#instance-properties', () => {
     const { level } = await User.find(1).exec();
     expect(level).toEqual('37 and a half');
   }));
-});
-
-describe('#instance-methods', () => {
-  const User = seventyEight.createModel({
-    constructor: function User() {},
-    schema: {
-      id: primary(),
-      username: string(),
-    },
-    instanceMethods: {
-      initials() {
-        return this.username.substr(0, 2).toUpperCase();
-      },
-    },
-  });
 
   it('should make instance methods available to instances', lasso(async () => {
     const user = await User.find(1).exec();
