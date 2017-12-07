@@ -9,7 +9,7 @@ module.exports = seventyEight.createModel({
   constructor: function User(props) {
 
   },
-  staticMethods: {
+  queryMethods: {
     findByUsername: function(username) {
       return this.where({ username: username }).one();
     }
@@ -36,12 +36,6 @@ Configure DB connection at runtime:
 
 // model creation
 seventyEight.createModel({ config });
-
-// shorthand return for an automatically resolved promise
-seventyEight.resolvedPromise({ data });
-
-// shorthand return for an automatically rejected promise
-seventyEight.rejectedPromise({ err });
 
 ```
 

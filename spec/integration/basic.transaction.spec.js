@@ -1,9 +1,9 @@
-
-var seventyEight = require('../../src/seventy.eight');
-const { field: { primary, boolean, json } } = seventyEight;
+const { lasso } = require('../helpers');
+const seventyEight = require('../../src/seventy.eight');
+const { field: { primary, string, boolean, json } } = seventyEight;
 
 describe('#static-query', function() {
-  var User = seventyEight.createModel({
+  const User = seventyEight.createModel({
     constructor: function User() {},
     schema: {
       id: primary(),
@@ -13,106 +13,106 @@ describe('#static-query', function() {
     instanceMethods: {},
   });
 
-  var Role = seventyEight.createModel({
+  const Role = seventyEight.createModel({
     constructor: function Role() {},
     schema: {
-      id: { type: 'int', primary: true, autoIncrement: true },
-      name: { type: 'string' },
+      id: primary(),
+      name: string(),
     },
   });
 
-  it('should retreive an array of instances with all()', function(done) {
-    var query = User.all();
-    query.then(function(users) {
-      expect(users.length > 0).toEqual(true);
-      done();
-    }, done.fail);
-  });
+  it('should retreive an array of instances with all()', lasso(async () => {
+    const users = await User.all().exec();
+    expect(users.length > 0).toEqual(true);
+  }));
 
-  it('should retreive a single instance with one()', function(done) {
-    var query = User.where({ id: 1 }).one();
-    query.then(function(user) {
-      expect(user.username).toEqual('root');
-      done();
-    }, done.fail);
-  });
+  it('should retreive a single instance with one()', lasso(async () => {
+    const { username } = await User.where({ id: 1 }).one().exec();
+    expect(username).toEqual('root');
+  }));
 
-  it('should format response json into `data` property', function(done) {
-    var query = User.find(1);
-    query.then(function(user) {
-      expect(user.data).toEqual({ test: true });
-      done();
-    }, done.fail);
-  });
+  it('should format response json into `data` property', lasso(async () => {
+    const { data } = await User.find(1).exec();
+    expect(data).toEqual({ test: true });
+  }));
 
-  it('should return Error object for misformatted queries', function(done) {
-    var query = User.joins("INNER JOINER doesn't_exist ON nothing");
-    query.then(done.fail, function(err) {
-      expect(err.constructor.name).toEqual('Error');
-      done();
-    }, done.fail);
-  });
+  it('should throw an error if the query is malformed', lasso(async () => {
+    await User.joins("INNER JOINER doesn't_exist ON nothing").exec();
+  }, err => {
+    expect(err).toEqual(jasmine.any(Error));
+  }));
 
-  it('should save a new row', function(done) {
-    var role = new Role({ name: 'guest' });
-    role.save().then(function() {
-      expect(role.id).toEqual(4);
-      done();
-    }, done.fail);
-  });
+  it('should save a new row', lasso(async () => {
+    const role = await new Role({ name: 'guest' }).save();
+    expect(role.id).toEqual(4);
+  }));
 
-  it('should format data with beforeSave when saving', function(done) {
-    var data = { mapping: [{ name: 'test' }, { name: 'two' }] };
-    var user = new User({ username: 'wiley', password: 'password', data });
-    user.save().then(function(savedUser) {
-      User.find(savedUser.id).then(function(u) {
-        expect(u.data).toEqual(data);
-        done();
-      });
-    }, done.fail);
-  });
+  it('should format data with beforeSave when saving', lasso(async () => {
+    const data = { mapping: [{ name: 'test' }, { name: 'two' }] };
+    const user = await new User({ username: 'wiley', password: 'password', data }).save();
+    const foundUser = await User.find(user.id).exec();
+    expect(foundUser.data).toEqual(data);
+  }));
 
-  it('should update an existing row via update()', function(done) {
-    User.find(1).then(function(user) {
-      expect(user.id).toEqual(1);
-      user.update({ active: false }).then(savedUser => {
-        expect(savedUser.active).toEqual(false);
-        done();
-      }, done.fail);
+  it('should update an existing row via update()', lasso(async () => {
+    const user = await User.find(1).exec();
+    expect(user.id).toEqual(1);
+    const updatedUser = await user.update({ active: false });
+    expect(updatedUser.active).toEqual(false);
+  }));
+
+  it('should update an existing row via save()', lasso(async () => {
+    const user = await User.find(1).exec();
+    user.data = { update: 'viaSave' };
+    await user.save();
+    expect(user.data.update).toEqual('viaSave');
+  }));
+
+  it('should update an existing row with the static method', lasso(async () => {
+    const success = await Role.update(3, { name: 'removed' });
+    const role = await Role.find(3).exec();
+    expect(success).toEqual(true);
+    expect(role.name).toEqual('removed');
+  }));
+
+  it('should delete an existing row', lasso(async () => {
+    const user = await User.find(2).exec();
+    expect(user.id).toEqual(2);
+    const deleted = await user.delete();
+    expect(deleted).toEqual(true);
+    const deletedUser = await User.find(2).exec();
+    expect(deletedUser).toEqual(null);
+  }));
+
+});
+
+describe('#options', function() {
+  let WeirdUserModel = null;
+
+  beforeEach(function() {
+    WeirdUserModel = seventyEight.createModel({
+      constructor: function WeirdUser() {},
+      schema: {
+        weird_id: string({ primary: true }),
+        middle_name: string(),
+      },
     });
   });
 
-  it('should update an existing row via save()', function(done) {
-    User.find(1).then(function(user) {
-      user.data = { update: 'viaSave' };
-      user.save().then(function() {
-        expect(user.data.update).toEqual('viaSave');
-        done();
-      }, done.fail);
-    });
-  });
+  it('should lookup records by the primaryKey', lasso(async () => {
+    const id = 'sdf0Sjqnpfps9-jfa';
+    const { weird_id } = await WeirdUserModel.find(id).exec();
+    expect(weird_id).toEqual(id);
+  }));
 
-  it('should update an existing row with the static method', function(done) {
-    Role.update(3, { name: 'removed' }).then(function(success) {
-      Role.find(3).then(function(role) {
-        expect(success).toEqual(true);
-        expect(role.name).toEqual('removed');
-        done();
-      }, done.fail);
-    }, done.fail);
-  });
-
-  it('should delete an existing row', function(done) {
-    User.find(2).then(function(user) {
-      expect(user.id).toEqual(2);
-      user.delete().then(function(status) {
-        expect(status).toEqual(true);
-        User.find(2).then(function(deletedUser) {
-          expect(deletedUser).toEqual(null);
-          done();
-        });
-      });
-    });
-  });
-
+  it('should upsert a record', lasso(async () => {
+    const id = 'sdf0Sjqnpfps9-jfa';
+    const name = 'steve-o';
+    await new WeirdUserModel({
+      weird_id: id,
+      middle_name: name,
+    }).save();
+    const { middle_name } = await WeirdUserModel.find(id).exec();
+    expect(middle_name).toEqual(name);
+  }));
 });

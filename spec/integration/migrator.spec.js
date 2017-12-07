@@ -1,3 +1,4 @@
+const { lasso } = require('../helpers');
 const { statements } = require('../helpers');
 const seventyEight = require('../../src/seventy.eight');
 const { field: { primary, int, string, boolean, json, time, relation } } = seventyEight;
@@ -40,82 +41,58 @@ describe('basic schema syncTable', () => {
     },
   });
 
-  it('should create the table', done => {
-    UserMigration.syncTable().then(() => {
-      const user = new UserMigration({
-        name: 'test',
-        data: { x: 1 },
-      });
-      user.save().then(savedUser => {
-        expect(savedUser.id).toEqual(1);
-        expect(savedUser.name).toEqual('test');
-        expect(savedUser.data).toEqual({ x: 1 });
-        UserMigration.schema.job = string({ default: 'unemployed' });
-        delete UserMigration.schema.data;
-        UserMigration.syncTable().then(() => {
-          const user2 = new UserMigration({
-            name: 'boog',
-          });
-          user2.save().then(savedUser2 => {
-            expect(savedUser2.id).toEqual(2);
-            expect(savedUser2.name).toEqual('boog');
-            expect(savedUser2.job).toEqual('unemployed');
-            done();
-          }, done.fail);
-        }).catch(done.fail);
-      }, done.fail);
-    });
-  });
+  it('should create the table', lasso(async () => {
+    await UserMigration.syncTable();
+    const user = await new UserMigration({
+      name: 'test',
+      data: { x: 1 },
+    }).save();
+    expect(user.id).toEqual(1);
+    expect(user.name).toEqual('test');
+    expect(user.data).toEqual({ x: 1 });
+    UserMigration.schema.job = string({ default: 'unemployed' });
+    delete UserMigration.schema.data;
+    await UserMigration.syncTable();
+    const user2 = await new UserMigration({
+      name: 'boog',
+    }).save();
+    expect(user2.id).toEqual(2);
+    expect(user2.name).toEqual('boog');
+    expect(user2.job).toEqual('unemployed');
+  }));
 
-  it('should add a foreign key', done => {
-    const test = () => {
-      AdminMigration.schema.account = relation(AccountMigration);
-      AdminMigration.syncTable().then(() => {
-        const user = new AdminMigration({
-          name: 'boog',
-          account: 1,
-        });
-        user.save().then(savedUser => {
-          expect(savedUser.id).toEqual(1);
-          expect(savedUser.name).toEqual('boog');
-          expect(savedUser.account).toEqual(1);
-          done();
-        }, done.fail);
-      }).catch(done.fail);
-    };
+  it('should add a foreign key', lasso(async () => {
+    await AccountMigration.syncTable();
+    await new AccountMigration().save();
+    AdminMigration.schema.account = relation(AccountMigration);
+    await AdminMigration.syncTable();
+    const user = await new AdminMigration({
+      name: 'boog',
+      account: 1,
+    }).save();
+    expect(user.id).toEqual(1);
+    expect(user.name).toEqual('boog');
+    expect(user.account).toEqual(1);
+  }));
 
-    AccountMigration.syncTable().then(() => {
-      new AccountMigration().save().then(test);
-    }).catch(done.fail);
-  });
-
-  it('should replace a changed foreign key', done => {
-    LeadMigration.syncTable()
-      .then(() => CopperMigration.syncTable())
-      .then(() => {
-        CopperMigration.schema.lead = relation(LeadMigration, { indexed: true, sync: true });
-        return CopperMigration.migrationSyntax();
-      })
-      .then(migration => {
-        expect(statements(migration)).toEqual(statements(`
-          ALTER TABLE \`copper_migrations\`
-            DROP FOREIGN KEY \`FOREIGN_COPPERMIGRATION_LEAD\`;
-          ALTER TABLE \`copper_migrations\`
-            ADD CONSTRAINT \`FOREIGN_COPPERMIGRATION_LEAD\`
-              FOREIGN KEY (\`lead\`)
-              REFERENCES \`lead_migrations\` (\`id\`)
-              ON DELETE CASCADE ON UPDATE CASCADE;
-        `));
-        return seventyEight.db.query(migration);
-      })
-      .then(() => CopperMigration.migrationSyntax())
-      .then(migration => {
-        console.log(migration);
-        expect(Boolean(migration)).toBe(false);
-        done();
-      })
-      .catch(done.fail);
-  });
+  it('should replace a changed foreign key', lasso(async () => {
+    await LeadMigration.syncTable();
+    await CopperMigration.syncTable();
+    CopperMigration.schema.lead = relation(LeadMigration, { indexed: true, sync: true });
+    const migration = await CopperMigration.migrationSyntax();
+    expect(statements(migration)).toEqual(statements(`
+      ALTER TABLE \`copper_migrations\`
+        DROP FOREIGN KEY \`FOREIGN_COPPERMIGRATION_LEAD\`;
+      ALTER TABLE \`copper_migrations\`
+        ADD CONSTRAINT \`FOREIGN_COPPERMIGRATION_LEAD\`
+          FOREIGN KEY (\`lead\`)
+          REFERENCES \`lead_migrations\` (\`id\`)
+          ON DELETE CASCADE ON UPDATE CASCADE;
+    `));
+    await seventyEight.db.query(migration);
+    const newMigration = await CopperMigration.migrationSyntax();
+    expect(Boolean(newMigration)).toBe(false);
+  }));
 });
 
 describe('complex schema syncTable', () => {
@@ -139,181 +116,176 @@ describe('complex schema syncTable', () => {
     },
   });
 
-  it('should be idempotent', done => {
-    UserRoleMigration.syncTable().then(() => {
-      RoleMigration.syncTable()
-        .then(() => RoleMigration.syncTable())
-        .then(() => RoleMigration.syncTable())
-        .then(() => RoleMigration.syncTable())
-        .then(() => RoleMigration.syncTable())
-        .then(() => RoleMigration.syncTable())
-        .then(() => RoleMigration.getSQLSchema())
-        .then(({ sqlSchema, sqlKeys }) => {
-          expect(sqlSchema).toEqual([{
-            name: 'id',
-            type: 'int',
-            length: 11,
-            default: null,
-            autoIncrement: true,
-            signed: false,
-            primary: true,
-            unique: false,
-            indexed: false,
-            relation: null,
-            relationColumn: null,
-            required: true,
-            keyLength: null,
-            sync: false,
-            column: 'id',
-          }, {
-            name: 'name',
-            type: 'string',
-            length: 255,
-            default: null,
-            autoIncrement: false,
-            signed: false,
-            primary: false,
-            unique: 'UNIQUE_ROLEMIGRATION_NAME',
-            indexed: false,
-            relation: null,
-            relationColumn: null,
-            required: false,
-            keyLength: null,
-            sync: false,
-            column: 'name',
-          }, {
-            name: 'level',
-            type: 'int',
-            length: 11,
-            default: 1,
-            autoIncrement: false,
-            signed: false,
-            primary: false,
-            unique: false,
-            indexed: false,
-            relation: null,
-            relationColumn: null,
-            required: false,
-            keyLength: null,
-            sync: false,
-            column: 'level',
-          }, {
-            name: 'active',
-            type: 'boolean',
-            length: 1,
-            default: null,
-            autoIncrement: false,
-            signed: false,
-            primary: false,
-            unique: false,
-            indexed: 'INDEXED_ROLEMIGRATION_ACTIVE',
-            relation: null,
-            relationColumn: null,
-            required: false,
-            keyLength: null,
-            sync: false,
-            column: 'active',
-          }, {
-            name: 'stage',
-            type: 'string',
-            length: 255,
-            default: null,
-            autoIncrement: false,
-            signed: false,
-            primary: false,
-            unique: 'stage_skill_idx',
-            indexed: false,
-            relation: null,
-            relationColumn: null,
-            required: false,
-            keyLength: null,
-            sync: false,
-            column: 'stage',
-          }, {
-            name: 'skill',
-            type: 'string',
-            length: 255,
-            default: null,
-            autoIncrement: false,
-            signed: false,
-            primary: false,
-            unique: 'stage_skill_idx',
-            indexed: false,
-            relation: null,
-            relationColumn: null,
-            required: false,
-            keyLength: null,
-            sync: false,
-            column: 'skill',
-          }, {
-            name: 'user',
-            type: 'int',
-            length: 11,
-            default: null,
-            autoIncrement: false,
-            signed: false,
-            primary: false,
-            unique: false,
-            indexed: 'INDEXED_ROLEMIGRATION_USER',
-            relation: 'user_role_migrations',
-            relationColumn: 'id',
-            required: false,
-            keyLength: null,
-            sync: false,
-            column: 'user',
-          }]);
-          expect(sqlKeys).toEqual([{
-            name: 'PRIMARY',
-            column: '`id`',
-            type: 'primary',
-            relation: null,
-            relationColumn: null,
-            keyLength: null,
-            sync: false,
-          }, {
-            name: 'UNIQUE_ROLEMIGRATION_NAME',
-            column: '`name`',
-            type: 'unique',
-            relation: null,
-            relationColumn: null,
-            keyLength: null,
-            sync: false,
-          }, {
-            name: 'stage_skill_idx',
-            column: '`stage`,`skill`',
-            type: 'unique',
-            relation: null,
-            relationColumn: null,
-            keyLength: null,
-            sync: false,
-          }, {
-            name: 'INDEXED_ROLEMIGRATION_ACTIVE',
-            column: '`active`',
-            type: 'indexed',
-            relation: null,
-            relationColumn: null,
-            keyLength: null,
-            sync: false,
-          }, {
-            name: 'INDEXED_ROLEMIGRATION_USER',
-            column: '`user`',
-            type: 'indexed',
-            relation: null,
-            relationColumn: null,
-            keyLength: null,
-            sync: false,
-          }, {
-            name: 'FOREIGN_ROLEMIGRATION_USER',
-            column: '`user`',
-            type: 'foreign',
-            relation: 'user_role_migrations',
-            relationColumn: 'id',
-            keyLength: null,
-            sync: false,
-          }]);
-          done();
-        })
-        .catch(console.error);
-    });
-  });
+  it('should be idempotent', lasso(async () => {
+    await UserRoleMigration.syncTable();
+    await RoleMigration.syncTable();
+    await RoleMigration.syncTable();
+    await RoleMigration.syncTable();
+    await RoleMigration.syncTable();
+    await RoleMigration.syncTable();
+    await RoleMigration.syncTable();
+    const { sqlSchema, sqlKeys } = await RoleMigration.getSQLSchema();
+    expect(sqlSchema).toEqual([{
+      name: 'id',
+      type: 'int',
+      length: 11,
+      default: null,
+      autoIncrement: true,
+      signed: false,
+      primary: true,
+      unique: false,
+      indexed: false,
+      relation: null,
+      relationColumn: null,
+      required: true,
+      keyLength: null,
+      sync: false,
+      column: 'id',
+    }, {
+      name: 'name',
+      type: 'string',
+      length: 255,
+      default: null,
+      autoIncrement: false,
+      signed: false,
+      primary: false,
+      unique: 'UNIQUE_ROLEMIGRATION_NAME',
+      indexed: false,
+      relation: null,
+      relationColumn: null,
+      required: false,
+      keyLength: null,
+      sync: false,
+      column: 'name',
+    }, {
+      name: 'level',
+      type: 'int',
+      length: 11,
+      default: 1,
+      autoIncrement: false,
+      signed: false,
+      primary: false,
+      unique: false,
+      indexed: false,
+      relation: null,
+      relationColumn: null,
+      required: false,
+      keyLength: null,
+      sync: false,
+      column: 'level',
+    }, {
+      name: 'active',
+      type: 'boolean',
+      length: 1,
+      default: null,
+      autoIncrement: false,
+      signed: false,
+      primary: false,
+      unique: false,
+      indexed: 'INDEXED_ROLEMIGRATION_ACTIVE',
+      relation: null,
+      relationColumn: null,
+      required: false,
+      keyLength: null,
+      sync: false,
+      column: 'active',
+    }, {
+      name: 'stage',
+      type: 'string',
+      length: 255,
+      default: null,
+      autoIncrement: false,
+      signed: false,
+      primary: false,
+      unique: 'stage_skill_idx',
+      indexed: false,
+      relation: null,
+      relationColumn: null,
+      required: false,
+      keyLength: null,
+      sync: false,
+      column: 'stage',
+    }, {
+      name: 'skill',
+      type: 'string',
+      length: 255,
+      default: null,
+      autoIncrement: false,
+      signed: false,
+      primary: false,
+      unique: 'stage_skill_idx',
+      indexed: false,
+      relation: null,
+      relationColumn: null,
+      required: false,
+      keyLength: null,
+      sync: false,
+      column: 'skill',
+    }, {
+      name: 'user',
+      type: 'int',
+      length: 11,
+      default: null,
+      autoIncrement: false,
+      signed: false,
+      primary: false,
+      unique: false,
+      indexed: 'INDEXED_ROLEMIGRATION_USER',
+      relation: 'user_role_migrations',
+      relationColumn: 'id',
+      required: false,
+      keyLength: null,
+      sync: false,
+      column: 'user',
+    }]);
+    expect(sqlKeys).toEqual([{
+      name: 'PRIMARY',
+      column: '`id`',
+      type: 'primary',
+      relation: null,
+      relationColumn: null,
+      keyLength: null,
+      sync: false,
+    }, {
+      name: 'UNIQUE_ROLEMIGRATION_NAME',
+      column: '`name`',
+      type: 'unique',
+      relation: null,
+      relationColumn: null,
+      keyLength: null,
+      sync: false,
+    }, {
+      name: 'stage_skill_idx',
+      column: '`stage`,`skill`',
+      type: 'unique',
+      relation: null,
+      relationColumn: null,
+      keyLength: null,
+      sync: false,
+    }, {
+      name: 'INDEXED_ROLEMIGRATION_ACTIVE',
+      column: '`active`',
+      type: 'indexed',
+      relation: null,
+      relationColumn: null,
+      keyLength: null,
+      sync: false,
+    }, {
+      name: 'INDEXED_ROLEMIGRATION_USER',
+      column: '`user`',
+      type: 'indexed',
+      relation: null,
+      relationColumn: null,
+      keyLength: null,
+      sync: false,
+    }, {
+      name: 'FOREIGN_ROLEMIGRATION_USER',
+      column: '`user`',
+      type: 'foreign',
+      relation: 'user_role_migrations',
+      relationColumn: 'id',
+      keyLength: null,
+      sync: false,
+    }]);
+  }));
 });

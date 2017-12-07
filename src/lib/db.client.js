@@ -15,7 +15,7 @@ var pool = mysql.createPool({
 
 
 const cyan = color('cyan');
-const green = color('green');
+// const green = color('green');
 let totalConnections = 0;
 
 const log = (str, params) => {
@@ -46,7 +46,7 @@ const spinner = () => {
   if (!process.env.DEBUG) {
     return () => {};
   }
-  const start = new Date();
+  // const start = new Date();
   let count = 0;
   let interval = null;
   let spinning = false;
@@ -98,41 +98,46 @@ exports.ping = function() {
   });
 };
 
-exports.getClient = function(cbFn) {
-  pool.getConnection((err, connection) => {
+const getConnection = () => new Promise((resolve, reject) => {
+  pool.getConnection(function(err, connection) {
     if (err) {
-      return cbFn(err);
+      return reject(err);
     }
-    cbFn(connection);
+    resolve({
+      query(str, params) {
+        return new Promise((res, rej) => {
+          connection.query(str, params, (error, data) => {
+            if (error) {
+              return rej(error);
+            }
+            res(data);
+          });
+        });
+      },
+      release() {
+        connection.release();
+      },
+    });
   });
-};
+});
+
+exports.getConnection = getConnection;
 
 exports.formatQuery = function(str, params) {
   var queryString = mysql.format(str, params);
   return queryString;
 };
 
-exports.query = function (str, params, silent = false) {
-  return new Promise((resolve, reject) => {
-    pool.getConnection(function(err, connection) {
-      if (err) {
-        return reject(err);
-      }
-
-      if (!silent) {
-        log(str, params);
-      }
-      const interval = spinner();
-      connection.query(str, params, function(error, data) {
-        interval();
-        if (error) {
-          return reject(error);
-        }
-        resolve(data);
-        connection.release();
-      });
-    });
-  });
+exports.query = async (str, params, silent = false) => {
+  const connection = await getConnection();
+  if (!silent) {
+    log(str, params);
+  }
+  const interval = spinner();
+  const data = await connection.query(str, params);
+  interval();
+  connection.release();
+  return data;
 };
 
 exports.startTransaction = async () => {
@@ -147,13 +152,13 @@ exports.commit = async () => {
   await exports.query('COMMIT');
 };
 
-exports.close = function(callbackFn) {
-  setTimeout(() => pool.end(callbackFn), 0);
+exports.close = async callbackFn => {
+  await getConnection();
+  pool.end(callbackFn);
 };
 
 exports.getDate = function(dayShift) {
-  var date;
-  date = new Date();
+  let date = new Date();
   date.setDate(date.getDate() + (dayShift || 0));
   date = date.getUTCFullYear() + '-' +
     ('00' + (date.getUTCMonth() + 1)).slice(-2) + '-' +

@@ -1,28 +1,23 @@
+const { lasso } = require('../helpers');
 const seventyEight = require('../../src/seventy.eight');
 const { field: { primary, int, string, boolean } } = seventyEight;
 const { statements, buildFullSchema } = require('../helpers');
 
 describe('syncTable -> updateTable', () => {
-  it('should not produce any updates when schema has not changed', done => {
-    buildFullSchema().then(schema => {
-      const DocMigration = seventyEight.createModel({
-        constructor: function DocMigration() {},
-        schema,
-      });
-      DocMigration.syncTable()
-        .then(updated => {
-          expect(updated).toEqual(true);
-          return DocMigration.syncTable();
-        })
-        .then(updated => {
-          expect(updated).toEqual(false);
-          done();
-        })
-        .catch(done.fail);
+  it('should not produce any updates when schema has not changed', lasso(async () => {
+    const schema = await buildFullSchema();
+    const DocMigration = seventyEight.createModel({
+      constructor: function DocMigration() {},
+      schema,
     });
-  });
+    let updated = null;
+    updated = await DocMigration.syncTable();
+    expect(updated).toEqual(true);
+    updated = await DocMigration.syncTable();
+    expect(updated).toEqual(false);
+  }));
 
-  it('should produce migration syntax for table updates', done => {
+  it('should produce migration syntax for table updates', lasso(async () => {
     const Grif = seventyEight.createModel({
       constructor: function Grif() {},
       schema: {
@@ -32,19 +27,16 @@ describe('syncTable -> updateTable', () => {
       },
     });
 
-    Grif.syncTable().then(() => {
-      Grif.schema.active = boolean({ default: false });
-      Grif.schema.name = string({ length: 36 });
-      delete Grif.schema.age;
-      Grif.migrationSyntax().then(migration => {
-        expect(statements(migration)).toEqual(statements(`
-          ALTER TABLE \`grifs\`
-            ADD COLUMN \`active\` TINYINT(1) NULL DEFAULT 0,
-            MODIFY \`name\` VARCHAR(36) NULL DEFAULT NULL,
-            DROP COLUMN \`age\`;
-        `));
-        done();
-      });
-    });
-  });
+    await Grif.syncTable();
+    Grif.schema.active = boolean({ default: false });
+    Grif.schema.name = string({ length: 36 });
+    delete Grif.schema.age;
+    const migration = await Grif.migrationSyntax();
+    expect(statements(migration)).toEqual(statements(`
+      ALTER TABLE \`grifs\`
+        ADD COLUMN \`active\` TINYINT(1) NULL DEFAULT 0,
+        MODIFY \`name\` VARCHAR(36) NULL DEFAULT NULL,
+        DROP COLUMN \`age\`;
+    `));
+  }));
 });

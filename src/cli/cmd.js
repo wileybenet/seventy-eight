@@ -21,7 +21,7 @@ const logR = log('red');
 const disconnect = () => {
   if (process.env.CONNECTED_TO_78) {
     const seventyEight = require('../seventy.eight');
-    seventyEight.promise.then(seventyEight.db.close);
+    seventyEight.db.close();
   }
   console.log(``);
 };

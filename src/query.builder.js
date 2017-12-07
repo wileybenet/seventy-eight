@@ -1,7 +1,34 @@
-var _ = require('lodash');
-var db = require('./lib/db.client');
+const _ = require('lodash');
+const db = require('./lib/db.client');
 
-function formatWhere(obj) {
+const formatWherePair = (key, value) => {
+  let multiValue = false;
+  let operator = '=';
+  let whereValue = value;
+  if (_.isArray(value)) {
+    if (['!=', '<>', '<', '<=', '>', '>=', '<=>', 'IS', 'IS NOT'].indexOf(value[0]) > -1) {
+      [operator] = value;
+      [, whereValue] = value;
+    } else {
+      multiValue = true;
+    }
+  }
+  if (multiValue) {
+    return `${db.escapeKey(key)} IN (${db.escapeValue(whereValue)})`;
+  }
+  return `${db.escapeKey(key)} ${operator} ${db.escapeValue(whereValue)}`;
+};
+
+const formatWhereDeep = (key, value) => {
+  if (key === '$OR' || key === '$AND') {
+    return `(${_.map(value, function(v, k) {
+      return formatWhereDeep(k, v);
+    }).join(` ${key.substr(1)} `)})`;
+  }
+    return formatWherePair(key, value);
+};
+
+const formatWhere = (obj) => {
   if (typeof obj === 'string') {
     return obj;
   } else if (obj.$OR || obj.$AND) {
@@ -12,51 +39,17 @@ function formatWhere(obj) {
     return _.map(obj, function(value, key) {
       return formatWherePair(key, value);
     }).join(' AND ');
+};
 
-}
+const instantiateResponse = function(data) {
+  const models = data.map(el => new this.$constructor(el, true));
+  return this.$queryParams.singleResult ? models[0] || null : models || [];
+};
 
-function formatWhereDeep(key, value) {
-  if (key === '$OR' || key === '$AND') {
-    return `(${_.map(value, function(v, k) {
-      return formatWhereDeep(k, v);
-    }).join(` ${key.substr(1)} `)})`;
-  }
-    return formatWherePair(key, value);
-
-}
-
-function formatWherePair(key, value) {
-  var multiValue = false;
-  var operator = '=';
-  if (_.isArray(value)) {
-    if (['!=', '<>', '<', '<=', '>', '>=', '<=>', 'IS', 'IS NOT'].indexOf(value[0]) !== -1) {
-      operator = value[0];
-      value = value[1];
-    } else {
-      multiValue = true;
-    }
-  }
-  if (multiValue) {
-    return `${db.escapeKey(key)} IN (${db.escapeValue(value)})`;
-  }
-    return `${db.escapeKey(key)} ${operator} ${db.escapeValue(value)}`;
-
-}
-
-function instantiateResponse(data) {
-  var this_ = this;
-  var models = [];
-  data.forEach(function(el) {
-    models.push(new this_.$constructor(el, true));
-  });
-
-  return this.$singleResult ? models[0] || null : models || [];
-}
-
-var api = {
+const queryMethods = {
   all() {},
   select(fields) {
-    var selects;
+    let selects = null;
     if (_.isArray(fields)) {
       selects = fields;
     } else {
@@ -68,17 +61,17 @@ var api = {
     }));
   },
   find(id) {
-    var where = {};
-    this.$singleResult = true;
+    const where = {};
+    this.$queryParams.singleResult = true;
     where[`${this.$constructor.tableName}.${this.$constructor.$getPrimaryKey()}`] = id;
     this.where(where).limit(1);
   },
   one() {
-    this.$singleResult = true;
+    this.$queryParams.singleResult = true;
     this.$queryParams.limit = 1;
   },
   joins(sql) {
-    var joins;
+    let joins = null;
     if (_.isArray(sql)) {
       joins = sql.join(' ');
     } else {
@@ -87,7 +80,7 @@ var api = {
     this.$queryParams.joins.push(joins);
   },
   group(keys) {
-    var groups;
+    let groups = null;
     if (_.isArray(keys)) {
       groups = keys;
     } else {
@@ -99,7 +92,7 @@ var api = {
     }));
   },
   order(keys) {
-    var orders;
+    let orders = null;
     if (_.isArray(keys)) {
       orders = keys;
     } else {
@@ -118,59 +111,59 @@ var api = {
   limit(size) {
     this.$queryParams.limit = Number(size);
   },
-  then(cbFn, errFn) {
-    var query = this.$renderSql();
-
-    this.$currentQuery = this.$record.db
-      .query(query);
-
-    this.$currentQuery.then(data => {
-      if (cbFn) {
-       cbFn.call(this, instantiateResponse.call(this, data));
-      }
-    }, errFn);
-
-    this.$init = false;
-  },
-  catch(errFn) {
-    // TODO not working ??
-    if (this.$currentQuery) {
-      this.$currentQuery.catch(errFn);
-    }
-  },
-  $renderSql() {
-    var query = '';
-    var params = [];
-    if (_.size(this.$queryParams.select)) {
-      query += `SELECT ${this.$queryParams.select.join(', ')}`;
-    } else {
-      query += 'SELECT *';
-    }
-    if (this.tableName) {
-      params.push(this.tableName);
-      query += ' FROM ??';
-    }
-    if (_.size(this.$queryParams.joins)) {
-      query += ` ${this.$queryParams.joins.join(' ')}`;
-    }
-    if (_.size(this.$queryParams.where)) {
-      query += ` WHERE ${this.$queryParams.where.join(' AND ')}`;
-    }
-    if (_.size(this.$queryParams.group)) {
-      params.push(this.$queryParams.group);
-      query += ' GROUP BY ??';
-    }
-    if (_.size(this.$queryParams.order)) {
-      query += ` ORDER BY ${this.$queryParams.order.join(', ')}`;
-    }
-    if (this.$queryParams.limit) {
-      params.push(this.$queryParams.limit);
-      query += ' LIMIT ?';
-    }
-
-    query += ';';
-    return db.formatQuery(query, params);
-  },
 };
 
-module.exports = api;
+module.exports = {
+  getBase() {
+    return {
+      where: [],
+      select: [],
+      joins: [],
+      group: [],
+      order: [],
+      limit: null,
+      singleResult: false,
+    };
+  },
+  queryMethods,
+  evaluation: {
+    $sql() { // eslint-disable-line max-statements
+      let query = '';
+      const params = [];
+      if (_.size(this.$queryParams.select)) {
+        query += `SELECT ${this.$queryParams.select.join(', ')}`;
+      } else {
+        query += 'SELECT *';
+      }
+      if (this.tableName) {
+        params.push(this.tableName);
+        query += ' FROM ??';
+      }
+      if (_.size(this.$queryParams.joins)) {
+        query += ` ${this.$queryParams.joins.join(' ')}`;
+      }
+      if (_.size(this.$queryParams.where)) {
+        query += ` WHERE ${this.$queryParams.where.join(' AND ')}`;
+      }
+      if (_.size(this.$queryParams.group)) {
+        params.push(this.$queryParams.group);
+        query += ' GROUP BY ??';
+      }
+      if (_.size(this.$queryParams.order)) {
+        query += ` ORDER BY ${this.$queryParams.order.join(', ')}`;
+      }
+      if (this.$queryParams.limit) {
+        params.push(this.$queryParams.limit);
+        query += ' LIMIT ?';
+      }
+
+      query += ';';
+      return db.formatQuery(query, params);
+    },
+    async exec() {
+      const response = await this.$record.db.query(this.$sql());
+      this.$chainInitialized = false;
+      return instantiateResponse.call(this, response);
+    },
+  },
+};

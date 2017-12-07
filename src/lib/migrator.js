@@ -42,71 +42,58 @@ module.exports = {
       getPrimaryKeyField() {
         return this.getSchema().find(field => field.primary);
       },
-      getSQLSchema() {
-        return new Promise((resolve, reject) => {
-          Promise.all([
-            this.db.query(schemaQuery(this.tableName), null, true),
-            this.db.query(keyQuery(this.tableName), null, true),
-          ]).then(([schemaResults, keyResults]) => {
-            const sqlKeys = flatMap(keyResults, utils.parseKeysFromSQL);
-            const sqlSchema = schemaResults.map(utils.parseSchemaFieldFromSQL(sqlKeys));
-            resolve({ sqlSchema, sqlKeys });
-          }, reject);
-        });
+      async getSQLSchema() {
+        const [schemaResults, keyResults] = await Promise.all([
+          this.db.query(schemaQuery(this.tableName), null, true),
+          this.db.query(keyQuery(this.tableName), null, true),
+        ]);
+        const sqlKeys = flatMap(keyResults, utils.parseKeysFromSQL);
+        const sqlSchema = schemaResults.map(utils.parseSchemaFieldFromSQL(sqlKeys));
+        return { sqlSchema, sqlKeys };
       },
       getKeys() {
         return utils.applyKeyDefaults(this.getSchema());
       },
-      getSchemaDiff() {
-        return new Promise((resolve, reject) => {
-          this.getSQLSchema().then(({ sqlSchema, sqlKeys }) => {
-            const keyChanges = utils.keyDiff(sqlKeys, this.getKeys(), false);
-            const schemaChanges = utils.schemaDiff(sqlSchema, this.getSchema());
-            resolve({ schemaChanges, keyChanges });
-          }).catch(reject);
-        });
+      async getSchemaDiff() {
+        const { sqlSchema, sqlKeys } = await this.getSQLSchema();
+        const keyChanges = utils.keyDiff(sqlKeys, this.getKeys(), false);
+        const schemaChanges = utils.schemaDiff(sqlSchema, this.getSchema());
+        return { schemaChanges, keyChanges };
       },
-      updateTableSyntax() {
-        return new Promise((resolve, reject) => {
-          this.getSchemaDiff().then(({ schemaChanges, keyChanges }) => {
-            const keyCmds = keyCommands(keyChanges);
-            const commands = [...schemaCommands(schemaChanges), ...keyCmds.drops];
-            const queries = [];
-            if (commands.length) {
-              queries.push(alterSyntax(this.tableName, commands));
-            }
-            if (keyCmds.adds.length) {
-              queries.push(alterSyntax(this.tableName, keyCmds.adds));
-            }
-            resolve(queries.join('\n') || null);
-          }, reject);
-        });
+      async updateTableSyntax() {
+        const { schemaChanges, keyChanges } = await this.getSchemaDiff();
+        const keyCmds = keyCommands(keyChanges);
+        const commands = [...schemaCommands(schemaChanges), ...keyCmds.drops];
+        const queries = [];
+        if (commands.length) {
+          queries.push(alterSyntax(this.tableName, commands));
+        }
+        if (keyCmds.adds.length) {
+          queries.push(alterSyntax(this.tableName, keyCmds.adds));
+        }
+        return queries.join('\n') || null;
       },
       createTableSyntax() {
         const columns = this.getSchema().map(utils.writeSchemaToSQL);
         const keys = utils.writeKeysToSQL('init')(this.getKeys());
         const fields = [...columns, ...keys];
-        return Promise.resolve(`CREATE TABLE \`${this.tableName}\` (${indent}${fields.join(`,${indent}`)}\n)`);
+        return `CREATE TABLE \`${this.tableName}\` (${indent}${fields.join(`,${indent}`)}\n)`;
       },
-      migrationSyntax() {
-        return new Promise((resolve, reject) => {
-          this.db.query(`SELECT 1 FROM ??`, [this.tableName], true)
-            .then(() => this.updateTableSyntax(), () => this.createTableSyntax())
-            .then(resolve, reject);
-        });
+      async migrationSyntax() {
+        try {
+          await this.db.query(`SELECT 1 FROM ??`, [this.tableName], true);
+          return this.updateTableSyntax();
+        } catch (err) {
+          return this.createTableSyntax();
+        }
       },
-      syncTable() {
-        return new Promise((resolve, reject) => {
-          const execute = syntax => {
-            if (!syntax) {
-              return resolve(false);
-            }
-            this.db.query(syntax).then(() => {
-              resolve(true);
-            }, reject);
-          };
-          this.migrationSyntax().then(execute).catch(reject);
-        });
+      async syncTable() {
+        const syntax = await this.migrationSyntax();
+        if (!syntax) {
+          return false;
+        }
+        await this.db.query(syntax);
+        return true;
       },
     };
   },

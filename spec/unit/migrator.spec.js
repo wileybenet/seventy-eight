@@ -1,3 +1,4 @@
+const { lasso } = require('../helpers');
 const seventyEight = require('../../src/seventy.eight');
 const utils = require('../../src/lib/migrator.utils').getUtils({ namespace: 'User' });
 const { statements } = require('../helpers');
@@ -33,8 +34,11 @@ const Account = seventyEight.createModel({
     ];
     getSQLSchemaFn = User.getSQLSchema;
     getSQLKeysFn = User.getSQLKeys;
-    User.getSQLKeys = () => Promise.resolve(utils.applyKeyDefaults(schema));
-    User.getSQLSchema = () => new Promise((resolve) => User.getSQLKeys().then(keys => resolve({ sqlSchema: schema, sqlKeys: keys })));
+    User.getSQLKeys = () => utils.applyKeyDefaults(schema);
+    User.getSQLSchema = async () => {
+      const keys = await User.getSQLKeys();
+      return { sqlSchema: schema, sqlKeys: keys };
+    };
   });
 
   afterEach(() => {
@@ -42,47 +46,43 @@ const Account = seventyEight.createModel({
     User.getSQLKeys = getSQLKeysFn;
   });
 
-  it('should generate field create syntax', function(done) {
-    User.createTableSyntax().then(sql => {
-      expect(statements(sql)).toEqual(statements(`
-        CREATE TABLE \`users\` (
-          \`id\` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-          \`name\` VARCHAR(255) NULL DEFAULT NULL,
-          \`data__json\` LONGTEXT NULL,
-          \`account\` INT(11) UNSIGNED NULL DEFAULT NULL,
-          \`account2\` INT(11) UNSIGNED NULL DEFAULT NULL,
+  it('should generate field create syntax', lasso(async () => {
+    const sql = await User.createTableSyntax();
+    expect(statements(sql)).toEqual(statements(`
+      CREATE TABLE \`users\` (
+        \`id\` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+        \`name\` VARCHAR(255) NULL DEFAULT NULL,
+        \`data__json\` LONGTEXT NULL,
+        \`account\` INT(11) UNSIGNED NULL DEFAULT NULL,
+        \`account2\` INT(11) UNSIGNED NULL DEFAULT NULL,
 
-          PRIMARY KEY (\`id\`),
-          KEY \`INDEXED_USER_DATA\` (\`data__json\`(5)),
-          CONSTRAINT \`FOREIGN_USER_ACCOUNT\` FOREIGN KEY (\`account\`) REFERENCES \`accounts\` (\`id\`),
-          CONSTRAINT \`FOREIGN_USER_ACCOUNT2\` FOREIGN KEY (\`account2\`) REFERENCES \`accounts\` (\`id\`) ON DELETE CASCADE ON UPDATE CASCADE
-        )
-      `));
-      done();
-    });
-  });
+        PRIMARY KEY (\`id\`),
+        KEY \`INDEXED_USER_DATA\` (\`data__json\`(5)),
+        CONSTRAINT \`FOREIGN_USER_ACCOUNT\` FOREIGN KEY (\`account\`) REFERENCES \`accounts\` (\`id\`),
+        CONSTRAINT \`FOREIGN_USER_ACCOUNT2\` FOREIGN KEY (\`account2\`) REFERENCES \`accounts\` (\`id\`) ON DELETE CASCADE ON UPDATE CASCADE
+      )
+    `));
+  }));
 
-  it('should generate field update syntax', function(done) {
+  it('should generate field update syntax', lasso(async () => {
     User.schema.name.default = 'hello world';
     User.schema.name.indexed = true;
-    User.updateTableSyntax().then(sql => {
-      expect(statements(sql)).toEqual(statements(`
-        ALTER TABLE \`users\`
-          ADD COLUMN \`data__json\` LONGTEXT NULL,
-          ADD COLUMN \`account2\` INT(11) UNSIGNED NULL DEFAULT NULL,
-          MODIFY \`name\` VARCHAR(255) NULL DEFAULT 'hello world',
-          DROP COLUMN \`created\`,
-          DROP INDEX \`INDEXED_USER_CREATED\`;
+    const sql = await User.updateTableSyntax();
+    expect(statements(sql)).toEqual(statements(`
+      ALTER TABLE \`users\`
+        ADD COLUMN \`data__json\` LONGTEXT NULL,
+        ADD COLUMN \`account2\` INT(11) UNSIGNED NULL DEFAULT NULL,
+        MODIFY \`name\` VARCHAR(255) NULL DEFAULT 'hello world',
+        DROP COLUMN \`created\`,
+        DROP INDEX \`INDEXED_USER_CREATED\`;
 
-        ALTER TABLE \`users\`
-          ADD INDEX \`INDEXED_USER_NAME\` (\`name\`),
-          ADD INDEX \`INDEXED_USER_DATA\` (\`data__json\`),
-          ADD CONSTRAINT \`FOREIGN_USER_ACCOUNT2\`
-            FOREIGN KEY (\`account2\`)
-            REFERENCES \`accounts\` (\`id\`)
-            ON DELETE CASCADE ON UPDATE CASCADE;
-      `));
-      done();
-    });
-  });
+      ALTER TABLE \`users\`
+        ADD INDEX \`INDEXED_USER_NAME\` (\`name\`),
+        ADD INDEX \`INDEXED_USER_DATA\` (\`data__json\`),
+        ADD CONSTRAINT \`FOREIGN_USER_ACCOUNT2\`
+          FOREIGN KEY (\`account2\`)
+          REFERENCES \`accounts\` (\`id\`)
+          ON DELETE CASCADE ON UPDATE CASCADE;
+    `));
+  }));
 });
