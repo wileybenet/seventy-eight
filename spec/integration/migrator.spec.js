@@ -1,7 +1,29 @@
-const { lasso } = require('../helpers');
+const { lasso, wait } = require('../helpers');
 const { statements } = require('../helpers');
 const seventyEight = require('../../src/seventy.eight');
 const { field: { primary, int, string, boolean, json, time, relation } } = seventyEight;
+
+describe('schema modifiers', () => {
+  const TrackedUser = seventyEight.createModel({
+    constructor: function TrackedUser() {},
+    schema: {
+      id: primary(),
+      name: string(),
+    },
+    tracked: true,
+  });
+
+
+  it('should have updated and created schema fields', lasso(async () => {
+    await TrackedUser.syncTable();
+    const now = new Date();
+    const user = await new TrackedUser({ name: 'james' }).save();
+    await wait(500);
+    user.name = 'ted';
+    await user.save();
+    expect(Number(user.updated)).toBeGreaterThan(Number(now) + 250);
+  }));
+});
 
 describe('basic schema syncTable', () => {
   const LeadMigration = seventyEight.createModel({

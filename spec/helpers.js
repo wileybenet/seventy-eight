@@ -23,6 +23,9 @@ module.exports = {
       }
     };
   },
+  wait(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms || 500));
+  },
   async buildFullSchema() { // eslint-disable-line max-statements
     const PageMigration = seventyEight.createModel({
       constructor: function PageMigration() {},

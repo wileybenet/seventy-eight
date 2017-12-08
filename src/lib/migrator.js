@@ -1,5 +1,6 @@
 const { flatMap } = require('lodash');
 const { indent } = require('../utils');
+const { time } = require('./field');
 const { getUtils } = require('./migrator.utils');
 const { schemaQuery, keyQuery } = require('./sql/schemas');
 
@@ -15,15 +16,34 @@ module.exports = {
 
     const alterSyntax = (tableName, commands) => `ALTER TABLE \`${tableName}\` ${indent}${commands.join(`,${indent}`)};`;
 
-    const schemaCommands = changes => ['create', 'update', 'remove'].reduce((memo, method) => memo.concat(writeColumnChanges(changes, method)), []);
+    const getExtraFields = model => {
+      const extraFields = {};
+      if (model.tracked) {
+        if (model.schema.updated || model.schema.created) {
+          throw new Error(`models with \`tracked: true\` overwrite the \`updated\` and \`created\` columns, please remove them from the ${context} schema'`);
+        }
+        Object.assign(extraFields, {
+          updated: time({ default: 'now' }),
+          created: time({ default: 'now' }),
+        });
+      }
+      return extraFields;
+    };
+
+    const schemaCommands = changes => ({
+      updates: ['create', 'update'].reduce((memo, method) => memo.concat(writeColumnChanges(changes, method)), []),
+      removes: writeColumnChanges(changes, 'remove'),
+    });
     const keyCommands = changes => ({
       drops: utils.writeKeysToSQL('drop')(changes.remove),
       adds: utils.writeKeysToSQL('add')(changes.create),
     });
     return {
       getSchema() {
-        const schema = Object.keys(this.schema).map(name => {
-          const schemaField = this.schema[name];
+        const extraFields = getExtraFields(this);
+        const fullSchema = Object.assign({}, this.schema, extraFields);
+        const schema = Object.keys(fullSchema).map(name => {
+          const schemaField = fullSchema[name];
           schemaField.name = schemaField.name || name;
           return utils.applySchemaDefaults(schemaField);
         });
@@ -63,13 +83,15 @@ module.exports = {
       async updateTableSyntax() {
         const { schemaChanges, keyChanges } = await this.getSchemaDiff();
         const keyCmds = keyCommands(keyChanges);
-        const commands = [...schemaCommands(schemaChanges), ...keyCmds.drops];
+        const schemaCmds = schemaCommands(schemaChanges);
+        const dropCmds = [...schemaCmds.removes, ...keyCmds.drops];
+        const modifyCmds = [...schemaCmds.updates, ...keyCmds.adds];
         const queries = [];
-        if (commands.length) {
-          queries.push(alterSyntax(this.tableName, commands));
+        if (dropCmds.length) {
+          queries.push(alterSyntax(this.tableName, dropCmds));
         }
-        if (keyCmds.adds.length) {
-          queries.push(alterSyntax(this.tableName, keyCmds.adds));
+        if (modifyCmds.length) {
+          queries.push(alterSyntax(this.tableName, modifyCmds));
         }
         return queries.join('\n') || null;
       },

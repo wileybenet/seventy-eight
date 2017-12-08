@@ -34,9 +34,10 @@ describe('syncTable -> updateTable', () => {
     const migration = await Grif.migrationSyntax();
     expect(statements(migration)).toEqual(statements(`
       ALTER TABLE \`grifs\`
-        ADD COLUMN \`active\` TINYINT(1) NULL DEFAULT 0,
-        MODIFY \`name\` VARCHAR(36) NULL DEFAULT NULL,
         DROP COLUMN \`age\`;
+      ALTER TABLE \`grifs\`
+        ADD COLUMN \`active\` TINYINT(1) NULL DEFAULT 0,
+        MODIFY \`name\` VARCHAR(36) NULL DEFAULT NULL;
     `));
   }));
 });

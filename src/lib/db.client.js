@@ -153,7 +153,8 @@ exports.commit = async () => {
 };
 
 exports.close = async callbackFn => {
-  await getConnection();
+  const connection = await getConnection();
+  connection.release();
   pool.end(callbackFn);
 };
 

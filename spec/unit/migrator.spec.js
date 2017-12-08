@@ -6,12 +6,12 @@ const { field: { primary, string, time, json, relation } } = seventyEight;
 
 describe('schemas', () => {
 
-const Account = seventyEight.createModel({
-  constructor: function Account() {},
-  schema: {
-    id: primary(),
-  },
-});
+  const Account = seventyEight.createModel({
+    constructor: function Account() {},
+    schema: {
+      id: primary(),
+    },
+  });
   const User = seventyEight.createModel({
     constructor: function User() {},
     schema: {
@@ -70,13 +70,13 @@ const Account = seventyEight.createModel({
     const sql = await User.updateTableSyntax();
     expect(statements(sql)).toEqual(statements(`
       ALTER TABLE \`users\`
-        ADD COLUMN \`data\` LONGTEXT NULL COMMENT 'type:json',
-        ADD COLUMN \`account2\` INT(11) UNSIGNED NULL DEFAULT NULL,
-        MODIFY \`name\` VARCHAR(255) NULL DEFAULT 'hello world',
         DROP COLUMN \`created\`,
         DROP INDEX \`INDEXED_USER_CREATED\`;
 
       ALTER TABLE \`users\`
+        ADD COLUMN \`data\` LONGTEXT NULL COMMENT 'type:json',
+        ADD COLUMN \`account2\` INT(11) UNSIGNED NULL DEFAULT NULL,
+        MODIFY \`name\` VARCHAR(255) NULL DEFAULT 'hello world',
         ADD INDEX \`INDEXED_USER_NAME\` (\`name\`),
         ADD INDEX \`INDEXED_USER_DATA\` (\`data\`),
         ADD CONSTRAINT \`FOREIGN_USER_ACCOUNT2\`
@@ -85,4 +85,22 @@ const Account = seventyEight.createModel({
           ON DELETE CASCADE ON UPDATE CASCADE;
     `));
   }));
+});
+
+
+describe('schema modifiers', () => {
+  const TrackedUsers = seventyEight.createModel({
+    constructor: function TrackedUsers() {},
+    schema: {
+      id: primary(),
+    },
+    tracked: true,
+  });
+
+
+  it('should have updated and created schema fields', () => {
+    const schema = TrackedUsers.getSchema();
+    expect(schema.find(f => f.name === 'updated').type).toEqual('time');
+    expect(schema.find(f => f.name === 'created').type).toEqual('time');
+  });
 });

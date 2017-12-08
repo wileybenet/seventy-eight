@@ -89,6 +89,9 @@ const globalInstanceMethods = {
   afterFind() {},
   $beforeSave(props) {
     const schema = this.Class.getSchema();
+    if (this.Class.tracked) {
+      props.updated = new Date();
+    }
     const filter = schemaFilters.filterIn(props);
     return _(Object.keys(props))
       .map(prop => schema.find(field => field.name === prop))
@@ -159,6 +162,7 @@ const globalInstanceMethods = {
 seventyEight.createModel = function(options) { // eslint-disable-line max-statements
   const Model = options.constructor;
   const { schema = {} } = options;
+  const tracked = options.tracked || false;
   const staticMembers = Object.assign({}, globalStaticMethods, options.static || {});
   const instanceMembers = _.extend({}, globalInstanceMethods, options.instance || {});
   const queryMethods = _.extend({}, chainQueryMethods.queryMethods, options.query || {});
@@ -181,6 +185,7 @@ seventyEight.createModel = function(options) { // eslint-disable-line max-statem
   Object.assign(QueryConstructor, migrator.getMethods({ namespace: Model.name }), {
     tableName,
     schema,
+    tracked,
     db: client,
     $getPrimaryKey() {
       try {
