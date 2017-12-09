@@ -21,9 +21,8 @@ jasmine.stderr.on('data', data => {
 
 jasmine.on('close', code => {
   if (code === 0) {
-    console.log(`${style.green.open}##########################################################${style.green.close}`);
-    console.log(`${style.green.open}#########                 PASSED                 #########${style.green.close}`);
-    console.log(`${style.green.open}##########################################################${style.green.close}`);
+    console.log(`${style.green.open} ✓   All tests passing${style.green.close}`);
+    console.log(``);
   }
   process.exit(code); // eslint-disable-line no-process-exit
 });

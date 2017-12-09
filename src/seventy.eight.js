@@ -4,6 +4,7 @@ const migrator = require('./lib/migrator');
 const schemaFilters = require('./lib/schema.filters');
 const fieldTypes = require('./lib/field');
 const { prefix } = require('./utils');
+const { mock } = require('./mock');
 
 const seventyEight = {};
 const chainQueryMethods = require('./query.builder');
@@ -14,6 +15,7 @@ const modelCache = {
 
 seventyEight.db = client;
 seventyEight.field = fieldTypes;
+seventyEight.mock = mock;
 
 // base static methods
 const globalStaticMethods = _.extend({
@@ -187,7 +189,11 @@ seventyEight.createModel = function(options) { // eslint-disable-line max-statem
         throw new Error(`schema missing primary field: \n${JSON.stringify(this.schema, null, 2)}`);
       }
     },
-  }, chainQueryMethods.evaluation, staticMembers);
+  }, chainQueryMethods.evaluation, staticMembers, {
+    queryMethodKeys: Object.keys(queryMethods),
+    staticMethodKeys: Object.keys(staticMembers).filter(sp => _.isFunction(staticMembers[sp])),
+    instanceMethodKeys: Object.keys(instanceMembers).filter(ip => _.isFunction(instanceMembers[ip])),
+  });
 
   Object.assign(QueryConstructor.prototype, instanceMembers);
 
