@@ -26,7 +26,7 @@ const log = (str, params) => {
   const notification = (/^\w+/).exec(formattedStr);
   let logString = notification ? cyan(notification[0]) : 'QUERY: null';
   if (process.env.DEBUG) {
-    logString = formattedStr.replace(/( [A-Z_]{3,}|[A-Z_]{3,} |[A-Z_]{3,}$)/g, (s, m) => cyan(m));
+    logString = formattedStr.replace(/( [A-Z_]{2,}|[A-Z_]{2,} |[A-Z_]{2,}$)/g, (s, m) => cyan(m));
   }
   if (process.env.NODE_ENV !== 'CLI') {
     console.log(logString);

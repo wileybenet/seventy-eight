@@ -17,13 +17,6 @@ seventyEight.field = fieldTypes;
 
 // base static methods
 const globalStaticMethods = _.extend({
-  int(value, dflt = null) {
-    var intVal = parseInt(value, 10);
-    return intVal > 0 || intVal < 0 || intVal === 0 ? intVal : dflt;
-  },
-  string(value, dflt = null) {
-    return typeof value !== 'undefined' && value !== null ? `${value}` : dflt;
-  },
   async import(objects) {
     const schema = this.getSchema();
     const columns = schema.map(field => field.column);

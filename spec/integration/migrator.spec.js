@@ -16,12 +16,12 @@ describe('schema modifiers', () => {
 
   it('should have updated and created schema fields', lasso(async () => {
     await TrackedUser.syncTable();
-    const now = new Date();
     const user = await new TrackedUser({ name: 'james' }).save();
     await wait(500);
     user.name = 'ted';
+    const now = user.updated;
     await user.save();
-    expect(Number(user.updated)).toBeGreaterThan(Number(now) + 250);
+    expect(Number(user.updated)).not.toBe(now);
   }));
 });
 
