@@ -1,5 +1,6 @@
 const _ = require('lodash');
 const db = require('./lib/db.client');
+const { NotFoundError } = require('./utils/error');
 
 const formatWherePair = (key, value) => {
   let multiValue = false;
@@ -43,7 +44,13 @@ const formatWhere = (obj) => {
 
 const instantiateResponse = function(data) {
   const models = data.map(el => new this.$constructor(el, true));
-  return this.$queryParams.singleResult ? models[0] || null : models || [];
+  if (this.$queryParams.singleResult) {
+    if (models[0]) {
+      return models[0];
+    }
+    throw new NotFoundError();
+  }
+  return models || [];
 };
 
 const queryMethods = {
@@ -127,7 +134,7 @@ module.exports = {
   },
   queryMethods,
   evaluation: {
-    $sql() { // eslint-disable-line max-statements
+    $sql(partition = false) { // eslint-disable-line max-statements
       let query = '';
       const params = [];
       if (_.size(this.$queryParams.select)) {
@@ -158,10 +165,10 @@ module.exports = {
       }
 
       query += ';';
-      return db.formatQuery(query, params);
+      return partition ? [query, params] : db.formatQuery(query, params);
     },
     async exec() {
-      const response = await this.$record.db.query(this.$sql());
+      const response = await this.$record.db.query(...this.$sql(true));
       this.$chainInitialized = false;
       return instantiateResponse.call(this, response);
     },

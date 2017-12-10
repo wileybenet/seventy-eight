@@ -1,5 +1,6 @@
 const { lasso } = require('../helpers');
 const seventyEight = require('../../src/seventy.eight');
+const { NotFoundError } = require('../../src/utils/error');
 const { field: { primary, string, boolean, json } } = seventyEight;
 
 describe('#static-query', function() {
@@ -79,8 +80,15 @@ describe('#static-query', function() {
     expect(user.id).toEqual(2);
     const deleted = await user.delete();
     expect(deleted).toEqual(true);
-    const deletedUser = await User.find(2).exec();
-    expect(deletedUser).toEqual(null);
+    await User.find(2).exec();
+  }, err => {
+    expect(err).toEqual(jasmine.any(NotFoundError));
+  }));
+
+  it('should throw not found', lasso(async () => {
+    await User.find(2125423).exec();
+  }, err => {
+    expect(err).toEqual(jasmine.any(NotFoundError));
   }));
 
 });

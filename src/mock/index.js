@@ -13,7 +13,7 @@ const setChain = function(spy, chainable, link) {
 
 module.exports = {
   mock(Model) {
-    const scope = { Model };
+    const scope = { [Model.name]: Model };
     const chainable = Model.queryMethodKeys;
     const chainableExec = [...chainable, 'exec'];
     const static = Model.staticMethodKeys;
@@ -22,10 +22,10 @@ module.exports = {
       ...static,
     ]);
     const api = new StubApi(Model.name, [...static, 'exec', 'new']);
-    const chainLink = jasmine.createSpyObj('ChainLink', chainableExec);
-    const instanceName = `${Model.name}<instance>`;
+    const chainLink = jasmine.createSpyObj(`${Model.name}/chainLink`, chainableExec);
+    const instanceName = `${Model.name}/instance`;
     const instanceApi = new StubApi(instanceName, Model.instanceMethodKeys);
-    const construcor = spyOn(scope, 'Model').and.callFake(props => {
+    const construcor = spyOn(scope, Model.name).and.callFake(props => {
       const instanceSpy = jasmine.createSpyObj(instanceName, Model.instanceMethodKeys);
       Model.instanceMethodKeys.forEach(method => {
         instanceSpy[method].and.callFake(() => instanceApi._process(method));

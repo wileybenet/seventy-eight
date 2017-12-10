@@ -3,7 +3,7 @@ const _ = require('lodash');
 const migrator = require('./lib/migrator');
 const schemaFilters = require('./lib/schema.filters');
 const fieldTypes = require('./lib/field');
-const { prefix } = require('./utils');
+const { prefix, error } = require('./utils');
 const { mock } = require('./mock');
 
 const seventyEight = {};
@@ -15,6 +15,7 @@ const modelCache = {
 
 seventyEight.db = client;
 seventyEight.field = fieldTypes;
+seventyEight.error = error;
 seventyEight.mock = mock;
 
 // base static methods

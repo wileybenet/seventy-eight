@@ -1,12 +1,12 @@
-
-var seventyEight = require('../../src/seventy.eight');
+const seventyEight = require('../../src/seventy.eight');
+const { field: { primary } } = seventyEight;
 
 describe('#static-composition', function() {
 
   var User = seventyEight.createModel({
     constructor: function User() {},
     schema: {
-      id: { type: 'int', primary: true },
+      id: primary(),
     },
   });
 
@@ -30,10 +30,16 @@ describe('#static-composition', function() {
       expect(query.$sql()).toEqual("SELECT * FROM `users` WHERE `id` < 1 AND `name` != 1 AND `title` >= 1;");
     });
 
-    it('should overwriting of keys from separate where statements', function() {
+    it('should not overwrite keys from separate where statements', function() {
       var query = User.where({ id: 1 }).where({ id: ['!=', 1] }).where({ id: ['>=', 1] });
 
       expect(query.$sql()).toEqual("SELECT * FROM `users` WHERE `id` = 1 AND `id` != 1 AND `id` >= 1;");
+    });
+
+    it('should where ... find statements', function() {
+      var query = User.where({ role: 5 }).find(1);
+
+      expect(query.$sql()).toEqual("SELECT * FROM `users` WHERE `role` = 5 AND `users`.`id` = 1 LIMIT 1;");
     });
 
     it('should resolve deep $AND/$OR where conditions', function() {

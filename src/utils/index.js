@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs-extra');
 const _ = require('lodash');
 const style = require('ansi-styles');
+const error = require('./error');
 
 const PREFIX_78 = `78`;
 
@@ -39,6 +40,7 @@ const utils = {
   prefix(clr) {
     return utils.color(clr)(PREFIX_78);
   },
+  error,
 };
 
 module.exports = utils;
