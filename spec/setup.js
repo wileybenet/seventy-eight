@@ -2,10 +2,8 @@ require('dotenv').config();
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
-const q = require('q');
 const client = require('../src/lib/db.client');
 const skipCreateDatabase = process.env.CI_BUILD;
-const deferred = q.defer();
 
 
 const createDatabase = () => new Promise((resolve, reject) => {
@@ -51,10 +49,8 @@ const seedDatabase = () => new Promise((resolve, reject) => {
 
 if (skipCreateDatabase) {
   console.log(`skipping db creation`);
-  seedDatabase().then(deferred.resolve).catch(console.error);
+  seedDatabase().catch(console.error);
 } else {
   console.log(`creating database ${process.env.DB_SCHEMA}`);
-  createDatabase().then(seedDatabase).then(deferred.resolve).catch(console.error);
+  createDatabase().then(seedDatabase).catch(console.error);
 }
-
-module.exports = deferred.promise;
