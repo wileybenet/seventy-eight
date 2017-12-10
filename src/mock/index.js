@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle */
-const StubApi = require('./StubApi');
+const Stub = require('./Stub');
 
 const setChain = function(spy, chainable, link) {
   chainable.forEach(method => {
@@ -21,10 +21,10 @@ module.exports = {
       ...chainable,
       ...static,
     ]);
-    const api = new StubApi(Model.name, [...static, 'exec', 'new']);
+    const api = new Stub(Model.name, [...static, 'exec', 'new']);
     const chainLink = jasmine.createSpyObj(`${Model.name}/chainLink`, chainableExec);
     const instanceName = `${Model.name}/instance`;
-    const instanceApi = new StubApi(instanceName, Model.instanceMethodKeys);
+    const instanceApi = new Stub(instanceName, Model.instanceMethodKeys);
     const construcor = spyOn(scope, Model.name).and.callFake(props => {
       const instanceSpy = jasmine.createSpyObj(instanceName, Model.instanceMethodKeys);
       Model.instanceMethodKeys.forEach(method => {

@@ -11,7 +11,14 @@ class NotFoundError extends SeventyEightError {
   }
 }
 
+class NotImplementedError extends SeventyEightError {
+  constructor(message = 'functionality not implemented') {
+    super(message, 501);
+  }
+}
+
 module.exports = {
   SeventyEightError,
   NotFoundError,
+  NotImplementedError,
 };
