@@ -1,7 +1,9 @@
-const seventyEight = require('seventy-eight');
-const { field: { primary } } = seventyEight;
+const {
+  createModel,
+  field: { primary },
+} = require('seventy-eight');
 
-module.exports = seventyEight.createModel({
+module.exports = createModel({
   constructor: function {{modelName}}() {},
   schema: {
     id: primary(),
