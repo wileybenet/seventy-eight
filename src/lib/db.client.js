@@ -1,5 +1,5 @@
 const mysql = require('mysql');
-const { color } = require('../utils');
+const { color, error: { SQLError } } = require('../utils');
 
 let schema = null;
 
@@ -108,7 +108,7 @@ const getConnection = () => new Promise((resolve, reject) => {
         return new Promise((res, rej) => {
           connection.query(str, params, (error, data) => {
             if (error) {
-              return rej(error);
+              return rej(new SQLError(error.message));
             }
             res(data);
           });
@@ -129,27 +129,15 @@ exports.formatQuery = function(str, params) {
 };
 
 exports.query = async (str, params, silent = false) => {
-  const connection = await getConnection();
+  const conn = await getConnection();
   if (!silent) {
     log(str, params);
   }
   const interval = spinner();
-  const data = await connection.query(str, params);
+  const data = await conn.query(str, params);
   interval();
-  connection.release();
+  conn.release();
   return data;
-};
-
-exports.startTransaction = async () => {
-  await exports.query('START TRANSACTION');
-};
-
-exports.rollback = async () => {
-  await exports.query('ROLLBACK');
-};
-
-exports.commit = async () => {
-  await exports.query('COMMIT');
 };
 
 exports.close = async callbackFn => {

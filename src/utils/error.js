@@ -17,8 +17,15 @@ class NotImplementedError extends SeventyEightError {
   }
 }
 
+class SQLError extends SeventyEightError {
+  constructor(message) {
+    super(message, 500);
+  }
+}
+
 module.exports = {
   SeventyEightError,
   NotFoundError,
   NotImplementedError,
+  SQLError,
 };

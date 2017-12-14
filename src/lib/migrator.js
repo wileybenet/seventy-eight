@@ -99,7 +99,7 @@ module.exports = {
         const columns = this.getSchema().map(utils.writeSchemaToSQL);
         const keys = utils.writeKeysToSQL('init')(this.getKeys());
         const fields = [...columns, ...keys];
-        return `CREATE TABLE \`${this.tableName}\` (${indent}${fields.join(`,${indent}`)}\n)`;
+        return `CREATE TABLE \`${this.tableName}\` (${indent}${fields.join(`,${indent}`)}\n);`;
       },
       async migrationSyntax() {
         try {

@@ -60,7 +60,7 @@ describe('schemas', () => {
         KEY \`INDEXED_USER_DATA\` (\`data\`(5)),
         CONSTRAINT \`FOREIGN_USER_ACCOUNT\` FOREIGN KEY (\`account\`) REFERENCES \`accounts\` (\`id\`),
         CONSTRAINT \`FOREIGN_USER_ACCOUNT2\` FOREIGN KEY (\`account2\`) REFERENCES \`accounts\` (\`id\`) ON DELETE CASCADE ON UPDATE CASCADE
-      )
+      );
     `));
   }));
 
