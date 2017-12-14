@@ -122,6 +122,12 @@ const SeventyEightSetting = seventyEight.createModel({
 
 module.exports = {
   async init() {
+    try {
+      await SeventyEightSetting.all().exec();
+      return 'already initialized';
+    } catch (err) {
+      //
+    }
     makeModelDir();
     makeMigrationDir();
     await SeventyEightSetting.syncTable();
@@ -152,7 +158,7 @@ module.exports = {
   },
   async syncData() {
     try {
-      SeventyEightSetting.all().exec();
+      await SeventyEightSetting.all().exec();
     } catch (err) {
       throw new Error(NEEDS_INIT('syncing data'));
     }

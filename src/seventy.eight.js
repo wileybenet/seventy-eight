@@ -130,7 +130,10 @@ const globalInstanceMethods = {
     let { columns } = params;
     let sql = 'INSERT INTO ?? (??) VALUES ';
     if (columns.length) {
-      sql += '(?) ON DUPLICATE KEY UPDATE ?';
+      sql += '(?)';
+      if (columns.includes(this.$primaryKey)) {
+        sql += 'ON DUPLICATE KEY UPDATE ?';
+      }
     } else {
       columns = this.Class.getDefaultSchemaFields();
       sql += `(${columns.map(() => 'NULL').join(', ')})`;
@@ -141,7 +144,7 @@ const globalInstanceMethods = {
       values,
       whiteListedProperties,
     ]);
-    const model = await this.Class.find(data.insertId).exec();
+    const model = await this.Class.find(data.insertId || this[this.$primaryKey]).exec();
     Object.assign(this, model);
     return this;
   },
