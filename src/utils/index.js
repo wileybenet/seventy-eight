@@ -40,6 +40,26 @@ const utils = {
   prefix(clr) {
     return utils.color(clr)(PREFIX_78);
   },
+  buildIndex(list, key) {
+    return list.reduce((memo, item) => {
+      memo[item[key]] = item;
+      return memo;
+    }, {});
+  },
+  async inSerial(items, promiser/*, asTransaction */) {
+    const evaluate = async () => {
+      const results = [];
+      for (const item of items) {
+        try {
+          results.push(await promiser(item)); // eslint-disable-line no-await-in-loop
+        } catch (err) {
+          throw err;
+        }
+      }
+      return results;
+    };
+    await evaluate();
+  },
   error,
 };
 

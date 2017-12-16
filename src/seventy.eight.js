@@ -3,20 +3,18 @@ const _ = require('lodash');
 const migrator = require('./lib/migrator');
 const schemaFilters = require('./lib/schema.filters');
 const fieldTypes = require('./lib/field');
-const { prefix, error } = require('./utils');
+const { error } = require('./utils');
 const { mock } = require('./mock');
 
 const seventyEight = {};
 const chainQueryMethods = require('./query.builder');
-const modelCache = {
-  byClass: {},
-  byTable: {},
-};
+const { getModel, cache } = require('./model.cache');
 
 seventyEight.db = client;
 seventyEight.field = fieldTypes;
 seventyEight.error = error;
 seventyEight.mock = mock;
+seventyEight.getModel = getModel;
 
 // base static methods
 const globalStaticMethods = _.extend({
@@ -227,19 +225,8 @@ seventyEight.createModel = function(options) { // eslint-disable-line max-statem
     }
   }
 
-  modelCache.byTable[tableName] = modelCache.byClass[Model.name] = QueryConstructor; // eslint-disable-line no-multi-assign
+  cache(QueryConstructor);
   return QueryConstructor;
-};
-
-seventyEight.getModel = name => {
-  if (modelCache.byTable[name] || modelCache.byClass[name]) {
-    return modelCache.byTable[name] || modelCache.byClass[name];
-  }
-  const cacheJSON = {
-    tables: Object.keys(modelCache.byTable),
-    classes: Object.keys(modelCache.byClass),
-  };
-  throw new Error(`${prefix('red')} getModel('${name}') could not find a matching loaded model\nmodel cache:\n${JSON.stringify(cacheJSON, null, 2)}`);
 };
 
 module.exports = seventyEight;

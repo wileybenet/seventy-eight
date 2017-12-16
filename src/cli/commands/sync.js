@@ -1,6 +1,6 @@
 /* eslint-disable no-sync */
 const fs = require('fs-extra');
-const { log, indent, modelDir, migrationDir, makeModelDir, makeMigrationDir, dataDir, getTemplate } = require('../../utils');
+const { log, indent, modelDir, migrationDir, makeModelDir, makeMigrationDir, dataDir, getTemplate, inSerial } = require('../../utils');
 const _ = require('lodash');
 const seventyEight = require('../../seventy.eight');
 const { getModel, field: { primary, string } } = seventyEight;
@@ -22,31 +22,6 @@ const pad = zeros => num => {
 };
 
 const padMigrationNumber = pad(5);
-
-const inSerial = async (items, promiser, asTransaction) => {
-  const evaluate = async () => {
-    for (const item of items) {
-      try {
-        await promiser(item); // eslint-disable-line no-await-in-loop
-      } catch (err) {
-        throw err;
-      }
-    }
-  };
-  // not working yet, ignoring data changes when inside transaction block
-  if (asTransaction) {
-    // await seventyEight.db.startTransaction();
-    try {
-      await evaluate();
-    } catch (err) {
-      await seventyEight.db.rollback();
-      throw err;
-    }
-    // await seventyEight.db.commit();
-  } else {
-    await evaluate();
-  }
-};
 
 const orderByRelation = Models => {
   const modelIndex = Models.reduce((memo, Model) => {

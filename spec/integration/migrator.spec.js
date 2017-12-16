@@ -1,5 +1,4 @@
-const { lasso, wait } = require('../helpers');
-const { statements } = require('../helpers');
+const { lasso, wait, statements } = require('../helpers');
 const seventyEight = require('../../src/seventy.eight');
 const { field: { primary, int, string, boolean, json, time, relation } } = seventyEight;
 
@@ -160,6 +159,8 @@ describe('complex schema syncTable', () => {
       indexed: false,
       relation: null,
       relationColumn: null,
+      hasParents: false,
+      hasSiblings: false,
       required: true,
       keyLength: null,
       comment: {},
@@ -177,6 +178,8 @@ describe('complex schema syncTable', () => {
       indexed: false,
       relation: null,
       relationColumn: null,
+      hasParents: false,
+      hasSiblings: false,
       required: false,
       keyLength: null,
       comment: {},
@@ -194,6 +197,8 @@ describe('complex schema syncTable', () => {
       indexed: false,
       relation: null,
       relationColumn: null,
+      hasParents: false,
+      hasSiblings: false,
       required: false,
       keyLength: null,
       comment: {},
@@ -211,6 +216,8 @@ describe('complex schema syncTable', () => {
       indexed: 'INDEXED_ROLEMIGRATION_ACTIVE',
       relation: null,
       relationColumn: null,
+      hasParents: false,
+      hasSiblings: false,
       required: false,
       keyLength: null,
       comment: {},
@@ -228,6 +235,8 @@ describe('complex schema syncTable', () => {
       indexed: false,
       relation: null,
       relationColumn: null,
+      hasParents: false,
+      hasSiblings: false,
       required: false,
       keyLength: null,
       comment: { type: 'json' },
@@ -245,6 +254,8 @@ describe('complex schema syncTable', () => {
       indexed: false,
       relation: null,
       relationColumn: null,
+      hasParents: false,
+      hasSiblings: false,
       required: false,
       keyLength: null,
       comment: {},
@@ -262,6 +273,8 @@ describe('complex schema syncTable', () => {
       indexed: false,
       relation: null,
       relationColumn: null,
+      hasParents: false,
+      hasSiblings: false,
       required: false,
       keyLength: null,
       comment: {},
@@ -279,6 +292,8 @@ describe('complex schema syncTable', () => {
       indexed: 'INDEXED_ROLEMIGRATION_USER',
       relation: 'user_role_migrations',
       relationColumn: 'id',
+      hasParents: false,
+      hasSiblings: false,
       required: false,
       keyLength: null,
       comment: {},

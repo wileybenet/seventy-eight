@@ -1,6 +1,8 @@
 const _ = require('lodash');
 const db = require('./lib/db.client');
-const { NotFoundError } = require('./utils/error');
+const RelationQuery = require('./lib/relation.query');
+const { getModel } = require('./model.cache');
+const { inSerial, error: { NotFoundError } } = require('./utils');
 
 const formatWherePair = (key, value) => {
   let multiValue = false;
@@ -22,24 +24,18 @@ const formatWherePair = (key, value) => {
 
 const formatWhereDeep = (key, value) => {
   if (key === '$OR' || key === '$AND') {
-    return `(${_.map(value, function(v, k) {
-      return formatWhereDeep(k, v);
-    }).join(` ${key.substr(1)} `)})`;
+    return `(${_.map(value, (v, k) => formatWhereDeep(k, v)).join(` ${key.substr(1)} `)})`;
   }
-    return formatWherePair(key, value);
+  return formatWherePair(key, value);
 };
 
 const formatWhere = (obj) => {
   if (typeof obj === 'string') {
     return obj;
   } else if (obj.$OR || obj.$AND) {
-    return _.map(obj, function(value, key) {
-      return formatWhereDeep(key, value);
-    }).join('');
+    return _.map(obj, (value, key) => formatWhereDeep(key, value)).join('');
   }
-    return _.map(obj, function(value, key) {
-      return formatWherePair(key, value);
-    }).join(' AND ');
+  return _.map(obj, (value, key) => formatWherePair(key, value)).join(' AND ');
 };
 
 const instantiateResponse = function(data) {
@@ -51,6 +47,24 @@ const instantiateResponse = function(data) {
     throw new NotFoundError();
   }
   return models || [];
+};
+
+const allQueries = async function(transactionQuerier) {
+  const send = q => q();
+  const query = transactionQuerier || this.$record.db.query;
+  const result = await query(...this.$sql(true));
+  const models = instantiateResponse.call(this, result);
+  if (this.$queryParams.relations.length) {
+    const relationQueries = this.$queryParams.relations.map(relation => new RelationQuery(this.$constructor, models, relation));
+    const queries = [
+      ...relationQueries.map(rq => () => rq.exec(transactionQuerier)),
+    ];
+    if (transactionQuerier) {
+      await inSerial(queries, send);
+    }
+    await Promise.all(queries.map(send));
+  }
+  return models;
 };
 
 const queryMethods = {
@@ -118,6 +132,13 @@ const queryMethods = {
   limit(size) {
     this.$queryParams.limit = Number(size);
   },
+  include(model) {
+    let relation = null;
+    if (!_.isFunction(model)) {
+      relation = getModel(model);
+    }
+    this.$queryParams.relations = this.$queryParams.relations.concat(relation);
+  },
 };
 
 module.exports = {
@@ -128,6 +149,7 @@ module.exports = {
       joins: [],
       group: [],
       order: [],
+      relations: [],
       limit: null,
       singleResult: false,
     };
@@ -167,10 +189,9 @@ module.exports = {
       query += ';';
       return partition ? [query, params] : db.formatQuery(query, params);
     },
-    async exec() {
-      const response = await this.$record.db.query(...this.$sql(true));
+    exec(transactionQuerier) {
       this.$chainInitialized = false;
-      return instantiateResponse.call(this, response);
+      return allQueries.call(this, transactionQuerier);
     },
   },
 };

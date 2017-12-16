@@ -16,6 +16,8 @@ const INDEXED = 'indexed';
 const FOREIGN = 'foreign';
 
 const CASCADE = 'CASCADE';
+const HAS_PARENTS = 'hasParents';
+const HAS_SIBLINGS = 'hasSiblings';
 
 const typeMapping = {
   int: 'INT',
@@ -65,6 +67,12 @@ const getMappers = ({ namespace }) => {
           if (schemaField.type === 'json') {
             comment.type = 'json';
           }
+          if (schemaField.hasParents) {
+            comment.hasParents = schemaField.hasParents;
+          }
+          if (schemaField.hasSiblings) {
+            comment.hasSiblings = schemaField.hasSiblings;
+          }
           return comment;
         },
         fromSQL(field) {
@@ -72,7 +80,11 @@ const getMappers = ({ namespace }) => {
           if (comment) {
             return comment.split('|').reduce((memo, pair) => {
               const [k, v] = pair.split(':');
-              memo[k] = v;
+              if (v) {
+                memo[k] = v;
+              } else {
+                memo[k] = true;
+              }
               return memo;
             }, {});
           }
@@ -80,7 +92,12 @@ const getMappers = ({ namespace }) => {
         },
         toSQL(schemaField) {
           if (size(schemaField.comment)) {
-            const comment = Object.keys(schemaField.comment).map(k => `${k}:${schemaField.comment[k]}`).join('|');
+            const comment = Object.keys(schemaField.comment).map(k => {
+              if (schemaField.comment[k] === true) {
+                return k;
+              }
+              return `${k}:${schemaField.comment[k]}`;
+            }).join('|');
             return `COMMENT '${comment}'`;
           }
           return '';
@@ -219,6 +236,32 @@ const getMappers = ({ namespace }) => {
         fromSQL({ keys }) {
           const key = keys.find(k => k.type === FOREIGN) || {};
           return key.relation || null;
+        },
+        toSQL: noopNull,
+      },
+      hasParents: {
+        default(schemaField) {
+          if (schemaField.relation) {
+            return schemaField.hasParents || false;
+          }
+          return false;
+        },
+        fromSQL(field) {
+          const { hasParents } = mappers.fields.comment.fromSQL(field);
+          return Boolean(hasParents);
+        },
+        toSQL: noopNull,
+      },
+      hasSiblings: {
+        default(schemaField) {
+          if (schemaField.relation) {
+            return schemaField.hasSiblings || false;
+          }
+          return false;
+        },
+        fromSQL(field) {
+          const { hasSiblings } = mappers.fields.comment.fromSQL(field);
+          return Boolean(hasSiblings);
         },
         toSQL: noopNull,
       },

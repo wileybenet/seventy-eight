@@ -138,7 +138,7 @@
     "no-implicit-coercion": "error",
     "no-implicit-globals": "error",
     "no-implied-eval": "error",
-    "no-inline-comments": "error",
+    "no-inline-comments": "off",
     "no-invalid-this": "error",
     "no-iterator": "error",
     "no-label-var": "error",
@@ -252,10 +252,7 @@
     ],
     "space-infix-ops": "error",
     "space-unary-ops": "error",
-    "spaced-comment": [
-      "error",
-      "always"
-    ],
+    "spaced-comment": "off",
     "strict": "off",
     "symbol-description": "error",
     "template-curly-spacing": "error",
