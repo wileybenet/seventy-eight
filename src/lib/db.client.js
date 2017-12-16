@@ -1,5 +1,5 @@
 const mysql = require('mysql');
-const { color, error: { SQLError } } = require('../utils');
+const { color, coloredConsoleLog, error: { SQLError } } = require('../utils');
 
 let schema = null;
 
@@ -13,7 +13,6 @@ var pool = mysql.createPool({
   multipleStatements: true,
 });
 
-
 const cyan = color('cyan');
 // const green = color('green');
 let totalConnections = 0;
@@ -23,13 +22,12 @@ const log = (str, params) => {
   if (params) {
     formattedStr = mysql.format(str, params);
   }
-  const notification = (/^\w+/).exec(formattedStr);
-  let logString = notification ? cyan(notification[0]) : 'QUERY: null';
-  if (process.env.DEBUG) {
-    logString = formattedStr.replace(/( [A-Z_]{2,}|[A-Z_]{2,} |[A-Z_]{2,}$)/g, (s, m) => cyan(m));
+  if (process.env.NODE_ENV === 'production' && process.env.DEBUG) {
+    return console.log(JSON.stringify({ service: 'mysql', query: formattedStr, timestamp: Date.now() }));
   }
-  if (process.env.NODE_ENV !== 'CLI') {
-    console.log(logString);
+  const logString = formattedStr.replace(/( [A-Z_]{2,}|[A-Z_]{2,} |[A-Z_]{2,}$)/g, (s, m) => cyan(m));
+  if (process.env.NODE_ENV !== 'cli') {
+    coloredConsoleLog(logString);
   }
 };
 

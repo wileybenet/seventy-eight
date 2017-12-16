@@ -13,13 +13,24 @@ const createDirIfNotExists = dir => {
   }
 };
 
+
+const fileColors = _.curry((clr, str) => [`${style[clr].open}${str}${style[clr].close}`]);
+const chromeColors = _.curry((clr, str) => `%${clr}#${str}%`);
+
 const utils = {
-  color: _.curry((colorName, str) => {
-    if (str) {
-      return style[colorName].open + str + style[colorName].close;
+  color: process.env.NODE_ENV === 'test' ? fileColors : chromeColors,
+  coloredConsoleLog(str, ...args) {
+    if (process.env.NODE_ENV === 'test') {
+      return console.log(str, args);
     }
-    return '';
-  }),
+    const colors = [];
+    const message = str.replace(/%([a-z-]+)#(.*?)%/g, (s, color, msg) => {
+      colors.push(`color:${color};`);
+      colors.push(`color:default;`);
+      return `%c${msg}%c`;
+    });
+    console.log(message, ...colors, ...args);
+  },
   indent: '\n  ',
   modelDir: `${process.cwd()}/models`,
   migrationDir: `${process.cwd()}/migrations`,

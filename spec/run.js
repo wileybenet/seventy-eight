@@ -3,6 +3,7 @@ const style = require('ansi-styles');
 const { spawn } = require('child_process');
 const coverTests = process.argv[2] === 'coverage';
 
+
 console.log(`running JASMINE`);
 let jasmine = null;
 
