@@ -166,3 +166,16 @@ Write literal SQL by using the connector:
 seventyEight.db.query("SELECT * FROM USERS;")
   .then(function(response) {}, function(err) {});
 ```
+
+## Development
+
+### Run tests
+
+Create a `.env` file with your local MySQL connection credentials
+```
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=root
+DB_PORT=3306
+DB_SCHEMA=seventy_eight
+```
