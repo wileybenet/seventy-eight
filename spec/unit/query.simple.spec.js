@@ -64,13 +64,25 @@ describe('#base-static-methods', function(){
     expect(query.$sql()).toEqual("SELECT * FROM `models` WHERE id = 10;");
   });
 
-  it('should format WHERE objects with $OR clauses', function() {
+  it('should format WHERE objects with $OR clauses and a single comparator', function() {
+    var query = Model.where({ $OR: { id: 1 } });
+
+    expect(query.$sql()).toEqual("SELECT * FROM `models` WHERE (`id` = 1);");
+  });
+
+  it('should format WHERE objects with $OR clauses and multiple comparators', function() {
     var query = Model.where({ $OR: { id: 1, name: 'root' } });
 
     expect(query.$sql()).toEqual("SELECT * FROM `models` WHERE (`id` = 1 OR `name` = 'root');");
   });
 
-  it('should format WHERE objects with $AND clauses', function() {
+  it('should format WHERE objects with $AND clauses and a single comparator', function() {
+    var query = Model.where({ $AND: { name: 'root' } });
+
+    expect(query.$sql()).toEqual("SELECT * FROM `models` WHERE (`name` = 'root');");
+  });
+
+  it('should format WHERE objects with $AND clauses and multiple comparators', function() {
     var query = Model.where({ $AND: { id: 1, name: 'root' } });
 
     expect(query.$sql()).toEqual("SELECT * FROM `models` WHERE (`id` = 1 AND `name` = 'root');");

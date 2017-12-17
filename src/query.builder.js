@@ -55,7 +55,7 @@ const allQueries = async function(transactionQuerier) {
   const result = await query(...this.$sql(true));
   const models = instantiateResponse.call(this, result);
   if (this.$queryParams.relations.length) {
-    const relationQueries = this.$queryParams.relations.map(relation => new RelationQuery(this.$constructor, models, relation));
+    const relationQueries = this.$queryParams.relations.map(({ relation, assignments }) => new RelationQuery(this.$constructor, models, relation, assignments));
     const queries = [
       ...relationQueries.map(rq => () => rq.exec(transactionQuerier)),
     ];
@@ -132,12 +132,15 @@ const queryMethods = {
   limit(size) {
     this.$queryParams.limit = Number(size);
   },
-  include(model) {
-    let relation = null;
+  include(model, assignments = {}) {
+    let relation = model;
     if (!_.isFunction(model)) {
       relation = getModel(model);
     }
-    this.$queryParams.relations = this.$queryParams.relations.concat(relation);
+    this.$queryParams.relations = this.$queryParams.relations.concat({
+      relation,
+      assignments,
+    });
   },
 };
 

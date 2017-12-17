@@ -18,10 +18,10 @@ const fileColors = _.curry((clr, str) => [`${style[clr].open}${str}${style[clr].
 const chromeColors = _.curry((clr, str) => `%${clr}#${str}%`);
 
 const utils = {
-  color: process.env.NODE_ENV === 'test' ? fileColors : chromeColors,
+  color: process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'cli' ? fileColors : chromeColors,
   coloredConsoleLog(str, ...args) {
     if (process.env.NODE_ENV === 'test') {
-      return console.log(str, args);
+      return console.log(str, ...args);
     }
     const colors = [];
     const message = str.replace(/%([a-z-]+)#(.*?)%/g, (s, color, msg) => {

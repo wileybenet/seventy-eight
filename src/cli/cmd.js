@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /* eslint-disable node/shebang */
+process.env.NODE_ENV = 'cli';
 const { color, log, indent } = require('../utils');
 // program
 //   .command('setup [env]')
@@ -12,7 +13,6 @@ const { color, log, indent } = require('../utils');
 //   });
 const [, , cmd, ...options] = process.argv;
 
-process.env.NODE_ENV = 'cli';
 
 const error = color('red');
 const logG = log('green');

@@ -1,5 +1,6 @@
-const client = require('./lib/db.client');
 const _ = require('lodash');
+const { plural } = require('pluralize');
+const client = require('./lib/db.client');
 const migrator = require('./lib/migrator');
 const schemaFilters = require('./lib/schema.filters');
 const fieldTypes = require('./lib/field');
@@ -163,7 +164,7 @@ seventyEight.createModel = function(options) { // eslint-disable-line max-statem
   const staticMembers = Object.assign({}, globalStaticMethods, options.static || {});
   const instanceMembers = _.extend({}, globalInstanceMethods, options.instance || {});
   const queryMethods = _.extend({}, chainQueryMethods.queryMethods, options.query || {});
-  const tableName = options.tableName || `${_.snakeCase(Model.name).replace(/y$/g, 'ie')}s`;
+  const tableName = options.tableName || plural(_.snakeCase(Model.name));
   const QueryConstructor = eval( // eslint-disable-line no-eval
     `(function ${Model.name}(row, found) {
       for (const key in row) {

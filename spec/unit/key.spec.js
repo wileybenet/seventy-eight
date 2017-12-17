@@ -33,8 +33,8 @@ describe('keys', () => {
         id: primary(),
       },
     });
-    const Model2 = seventyEight.createModel({
-      constructor: function Model2() {},
+    const ModelTwo = seventyEight.createModel({
+      constructor: function ModelTwo() {},
       schema: {
         pid: string({ primary: true }),
       },
@@ -42,11 +42,11 @@ describe('keys', () => {
 
     it('should set a relation defaults from foreign schema', () => {
       const foreignKey = relation(Model);
-      const foreignKey2 = relation(Model2);
+      const foreignKey2 = relation(ModelTwo);
       expect(foreignKey.relation).toEqual('models');
       expect(foreignKey.type).toEqual('int');
       expect(foreignKey.relationColumn).toEqual('id');
-      expect(foreignKey2.relation).toEqual('model_2s');
+      expect(foreignKey2.relation).toEqual('model_twos');
       expect(foreignKey2.type).toEqual('string');
       expect(foreignKey2.relationColumn).toEqual('pid');
     });

@@ -16,8 +16,6 @@ const INDEXED = 'indexed';
 const FOREIGN = 'foreign';
 
 const CASCADE = 'CASCADE';
-const HAS_PARENTS = 'hasParents';
-const HAS_SIBLINGS = 'hasSiblings';
 
 const typeMapping = {
   int: 'INT',
@@ -67,11 +65,8 @@ const getMappers = ({ namespace }) => {
           if (schemaField.type === 'json') {
             comment.type = 'json';
           }
-          if (schemaField.hasParents) {
-            comment.hasParents = schemaField.hasParents;
-          }
-          if (schemaField.hasSiblings) {
-            comment.hasSiblings = schemaField.hasSiblings;
+          if (schemaField.oneToOne) {
+            comment.oneToOne = schemaField.oneToOne;
           }
           return comment;
         },
@@ -239,29 +234,16 @@ const getMappers = ({ namespace }) => {
         },
         toSQL: noopNull,
       },
-      hasParents: {
+      oneToOne: {
         default(schemaField) {
           if (schemaField.relation) {
-            return schemaField.hasParents || false;
+            return schemaField.oneToOne || false;
           }
           return false;
         },
         fromSQL(field) {
-          const { hasParents } = mappers.fields.comment.fromSQL(field);
-          return Boolean(hasParents);
-        },
-        toSQL: noopNull,
-      },
-      hasSiblings: {
-        default(schemaField) {
-          if (schemaField.relation) {
-            return schemaField.hasSiblings || false;
-          }
-          return false;
-        },
-        fromSQL(field) {
-          const { hasSiblings } = mappers.fields.comment.fromSQL(field);
-          return Boolean(hasSiblings);
+          const { oneToOne } = mappers.fields.comment.fromSQL(field);
+          return Boolean(oneToOne);
         },
         toSQL: noopNull,
       },
