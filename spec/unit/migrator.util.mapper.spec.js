@@ -1,12 +1,15 @@
 // const { field: { primary, string, time } } = require('../../src/seventy.eight');
 const _ = require('lodash');
-const mappers = require('../../src/lib/migrator.utils.mappers').getMappers({ namespace: 'Mouse' });
+const { getMappers } = require('../../src/lib/migrator.utils.mappers');
+
+const namespace = 'Mouse';
+const mappers = getMappers({ namespace });
 const { keys } = mappers;
 
 const testCase = _.curry((method, prop, cases) => {
   cases.forEach(([context, result, key], index) => {
     it(`should return ${method} ${prop} (case: ${index + 1})`, () => {
-      expect(keys[prop][method](context, key)).toEqual(result);
+      expect(keys[prop][method].call({ keys, namespace }, context, key)).toEqual(result);
     });
   });
 });

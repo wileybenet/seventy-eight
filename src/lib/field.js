@@ -23,7 +23,7 @@ const field = {
   primary(name = null) {
     return field.int({ autoIncrement: true, primary: true, required: true, signed: false }, name);
   },
-  relation(Model, { type, length, signed, default: def, relation, relationColumn, oneToOne, indexed = false, sync = false } = {}, name = null) {
+  relation(Model, { type, length, signed, default: def, relation, relationColumn, oneToOne, inverse, indexed = false, sync = false } = {}, name = null) {
     let foreignField = {};
     try {
       foreignField = Model.getPrimaryKeyField();
@@ -40,6 +40,7 @@ const field = {
       relation: relation || Model.tableName,
       relationColumn: relationColumn || foreignField.column,
       oneToOne,
+      inverse,
       indexed,
       sync,
       name,

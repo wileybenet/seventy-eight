@@ -80,8 +80,8 @@ describe('complex relationships', () => {
     constructor: function Conduit() {},
     schema: {
       id: primary(),
-      start: relation(Hub, { hasSiblings: true }),
-      end: relation(Hub, { hasSiblings: true }),
+      start: relation(Hub, { inverse: 'outputs' }),
+      end: relation(Hub, { inverse: 'inputs' }),
     },
   });
 
@@ -101,8 +101,8 @@ describe('complex relationships', () => {
     await query('DROP TABLE hubs');
   }));
 
-  fit('should load the related models automatically with disambiguation assignments', lasso(async () => {
-    const hubs = await Hub.include('conduits', { start: 'outputs', end: 'inputs' }).exec();
+  it('should load the related models automatically with disambiguation assignments', lasso(async () => {
+    const hubs = await Hub.include('conduits').exec();
 
     const hubB = hubs.find(h => h.name === 'B');
     const hubC = hubs.find(h => h.name === 'C');

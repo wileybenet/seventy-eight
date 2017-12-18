@@ -16,12 +16,12 @@ const { buildIndex } = require('../utils');
  * a property with a name in the plural form of the inverse field
  */
 class RelationQuery {
-  constructor(model, instances, relation, assignments = {}) {
-    this.model = model;
+  constructor(instance/*s*/, relation) {
     this.relation = relation;
-    this.instances = [].concat(instances);
+    this.instances = [].concat(instance);
+    this.model = this.instances[0].Class;
 
-    const directRelations = model.getSchema().filter(field => field.relation === relation.tableName);
+    const directRelations = this.model.getSchema().filter(field => field.relation === relation.tableName);
     if (directRelations.length) {
       this.alignments = directRelations.map(field => ({
         modelColumn: field.column,
@@ -30,18 +30,18 @@ class RelationQuery {
         inverse: false,
       }));
     } else {
-      const inverseRelations = relation.getSchema().filter(field => field.relation === model.tableName);
+      const inverseRelations = relation.getSchema().filter(field => field.relation === this.model.tableName);
       this.alignments = inverseRelations.map(field => ({
         modelColumn: field.relationColumn,
         relationColumn: field.column,
         many: !field.oneToOne,
         inverse: true,
-        arbitraryProp: assignments[field.column],
+        inverseProp: field.inverse,
       }));
     }
     this.where = {
       '$OR': this.alignments.reduce((memo, alignment) => {
-        memo[alignment.relationColumn] = this.instances.map(instance => instance[alignment.modelColumn]);
+        memo[alignment.relationColumn] = this.instances.map(inst => inst[alignment.modelColumn]);
         return memo;
       }, {}),
     };
@@ -51,9 +51,9 @@ class RelationQuery {
     this.assign(result);
     return result;
   }
-  getPropName(arbitraryProp, modelColumn, inverse, many) {
-    if (arbitraryProp) {
-      return arbitraryProp;
+  getPropName(inverseProp, modelColumn, inverse, many) {
+    if (inverseProp) {
+      return inverseProp;
     }
     if (inverse) {
       if (many) {
@@ -67,9 +67,9 @@ class RelationQuery {
     return modelColumn;
   }
   assign(result) {
-    this.alignments.forEach(({ inverse, many, modelColumn, relationColumn, arbitraryProp }) => {
+    this.alignments.forEach(({ inverse, many, modelColumn, relationColumn, inverseProp }) => {
       const index = buildIndex(this.instances, modelColumn);
-      const assignmentProp = this.getPropName(arbitraryProp, modelColumn, inverse, many);
+      const assignmentProp = this.getPropName(inverseProp, modelColumn, inverse, many);
       result.forEach(relation => {
         const parent = index[relation[relationColumn]];
         if (!parent) {

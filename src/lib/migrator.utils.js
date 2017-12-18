@@ -16,6 +16,8 @@ const schemaProps = [
   'autoIncrement',
   'signed',
   'column',
+  'oneToOne',
+  'inverse',
 ];
 
 const keyProps = [
@@ -71,7 +73,7 @@ const getUtils = context => {
     },
 
     writeKeysToSQL(method) {
-      return keys => keys.map(key => mappers.keys.type.toSQL(key, method));
+      return keys => keys.map(key => mappers.runMapper('keys', 'type', 'toSQL', key, method));
     },
 
     parseKeysFromSQL(indexes) {

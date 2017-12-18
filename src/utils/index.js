@@ -13,7 +13,6 @@ const createDirIfNotExists = dir => {
   }
 };
 
-
 const fileColors = _.curry((clr, str) => [`${style[clr].open}${str}${style[clr].close}`]);
 const chromeColors = _.curry((clr, str) => `%${clr}#${str}%`);
 
@@ -56,6 +55,14 @@ const utils = {
       memo[item[key]] = item;
       return memo;
     }, {});
+  },
+  inheritedProps(cls) {
+    let obj = cls;
+    let props = [];
+    while (obj = Object.getPrototypeOf(obj)) { // eslint-disable-line no-cond-assign
+      props = props.concat(Object.getOwnPropertyNames(obj));
+    }
+    return props;
   },
   async inSerial(items, promiser/*, asTransaction */) {
     const evaluate = async () => {
