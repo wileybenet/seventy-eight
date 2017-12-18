@@ -52,7 +52,7 @@ const instanceMethods = {
     const modifiedRelations = _.intersection(relationFields.map(field => field.column), propKeys);
     if (modifiedRelations.length) {
       const relations = modifiedRelations.map(column => _.find(relationFields, { column })).map(({ relation }) => getModel(relation));
-      return Promise.all(relations.map(relation => RelationQuery(this, relation)));
+      return Promise.all(relations.map(relation => new RelationQuery(this, relation).exec()));
     }
   },
   async update(props) {
@@ -77,8 +77,8 @@ const instanceMethods = {
         this[this.$primaryKey],
       ]);
       _.extend(this, whiteListedProperties);
-      await this.loadRelations(loadedRelationsProps);
       this.$afterFind();
+      await this.loadRelations(loadedRelationsProps);
       this.afterFind();
     }
     return this;

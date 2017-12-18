@@ -110,3 +110,47 @@ describe('complex relationships', () => {
     expect(hubB.outputs.length).toEqual(1);
   }));
 });
+
+describe('stale relationships', () => {
+  const Alpha = seventyEight.createModel({
+    constructor: function Alpha() {},
+    schema: {
+      id: primary(),
+      name: string(),
+    },
+  });
+
+  const Beta = seventyEight.createModel({
+    constructor: function Beta() {},
+    schema: {
+      id: primary(),
+      alpha: relation(Alpha),
+    },
+  });
+
+  beforeEach(lasso(async () => {
+    await Alpha.syncTable();
+    await Beta.syncTable();
+    const a = await new Alpha({ name: 'alf' }).save();
+    await new Alpha({ name: 'malph' }).save();
+    await new Beta({ alpha: a.id }).save();
+  }));
+
+  afterEach(lasso(async () => {
+    await query('DROP TABLE betas');
+    await query('DROP TABLE alphas');
+  }));
+
+  it('should NOT load the related models after an update', lasso(async () => {
+    const b = await Beta.find(1).exec();
+    const updatedB = await b.update({ alpha: 2 });
+    expect(updatedB.alpha).toEqual(2);
+  }));
+
+  it('should load the related models after an update', lasso(async () => {
+    const b = await Beta.find(1).include(Alpha).exec();
+    await b.update({ alpha: 2 });
+    console.log(b);
+    expect(b.alpha.name).toEqual('malph');
+  }));
+});
