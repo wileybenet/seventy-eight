@@ -23,7 +23,11 @@ const instanceMethods = {
     });
   },
   json() {
-    return _.pickBy(this, (value, prop) => !prop.match(/\$|_/) && typeof value !== 'function');
+    const schema = this.Class.getSchema();
+    return Object.assign({},
+      _.pickBy(this, (value, prop) => !prop.match(/\$|_/) && !_.isFunction(value)),
+      schema.reduce(schemaFilters.filterJSON(this), {})
+    );
   },
   $afterFind() {
     const schema = this.Class.getSchema();

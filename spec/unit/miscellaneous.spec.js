@@ -1,5 +1,6 @@
 
 var seventyEight = require('../../src/seventy.eight');
+const { field: { primary } } = seventyEight;
 
 describe('#miscellaneous', function() {
 
@@ -7,7 +8,7 @@ describe('#miscellaneous', function() {
     constructor: function User() {},
     tableName: 'user_tbl',
     schema: {
-      id: { type: 'int', primary: true },
+      id: primary(),
     },
   });
 

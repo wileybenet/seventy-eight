@@ -48,6 +48,13 @@ seventyEight.createModel = function(options) { // eslint-disable-line max-statem
     tableName,
     schema,
     tracked,
+    camel(test) {
+      const camel = _.camelCase(ModelConstructor.name);
+      if (_.isArray(test) || (_.isNumber(test) && test > 1)) {
+        return plural(camel);
+      }
+      return camel;
+    },
     db: client,
     $getPrimaryKey() {
       try {

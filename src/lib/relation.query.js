@@ -73,7 +73,7 @@ class RelationQuery {
       result.forEach(relation => {
         const parent = index[relation[relationColumn]];
         if (!parent) {
-          throw new Error(`${relation.Class.name} instance has no ${this.model.name} to assign to: ${relation.Class.name}.${relationColumn} = ${relation[relationColumn]}`);
+          return;
         }
         if (many) {
           parent[assignmentProp] = parent[assignmentProp] || [];

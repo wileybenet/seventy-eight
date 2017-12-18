@@ -54,4 +54,19 @@ module.exports = {
       },
     }[schemaField.type](model[schemaField.name])];
   },
+
+
+  filterJSON(model) {
+    return (json, schemaField) => {
+      json[schemaField.name] = {
+        int: noop,
+        string: noop,
+        time: val => (val.toJSON ? val.toJSON() : val),
+        boolean: noop,
+        text: noop,
+        json: noop,
+      }[schemaField.type](model[schemaField.name]);
+      return json;
+    };
+  },
 };
