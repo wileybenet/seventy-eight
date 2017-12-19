@@ -1,4 +1,4 @@
-const { createModel, field: { primary, string, int, json, time } } = require('../../src/seventy.eight');;
+const { createModel, field: { primary, string, int, json, time } } = require('../../src/seventy.eight');
 
 describe('#json', function() {
   let jsonData = null;

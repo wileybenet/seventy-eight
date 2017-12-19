@@ -39,7 +39,7 @@ const formatWhere = (obj) => {
 };
 
 const instantiateResponse = function(data) {
-  const models = data.map(el => new this.$constructor(el, true));
+  const models = data.map(el => new this.Class(el, true));
   if (this.$queryParams.singleResult) {
     if (models[0]) {
       return models[0];
@@ -52,7 +52,7 @@ const instantiateResponse = function(data) {
 const allQueries = async function(transactionQuerier) {
   const send = q => q();
   const query = transactionQuerier || this.$record.db.query;
-  const result = await query(...this.$sql(true));
+  const result = await query(this.$sql());
   const models = instantiateResponse.call(this, result);
   if (this.$queryParams.relations.length) {
     const relationQueries = this.$queryParams.relations.map(relation => new RelationQuery(models, relation));
@@ -84,7 +84,7 @@ const queryMethods = {
   find(id) {
     const where = {};
     this.$queryParams.singleResult = true;
-    where[`${this.$constructor.tableName}.${this.$constructor.$getPrimaryKey()}`] = id;
+    where[`${this.Class.tableName}.${this.Class.$getPrimaryKey()}`] = id;
     this.where(where).limit(1);
   },
   one() {
@@ -133,10 +133,12 @@ const queryMethods = {
     this.$queryParams.limit = Number(size);
   },
   include(model) {
-    let relation = model;
-    if (!_.isFunction(model)) {
-      relation = getModel(model);
-    }
+    const relation = [].concat(model).map(m => {
+      if (_.isString(m)) {
+        return getModel(m);
+      }
+      return m;
+    });
     this.$queryParams.relations = this.$queryParams.relations.concat(relation);
   },
 };
@@ -190,6 +192,9 @@ module.exports = {
       return partition ? [query, params] : db.formatQuery(query, params);
     },
     exec(transactionQuerier) {
+      if (transactionQuerier && transactionQuerier.length !== 2) {
+        throw new Error('method passed to exec() should be a query method for performing all queries on the same connection');
+      }
       this.$chainInitialized = false;
       return allQueries.call(this, transactionQuerier);
     },

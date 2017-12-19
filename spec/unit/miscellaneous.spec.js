@@ -14,6 +14,9 @@ describe('#miscellaneous', function() {
 
   const UserRole = seventyEight.createModel({
     constructor: function UserRole() {},
+    schema: {
+      id: primary(),
+    },
   });
 
   it('should format tableName from constructor name', function() {

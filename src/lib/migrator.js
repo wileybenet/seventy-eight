@@ -1,4 +1,5 @@
 const { flatMap } = require('lodash');
+const { getModel } = require('../model.cache');
 const { indent } = require('../utils');
 const { time } = require('./field');
 const { getUtils } = require('./migrator.utils');
@@ -39,6 +40,7 @@ module.exports = {
       adds: utils.writeKeysToSQL('add')(changes.create),
     });
     return {
+      directAndInverseRelations: [],
       getSchema() {
         const extraFields = getExtraFields(this);
         const fullSchema = Object.assign({}, this.schema, extraFields);
@@ -53,10 +55,32 @@ module.exports = {
         }
         return schema;
       },
+      setRelations() {
+        this.getSchema().filter(field => field.relation).forEach(field => {
+          const relation = getModel(field.relation);
+          relation.directAndInverseRelations.push({
+            name: field.inverse || this.camel(field.oneToOne ? 1 : 2),
+            column: field.relationColumn,
+            relation: this,
+            relationColumn: field.column,
+            hasMany: !field.oneToOne,
+          });
+          this.directAndInverseRelations.push({
+            name: field.name,
+            column: field.column,
+            relation,
+            relationColumn: field.relationColumn,
+            hasMany: false,
+          });
+        });
+      },
+      getRelations() {
+        return this.directAndInverseRelations;
+      },
       getDefaultSchemaFields() {
         return this.getSchema().filter(field => field.default !== null || field.autoIncrement).map(field => field.column);
       },
-      getRelations() {
+      getRelationTableNames() {
         return this.getSchema().map(field => field.relation).filter(m => m);
       },
       getPrimaryKeyField() {

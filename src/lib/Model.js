@@ -59,7 +59,8 @@ const instanceMethods = {
       return Promise.all(relations.map(relation => new RelationQuery(this, relation).exec()));
     }
   },
-  async update(props) {
+  async update(props, transactionQuerier = null) {
+    const query = transactionQuerier || client.query;
     const properties = this.beforeSave(_.extend({}, props));
     let whiteListedProperties = this.$prepareProps(properties);
     whiteListedProperties = this.$beforeSave(whiteListedProperties);
@@ -74,7 +75,7 @@ const instanceMethods = {
     });
 
     if (_.size(whiteListedProperties)) {
-      await client.query("UPDATE ?? SET ? WHERE ?? = ?", [
+      await query("UPDATE ?? SET ? WHERE ?? = ?", [
         this.$tableName,
         whiteListedProperties,
         this.$primaryKey,
@@ -95,7 +96,8 @@ const instanceMethods = {
     const values = this.$getAt(columns, whiteListedProperties);
     return { columns, values, whiteListedProperties };
   },
-  async save() {
+  async save(transactionQuerier = null) {
+    const query = transactionQuerier || client.query;
     const params = this.$saveParams();
     const { values, whiteListedProperties } = params;
     let { columns } = params;
@@ -109,7 +111,7 @@ const instanceMethods = {
       columns = this.Class.getDefaultSchemaFields();
       sql += `(${columns.map(() => 'NULL').join(', ')})`;
     }
-    const data = await client.query(sql, [
+    const data = await query(sql, [
       this.$tableName,
       columns,
       values,
@@ -119,8 +121,9 @@ const instanceMethods = {
     Object.assign(this, model);
     return this;
   },
-  async delete() {
-    await client.query("DELETE FROM ?? WHERE ?? = ?", [
+  async delete(transactionQuerier = null) {
+    const query = transactionQuerier || client.query;
+    await query("DELETE FROM ?? WHERE ?? = ?", [
       this.$tableName,
       this.$primaryKey,
       this[this.$primaryKey],
@@ -153,7 +156,8 @@ const staticMethods = {
     ];
     await client.query(query, injection);
   },
-  async update(recordId, props) {
+  async update(recordId, props, transactionQuerier = null) {
+    const query = transactionQuerier || client.query;
     const initialProps = {
       [this.$getPrimaryKey()]: recordId,
     };
@@ -163,7 +167,7 @@ const staticMethods = {
     whiteListedProperties = pseudoModel.$beforeSave(whiteListedProperties);
 
     if (_.size(whiteListedProperties)) {
-      await client.query("UPDATE ?? SET ? WHERE ?? = ?", [
+      await query("UPDATE ?? SET ? WHERE ?? = ?", [
         pseudoModel.$tableName,
         whiteListedProperties,
         this.$getPrimaryKey(),

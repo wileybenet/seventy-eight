@@ -20,28 +20,10 @@ class RelationQuery {
     this.relation = relation;
     this.instances = [].concat(instance);
     this.model = this.instances[0].Class;
-
-    const directRelations = this.model.getSchema().filter(field => field.relation === relation.tableName);
-    if (directRelations.length) {
-      this.alignments = directRelations.map(field => ({
-        modelColumn: field.column,
-        relationColumn: field.relationColumn,
-        many: false,
-        inverse: false,
-      }));
-    } else {
-      const inverseRelations = relation.getSchema().filter(field => field.relation === this.model.tableName);
-      this.alignments = inverseRelations.map(field => ({
-        modelColumn: field.relationColumn,
-        relationColumn: field.column,
-        many: !field.oneToOne,
-        inverse: true,
-        inverseProp: field.inverse,
-      }));
-    }
+    this.alignments = this.model.getRelations().filter(({ relation: r }) => r.tableName === relation.tableName);
     this.where = {
       '$OR': this.alignments.reduce((memo, alignment) => {
-        memo[alignment.relationColumn] = this.instances.map(inst => inst[alignment.modelColumn]);
+        memo[alignment.relationColumn] = this.instances.map(inst => inst[alignment.column]);
         return memo;
       }, {}),
     };
@@ -51,35 +33,19 @@ class RelationQuery {
     this.assign(result);
     return result;
   }
-  getPropName(inverseProp, modelColumn, inverse, many) {
-    if (inverseProp) {
-      return inverseProp;
-    }
-    if (inverse) {
-      if (many) {
-        return camelCase(this.relation.tableName);
-      }
-      return camelCase(this.model.name);
-    }
-    if (many) {
-      return plural(modelColumn);
-    }
-    return modelColumn;
-  }
   assign(result) {
-    this.alignments.forEach(({ inverse, many, modelColumn, relationColumn, inverseProp }) => {
-      const index = buildIndex(this.instances, modelColumn);
-      const assignmentProp = this.getPropName(inverseProp, modelColumn, inverse, many);
-      result.forEach(relation => {
-        const parent = index[relation[relationColumn]];
+    this.alignments.forEach(({ name, column, relationColumn, hasMany }) => {
+      const index = buildIndex(this.instances, column);
+      result.forEach(relationInstance => {
+        const parent = index[relationInstance[relationColumn]];
         if (!parent) {
           return;
         }
-        if (many) {
-          parent[assignmentProp] = parent[assignmentProp] || [];
-          parent[assignmentProp].push(relation);
+        if (hasMany) {
+          parent[name] = parent[name] || [];
+          parent[name].push(relationInstance);
         } else {
-          parent[assignmentProp] = relation;
+          parent[name] = relationInstance;
         }
       });
     });

@@ -18,7 +18,11 @@ seventyEight.error = error;
 seventyEight.mock = mock;
 seventyEight.getModel = getModel;
 
-seventyEight.createModel = function(options) { // eslint-disable-line max-statements
+const extend = function(options) { // eslint-disable-line max-statements
+  let BaseModel = Model; // eslint-disable-line no-unused-vars
+  if (this instanceof Model) {
+    BaseModel = this; // eslint-disable-line consistent-this
+  }
   const ModelConstructor = options.constructor;
   const { schema = {} } = options;
   const tracked = options.tracked || false;
@@ -27,7 +31,7 @@ seventyEight.createModel = function(options) { // eslint-disable-line max-statem
   const queryMethods = Object.assign({}, chainQueryMethods.queryMethods, options.query || {});
   const tableName = options.tableName || plural(_.snakeCase(ModelConstructor.name));
   const QueryConstructor = eval( // eslint-disable-line no-eval
-    `(class ${ModelConstructor.name} extends Model {
+    `(class ${ModelConstructor.name} extends BaseModel {
         constructor(row, found) {
           super();
           for (const key in row) {
@@ -49,11 +53,10 @@ seventyEight.createModel = function(options) { // eslint-disable-line max-statem
     schema,
     tracked,
     camel(test) {
-      const camel = _.camelCase(ModelConstructor.name);
       if (_.isArray(test) || (_.isNumber(test) && test > 1)) {
-        return plural(camel);
+        return _.camelCase(tableName);
       }
-      return camel;
+      return _.camelCase(ModelConstructor.name);
     },
     db: client,
     $getPrimaryKey() {
@@ -78,7 +81,7 @@ seventyEight.createModel = function(options) { // eslint-disable-line max-statem
   });
 
   const initChain = () => _.extend({}, QueryConstructor, {
-    $constructor: QueryConstructor,
+    Class: QueryConstructor,
     $getPrimaryKey: QueryConstructor.$getPrimaryKey(),
     $record: seventyEight,
     $chainInitialized: true,
@@ -102,7 +105,11 @@ seventyEight.createModel = function(options) { // eslint-disable-line max-statem
   }
 
   cache(QueryConstructor);
+  QueryConstructor.setRelations();
   return QueryConstructor;
 };
+
+Model.extend = extend;
+seventyEight.createModel = extend;
 
 module.exports = seventyEight;

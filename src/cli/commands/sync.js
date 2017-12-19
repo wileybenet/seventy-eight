@@ -37,7 +37,7 @@ const orderByRelation = Models => {
   });
 
   const addToOrderedList = Model => {
-    const relations = Model.getRelations().map(getModel);
+    const relations = Model.getRelationTableNames().map(getModel);
     if (relations.length) {
       relations.forEach(addToOrderedList);
     }
