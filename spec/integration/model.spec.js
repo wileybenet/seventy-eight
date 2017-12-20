@@ -43,10 +43,8 @@ describe('relationships', () => {
 
     children.forEach(child => {
       child.parent = parentIndex[child.parent];
-      if (child.parent) {
-        child.parent.children = child.parent.children || [];
-        child.parent.children.push(child);
-      }
+      child.parent.children = child.parent.children || [];
+      child.parent.children.push(child);
     });
     const joe = children.find(c => c.name === 'joe');
     const tom = parents.find(p => p.name === 'tom');
@@ -108,6 +106,47 @@ describe('complex relationships', () => {
     const hubC = hubs.find(h => h.name === 'C');
     expect(hubC.inputs.length).toEqual(2);
     expect(hubB.outputs.length).toEqual(1);
+  }));
+});
+
+describe('one-to-one relationships', () => {
+  const Dep = seventyEight.createModel({
+    constructor: function Dep() {},
+    schema: {
+      id: primary(),
+      name: string(),
+    },
+  });
+
+  const Pep = seventyEight.createModel({
+    constructor: function Pep() {},
+    schema: {
+      id: primary(),
+      name: string(),
+      dep: relation(Dep, { oneToOne: true }),
+    },
+  });
+
+  beforeEach(lasso(async () => {
+    await Dep.syncTable();
+    await Pep.syncTable();
+    const d = await new Dep({ name: 'dolt' }).save();
+    await new Pep({ name: 'perry', dep: d.id }).save();
+  }));
+
+  afterEach(lasso(async () => {
+    await query('DROP TABLE peps');
+    await query('DROP TABLE deps');
+  }));
+
+  it('should load relations as single instances', lasso(async () => {
+    const p = await Pep.includeDep().find(1).exec();
+    expect(p.dep.name).toEqual('dolt');
+  }));
+
+  it('should load inverse relations as single instances', lasso(async () => {
+    const d = await Dep.includePep().find(1).exec();
+    expect(d.pep.name).toEqual('perry');
   }));
 });
 

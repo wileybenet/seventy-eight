@@ -1,6 +1,34 @@
 const { createModel, isModelSet, field: { primary, string, int, json, time } } = require('../../src/seventy.eight');
 
-describe('#json', function() {
+describe('initialization', () => {
+  it('should throw for missing primary key', () => {
+    expect(() => createModel({
+      constructor: function FaultySchema() {},
+      schema: {
+        name: string(),
+      },
+    })).toThrow();
+  });
+
+  it('should throw for a bad implementation of a query method', () => {
+    const FaultyQuery = createModel({
+      constructor: function FaultyQuery() {},
+      schema: {
+        id: primary(),
+        name: string(),
+      },
+      query: {
+        byName(name) {
+          return this.where({ name });
+        },
+      },
+    });
+
+    expect(() => FaultyQuery.byName()).toThrow();
+  });
+});
+
+describe('#json', () => {
   let jsonData = null;
 
   const Json = createModel({
