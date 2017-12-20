@@ -184,4 +184,8 @@ module.exports = {
   Model,
   staticMethods,
   instanceMethods,
+  isModelSet(set) {
+    const model = _.isArray(set) ? set[0] : set;
+    return model instanceof Model;
+  },
 };

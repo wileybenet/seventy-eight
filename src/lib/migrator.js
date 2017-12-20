@@ -55,17 +55,24 @@ module.exports = {
         }
         return schema;
       },
+      compileRelation(relation) {
+        const queryMethod = `include${relation.relation.name}`;
+        this.directAndInverseRelations.push(relation);
+        this.createQueryMethod(function() {
+          this.include(relation.relation);
+        }, queryMethod);
+      },
       setRelations() {
         this.getSchema().filter(field => field.relation).forEach(field => {
           const relation = getModel(field.relation);
-          relation.directAndInverseRelations.push({
+          relation.compileRelation({
             name: field.inverse || this.camel(field.oneToOne ? 1 : 2),
             column: field.relationColumn,
             relation: this,
             relationColumn: field.column,
             hasMany: !field.oneToOne,
           });
-          this.directAndInverseRelations.push({
+          this.compileRelation({
             name: field.name,
             column: field.column,
             relation,

@@ -1,4 +1,4 @@
-const { createModel, field: { primary, string, int, json, time } } = require('../../src/seventy.eight');
+const { createModel, isModelSet, field: { primary, string, int, json, time } } = require('../../src/seventy.eight');
 
 describe('#json', function() {
   let jsonData = null;
@@ -37,5 +37,50 @@ describe('#json', function() {
 
   it('should format time for json', function() {
     expect(jsonData.made).toEqual('2012-04-23T18:25:43.511Z');
+  });
+});
+
+describe('helpers', () => {
+  const ModelHelper = createModel({
+    constructor: function ModelHelper() {},
+    schema: {
+      id: primary(),
+    },
+  });
+
+  it('should return true 1', () => {
+    expect(isModelSet(new ModelHelper())).toBe(true);
+  });
+
+  it('should return true 2', () => {
+    expect(isModelSet([new ModelHelper(), new ModelHelper()])).toBe(true);
+  });
+
+  it('should return false 1', () => {
+    expect(isModelSet(123)).toBe(false);
+  });
+
+  it('should return false 2', () => {
+    expect(isModelSet('hello world')).toBe(false);
+  });
+
+  it('should return false 3', () => {
+    expect(isModelSet(null)).toBe(false);
+  });
+
+  it('should return false 4', () => {
+    expect(isModelSet({})).toBe(false);
+  });
+
+  it('should return false 5', () => {
+    expect(isModelSet([])).toBe(false);
+  });
+
+  it('should return false 6', () => {
+    expect(isModelSet([{}, {}])).toBe(false);
+  });
+
+  it('should return false 7', () => {
+    expect(isModelSet()).toBe(false);
   });
 });

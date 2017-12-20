@@ -102,7 +102,7 @@ describe('complex relationships', () => {
   }));
 
   it('should load the related models automatically with disambiguation assignments', lasso(async () => {
-    const hubs = await Hub.include('conduits').exec();
+    const hubs = await Hub.includeConduit().exec();
 
     const hubB = hubs.find(h => h.name === 'B');
     const hubC = hubs.find(h => h.name === 'C');
@@ -152,5 +152,63 @@ describe('stale relationships', () => {
     await b.update({ alpha: 2 });
     console.log(b);
     expect(b.alpha.name).toEqual('malph');
+  }));
+});
+
+describe('nested relationships', () => {
+  const System = seventyEight.createModel({
+    constructor: function System() {},
+    schema: {
+      id: primary(),
+      name: string(),
+    },
+  });
+
+  const Part = seventyEight.createModel({
+    constructor: function Parts() {},
+    schema: {
+      id: primary(),
+      system: relation(System),
+    },
+  });
+
+  const Piece = seventyEight.createModel({
+    constructor: function Piece() {},
+    schema: {
+      id: primary(),
+      name: string(),
+      part: relation(Part),
+    },
+  });
+
+  beforeEach(lasso(async () => {
+    await System.syncTable();
+    await Part.syncTable();
+    await Piece.syncTable();
+    const sys = await new System({ name: 'main' }).save();
+    const part = await new Part({ system: sys.id }).save();
+    await new Piece({ part: part.id, name: 'screw' }).save();
+    await new System({ name: 'secondary' }).save();
+  }));
+
+  afterEach(lasso(async () => {
+    await query('DROP TABLE pieces');
+    await query('DROP TABLE parts');
+    await query('DROP TABLE systems');
+  }));
+
+  it('should load multi-level direct relations', lasso(async () => {
+    const piece = await Piece.include(Part.includeSystem()).find(1).exec();
+    expect(piece.part.system.name).toEqual('main');
+  }));
+
+  it('should load multi-level inverse relations', lasso(async () => {
+    const system = await System.include(Part.include(Piece)).find(1).exec();
+    expect(system.parts[0].pieces[0].name).toEqual('screw');
+  }));
+
+  it('should not throw even when no relations are found', lasso(async () => {
+    const system = await System.include(Part.include(Piece)).find(2).exec();
+    expect(system.parts).not.toBeDefined();
   }));
 });

@@ -1,5 +1,4 @@
-const { camelCase } = require('lodash');
-const { plural } = require('pluralize');
+const { uniq } = require('lodash');
 const { buildIndex } = require('../utils');
 
 /**
@@ -19,16 +18,23 @@ class RelationQuery {
   constructor(instance/*s*/, relation) {
     this.relation = relation;
     this.instances = [].concat(instance);
+    if (this.instances.length === 0) {
+      this.empty = true;
+      return;
+    }
     this.model = this.instances[0].Class;
     this.alignments = this.model.getRelations().filter(({ relation: r }) => r.tableName === relation.tableName);
     this.where = {
       '$OR': this.alignments.reduce((memo, alignment) => {
-        memo[alignment.relationColumn] = this.instances.map(inst => inst[alignment.column]);
+        memo[alignment.relationColumn] = uniq(this.instances.map(inst => inst[alignment.column]));
         return memo;
       }, {}),
     };
   }
   async exec(query) {
+    if (this.empty) {
+      return [];
+    }
     const result = await this.relation.where(this.where).exec(query);
     this.assign(result);
     return result;

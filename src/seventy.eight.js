@@ -9,7 +9,7 @@ const { mock } = require('./mock');
 const seventyEight = {};
 const chainQueryMethods = require('./query.builder');
 const { getModel, cache } = require('./model.cache');
-const { Model, staticMethods, instanceMethods } = require('./lib/Model');
+const { Model, staticMethods, instanceMethods, isModelSet } = require('./lib/Model');
 
 seventyEight.db = client;
 seventyEight.Model = Model;
@@ -17,6 +17,7 @@ seventyEight.field = fieldTypes;
 seventyEight.error = error;
 seventyEight.mock = mock;
 seventyEight.getModel = getModel;
+seventyEight.isModelSet = isModelSet;
 
 const extend = function(options) { // eslint-disable-line max-statements
   let BaseModel = Model; // eslint-disable-line no-unused-vars
@@ -98,11 +99,11 @@ const extend = function(options) { // eslint-disable-line max-statements
     throw new Error(`queryMethod ${ModelConstructor.name}.${fn.name}() CANNOT return a value, call this.<otherQueryMethod>() (returns are permitted from static)`);
   };
 
-  for (const queryMethod in queryMethods) {
-    if (queryMethods[queryMethod]) {
-      QueryConstructor[queryMethod] = chainable(queryMethods[queryMethod]);
-    }
-  }
+  QueryConstructor.createQueryMethod = (fn, methodName) => {
+    QueryConstructor[methodName] = chainable(fn);
+  };
+
+  _.forEach(queryMethods, QueryConstructor.createQueryMethod);
 
   cache(QueryConstructor);
   QueryConstructor.setRelations();

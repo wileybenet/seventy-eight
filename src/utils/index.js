@@ -13,7 +13,7 @@ const createDirIfNotExists = dir => {
   }
 };
 
-const fileColors = _.curry((clr, str) => [`${style[clr].open}${str}${style[clr].close}`]);
+const fileColors = _.curry((clr, str) => `${style[clr].open}${str}${style[clr].close}`);
 const chromeColors = _.curry((clr, str) => `%${clr}#${str}%`);
 
 const utils = {

@@ -132,14 +132,14 @@ const queryMethods = {
   limit(size) {
     this.$queryParams.limit = Number(size);
   },
-  include(model) {
-    const relation = [].concat(model).map(m => {
+  include(...models) {
+    const relations = [].concat(_.flatten(models)).map(m => {
       if (_.isString(m)) {
         return getModel(m);
       }
       return m;
     });
-    this.$queryParams.relations = this.$queryParams.relations.concat(relation);
+    this.$queryParams.relations = this.$queryParams.relations.concat(relations);
   },
 };
 
