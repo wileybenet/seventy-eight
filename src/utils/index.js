@@ -40,6 +40,11 @@ const utils = {
   makeMigrationDir() {
     createDirIfNotExists(utils.migrationDir);
   },
+  requireModel: name => require(`${utils.modelDir}/${name}`),
+  async getAllModels() {
+    const items = await fs.readdir(utils.modelDir);
+    return items.filter(item => item.match(/\.js$/)).map(utils.requireModel);
+  },
   getTemplate(name) {
     const modelTemplate = fs.readFileSync(path.resolve(__dirname, `../templates/${name}.tpl`)).toString();
     return options => modelTemplate.replace(/\{\{([^}]+)\}\}/g, (str, match) => options[match]);
@@ -77,6 +82,33 @@ const utils = {
       return results;
     };
     await evaluate();
+  },
+  orderByRelation(Models) {
+    const modelIndex = Models.reduce((memo, Model) => {
+      memo[Model.name] = Model;
+      return memo;
+    }, {});
+    const order = Models.filter(Model => {
+      if (!Model.getSchema().find(field => field.relation)) {
+        delete modelIndex[Model.name];
+        return true;
+      }
+      return false;
+    });
+
+    const addToOrderedList = Model => {
+      const relations = Model.getRelationTableNames().map(Model.getModel);
+      if (relations.length) {
+        relations.forEach(addToOrderedList);
+      }
+      if (modelIndex[Model.name]) {
+        delete modelIndex[Model.name];
+        order.push(Model);
+      }
+    };
+    Models.forEach(addToOrderedList);
+
+    return order;
   },
   error,
 };

@@ -2,12 +2,9 @@ const _ = require('lodash');
 const client = require('./db.client');
 const schemaFilters = require('./schema.filters');
 const RelationQuery = require('./relation.query');
-const { getModel } = require('../model.cache');
 
 class Model {
-  constructor() { // eslint-disable-line no-useless-constructor
-    //
-  }
+  constructor() {}
 }
 
 const instanceMethods = {
@@ -55,7 +52,7 @@ const instanceMethods = {
     const relationFields = this.Class.getSchema().filter(field => field.relation);
     const modifiedRelations = _.intersection(relationFields.map(field => field.column), propKeys);
     if (modifiedRelations.length) {
-      const relations = modifiedRelations.map(column => _.find(relationFields, { column })).map(({ relation }) => getModel(relation));
+      const relations = modifiedRelations.map(column => _.find(relationFields, { column })).map(({ relation }) => this.getModel(relation));
       return Promise.all(relations.map(relation => new RelationQuery(this, relation).exec()));
     }
   },

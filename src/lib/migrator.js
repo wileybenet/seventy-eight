@@ -1,5 +1,4 @@
 const { flatMap } = require('lodash');
-const { getModel } = require('../model.cache');
 const { indent } = require('../utils');
 const { time } = require('./field');
 const { getUtils } = require('./migrator.utils');
@@ -64,7 +63,7 @@ module.exports = {
       },
       setRelations() {
         this.getSchema().filter(field => field.relation).forEach(field => {
-          const relation = getModel(field.relation);
+          const relation = this.getModel(field.relation);
           relation.compileRelation({
             name: field.inverse || this.camel(field.oneToOne ? 1 : 2),
             column: field.relationColumn,
@@ -80,6 +79,10 @@ module.exports = {
             hasMany: false,
           });
         });
+      },
+      resetRelations() {
+        this.directAndInverseRelations = [];
+        return this;
       },
       getRelations() {
         return this.directAndInverseRelations;

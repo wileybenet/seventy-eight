@@ -1,6 +1,18 @@
 /* eslint-disable no-sync */
 const fs = require('fs-extra');
-const { log, indent, modelDir, migrationDir, makeModelDir, makeMigrationDir, dataDir, getTemplate, inSerial } = require('../../utils');
+const {
+  log,
+  indent,
+  migrationDir,
+  makeModelDir,
+  makeMigrationDir,
+  dataDir,
+  getTemplate,
+  inSerial,
+  getAllModels,
+  requireModel,
+  orderByRelation,
+} = require('../../utils');
 const _ = require('lodash');
 const seventyEight = require('../../seventy.eight');
 const { getModel, field: { primary, string } } = seventyEight;
@@ -22,41 +34,6 @@ const pad = zeros => num => {
 };
 
 const padMigrationNumber = pad(5);
-
-const orderByRelation = Models => {
-  const modelIndex = Models.reduce((memo, Model) => {
-    memo[Model.name] = Model;
-    return memo;
-  }, {});
-  const order = Models.filter(Model => {
-    if (!Model.getSchema().find(field => field.relation)) {
-      delete modelIndex[Model.name];
-      return true;
-    }
-    return false;
-  });
-
-  const addToOrderedList = Model => {
-    const relations = Model.getRelationTableNames().map(getModel);
-    if (relations.length) {
-      relations.forEach(addToOrderedList);
-    }
-    if (modelIndex[Model.name]) {
-      delete modelIndex[Model.name];
-      order.push(Model);
-    }
-  };
-  Models.forEach(addToOrderedList);
-
-  return order;
-};
-
-const requireModel = name => require(`${modelDir}/${name}`);
-
-const getAllModels = async () => {
-  const items = await fs.readdir(modelDir);
-  return items.filter(item => item.match(/\.js$/)).map(requireModel);
-};
 
 const getAllRelations = Model => {
   const relations = Model.getSchema().filter(field => field.relation).map(({ relation }) => getModel(relation));

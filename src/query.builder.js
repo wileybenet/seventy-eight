@@ -1,7 +1,6 @@
 const _ = require('lodash');
 const db = require('./lib/db.client');
 const RelationQuery = require('./lib/relation.query');
-const { getModel } = require('./model.cache');
 const { inSerial, error: { NotFoundError } } = require('./utils');
 
 const formatWherePair = (key, value) => {
@@ -51,7 +50,7 @@ const instantiateResponse = function(data) {
 
 const allQueries = async function(transactionQuerier) {
   const send = q => q();
-  const query = transactionQuerier || this.$record.db.query;
+  const query = transactionQuerier || this.db.query;
   const result = await query(this.$sql());
   const models = instantiateResponse.call(this, result);
   if (this.$queryParams.relations.length) {
@@ -135,11 +134,14 @@ const queryMethods = {
   include(...models) {
     const relations = [].concat(_.flatten(models)).map(m => {
       if (_.isString(m)) {
-        return getModel(m);
+        return this.getModel(m);
       }
       return m;
     });
     this.$queryParams.relations = this.$queryParams.relations.concat(relations);
+  },
+  $() {
+    this.$queryParams.defaultOverride = true;
   },
 };
 
@@ -154,11 +156,15 @@ module.exports = {
       relations: [],
       limit: null,
       singleResult: false,
+      defaultOverride: false,
     };
   },
   queryMethods,
   evaluation: {
     $sql(partition = false) { // eslint-disable-line max-statements
+      if (this.default && !this.$queryParams.defaultOverride) {
+        this.default();
+      }
       let query = '';
       const params = [];
       if (_.size(this.$queryParams.select)) {

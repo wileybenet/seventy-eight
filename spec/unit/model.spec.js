@@ -1,6 +1,29 @@
 const { createModel, isModelSet, field: { primary, string, int, json, time } } = require('../../src/seventy.eight');
 
 describe('initialization', () => {
+  it('should throw for an invalid name', () => {
+    expect(() => createModel({
+      constructor: function Faulty_Schema() {},
+      schema: {
+        id: primary(),
+      },
+    })).toThrow();
+
+    expect(() => createModel({
+      constructor: function faultySchema() {},
+      schema: {
+        id: primary(),
+      },
+    })).toThrow();
+
+    expect(() => createModel({
+      constructor: function Faulty$chema() {},
+      schema: {
+        id: primary(),
+      },
+    })).toThrow();
+  });
+
   it('should throw for missing primary key', () => {
     expect(() => createModel({
       constructor: function FaultySchema() {},
@@ -110,5 +133,66 @@ describe('helpers', () => {
 
   it('should return false 7', () => {
     expect(isModelSet()).toBe(false);
+  });
+});
+
+describe('binding', () => {
+  let BoundModel = null;
+  let model = null;
+  const context = {
+    req: {
+      user: {},
+    },
+  };
+  const ModelBinding = createModel({
+    constructor: function ModelBinding() {},
+    schema: {
+      id: primary(),
+    },
+    static: {
+      binder: true,
+    },
+    query: {
+      getAllBindings() {
+        this.req.user; // eslint-disable-line no-unused-expressions
+      },
+    },
+    instance: {
+      getUser() {
+        return this.req.user;
+      },
+    },
+  });
+
+  beforeEach(() => {
+    BoundModel = ModelBinding.bindToContext(context);
+    model = new BoundModel();
+  });
+
+  it('should not have the context attached to the original class', () => {
+    expect(ModelBinding.req).not.toBeDefined();
+  });
+
+  it('should have the context attached to the bound class', () => {
+    expect(BoundModel.req.user).toEqual({});
+  });
+
+  it('should have the context attached to each instance', () => {
+    expect(model.req.user).toEqual({});
+  });
+
+  it('should have the original static members', () => {
+    expect(BoundModel.import).toEqual(jasmine.any(Function));
+    expect(BoundModel.binder).toEqual(true);
+  });
+
+  it('should have the original query methods', () => {
+    expect(BoundModel.find).toEqual(jasmine.any(Function));
+    expect(BoundModel.getAllBindings()).toEqual(jasmine.any(Object));
+  });
+
+  it('should have the original instance methods', () => {
+    expect(model.getUser()).toEqual({});
+    expect(model.save).toEqual(jasmine.any(Function));
   });
 });

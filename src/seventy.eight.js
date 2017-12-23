@@ -1,14 +1,15 @@
+ /* eslint-disable no-eval */
 const _ = require('lodash');
 const { plural } = require('pluralize');
 const client = require('./lib/db.client');
 const migrator = require('./lib/migrator');
 const fieldTypes = require('./lib/field');
-const { error } = require('./utils');
+const { error, getAllModels } = require('./utils');
 const { mock } = require('./mock');
 
 const seventyEight = {};
 const chainQueryMethods = require('./query.builder');
-const { getModel, cache } = require('./model.cache');
+const { cache, getModel, getBoundModelCache } = require('./model.cache');
 const { Model, staticMethods, instanceMethods, isModelSet } = require('./lib/Model');
 
 seventyEight.db = client;
@@ -18,8 +19,32 @@ seventyEight.error = error;
 seventyEight.mock = mock;
 seventyEight.getModel = getModel;
 seventyEight.isModelSet = isModelSet;
+seventyEight.getAllModels = getAllModels;
+seventyEight.getBoundModelCache = getBoundModelCache;
+
+const getConstructor = (className, baseName) => `(
+  class ${className} extends ${baseName} {
+    constructor(row, found) {
+      super();
+      for (const key in row) {
+        this[key] = row[key];
+      }
+      this.$tableName = tableName;
+      this.$primaryKey = this.Class.$getPrimaryKey();
+      if (found) {
+        this.$afterFind();
+        this.afterFind();
+      } else {
+        ModelConstructor.call(this);
+      }
+    }
+  }
+)`;
 
 const extend = function(options) { // eslint-disable-line max-statements
+  if (!options.constructor.name.match(/^[A-Z][A-Za-z0-9]+$/)) {
+    throw new Error('Model names must be letters and/or numbers in pascal case');
+  }
   let BaseModel = Model; // eslint-disable-line no-unused-vars
   if (this instanceof Model) {
     BaseModel = this; // eslint-disable-line consistent-this
@@ -31,28 +56,13 @@ const extend = function(options) { // eslint-disable-line max-statements
   const instanceMembers = Object.assign({}, options.instance || {});
   const queryMethods = Object.assign({}, chainQueryMethods.queryMethods, options.query || {});
   const tableName = options.tableName || plural(_.snakeCase(ModelConstructor.name));
-  const QueryConstructor = eval( // eslint-disable-line no-eval
-    `(class ${ModelConstructor.name} extends BaseModel {
-        constructor(row, found) {
-          super();
-          for (const key in row) {
-            this[key] = row[key];
-          }
-          this.$tableName = tableName;
-          this.$primaryKey = this.Class.$getPrimaryKey();
-          if (found) {
-            this.$afterFind();
-            this.afterFind();
-          } else {
-            ModelConstructor.call(this);
-          }
-        }
-    })`);
+  const QueryConstructor = eval(getConstructor(ModelConstructor.name, 'BaseModel'));
 
   Object.assign(QueryConstructor, migrator.getMethods({ namespace: ModelConstructor.name }), {
     tableName,
     schema,
     tracked,
+    getModel,
     camel(test) {
       if (_.isArray(test) || (_.isNumber(test) && test > 1)) {
         return _.camelCase(tableName);
@@ -81,16 +91,14 @@ const extend = function(options) { // eslint-disable-line max-statements
     instanceMethodKeys: Object.keys(Object.assign({}, instanceMethods, instanceMembers)).filter(prop => _.isFunction(QueryConstructor.prototype[prop])),
   });
 
-  const initChain = () => _.extend({}, QueryConstructor, {
-    Class: QueryConstructor,
-    $getPrimaryKey: QueryConstructor.$getPrimaryKey(),
-    $record: seventyEight,
+  const initChain = context => Object.assign({}, context, {
+    Class: context,
     $chainInitialized: true,
     $queryParams: chainQueryMethods.getBase(),
   });
 
   const chainable = fn => function(...args) {
-    const context = this.$chainInitialized ? this : initChain(); // eslint-disable-line no-invalid-this
+    const context = this.$chainInitialized ? this : initChain(this); // eslint-disable-line no-invalid-this
     const nextSelf = _.extend({}, context);
     const ret = fn.apply(nextSelf, args);
     if (_.isUndefined(ret)) {
@@ -104,6 +112,15 @@ const extend = function(options) { // eslint-disable-line max-statements
   };
 
   _.forEach(queryMethods, QueryConstructor.createQueryMethod);
+
+  QueryConstructor.bindToContext = (context, bindingOverrides) => {
+    const BoundModel = eval(getConstructor(`Bound${ModelConstructor.name}`, 'QueryConstructor'));
+    Object.assign(BoundModel, QueryConstructor, bindingOverrides, context);
+    BoundModel.prototype.constructor = QueryConstructor;
+    Object.assign(BoundModel.prototype, context);
+    BoundModel.resetRelations().setRelations();
+    return BoundModel;
+  };
 
   cache(QueryConstructor);
   QueryConstructor.setRelations();

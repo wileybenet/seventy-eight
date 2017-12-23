@@ -62,4 +62,28 @@ describe('#static-composition', function() {
 
   });
 
+  describe('#default setting', () => {
+    const DefaultUser = seventyEight.createModel({
+      constructor: function DefaultUser() {},
+      schema: {
+        id: primary(),
+      },
+      query: {
+        default() {
+          this.where({ x: 10 });
+        },
+      },
+    });
+
+    it('should add default sql to each query', () => {
+      var query = DefaultUser.find(1);
+      expect(query.$sql()).toEqual("SELECT * FROM `default_users` WHERE `default_users`.`id` = 1 AND `x` = 10 LIMIT 1;");
+    });
+
+    it('should be able to ignore default sql', () => {
+      var query = DefaultUser.find(1).$();
+      expect(query.$sql()).toEqual("SELECT * FROM `default_users` WHERE `default_users`.`id` = 1 LIMIT 1;");
+    });
+  });
+
 });
