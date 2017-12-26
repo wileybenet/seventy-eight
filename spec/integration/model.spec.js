@@ -189,7 +189,6 @@ describe('stale relationships', () => {
   it('should load the related models after an update', lasso(async () => {
     const b = await Beta.find(1).include(Alpha).exec();
     await b.update({ alpha: 2 });
-    console.log(b);
     expect(b.alpha.name).toEqual('malph');
   }));
 });

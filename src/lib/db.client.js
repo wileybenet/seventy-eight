@@ -88,7 +88,7 @@ exports.ping = function() {
         if (err) {
           reject(err);
         }
-        log('connected to mysql:', exports.getDate());
+        log('connected to mysql:', new Date().toJSON());
         connection.release();
         resolve();
       });
@@ -142,17 +142,4 @@ exports.close = async callbackFn => {
   const connection = await getConnection();
   connection.release();
   pool.end(callbackFn);
-};
-
-exports.getDate = function(dayShift) {
-  let date = new Date();
-  date.setDate(date.getDate() + (dayShift || 0));
-  date = date.getUTCFullYear() + '-' +
-    ('00' + (date.getUTCMonth() + 1)).slice(-2) + '-' +
-    ('00' + date.getUTCDate()).slice(-2) + ' ' +
-    ('00' + date.getUTCHours()).slice(-2) + ':' +
-    ('00' + date.getUTCMinutes()).slice(-2) + ':' +
-    ('00' + date.getUTCSeconds()).slice(-2);
-
-  return date;
 };

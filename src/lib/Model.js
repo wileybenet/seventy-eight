@@ -7,6 +7,11 @@ class Model {
   constructor() {}
 }
 
+const isModelSet = set => {
+  const model = _.isArray(set) ? set[0] : set;
+  return model instanceof Model;
+};
+
 const instanceMethods = {
   $whiteList(properties) {
     return _.pick(properties, Object.keys(this.Class.schema));
@@ -45,31 +50,23 @@ const instanceMethods = {
       .fromPairs()
       .value();
   },
-  beforeSave(props) { // eslint-disable-line class-methods-use-this
+  beforeSave(props) {
     return props;
   },
-  loadRelations(propKeys) {
+  refreshRelations(propKeys) {
     const relationFields = this.Class.getSchema().filter(field => field.relation);
     const modifiedRelations = _.intersection(relationFields.map(field => field.column), propKeys);
     if (modifiedRelations.length) {
-      const relations = modifiedRelations.map(column => _.find(relationFields, { column })).map(({ relation }) => this.getModel(relation));
+      const relations = modifiedRelations.map(column => _.find(relationFields, { column })).map(({ relation }) => this.Class.getModel(relation));
       return Promise.all(relations.map(relation => new RelationQuery(this, relation).exec()));
     }
   },
   async update(props, transactionQuerier = null) {
     const query = transactionQuerier || client.query;
-    const properties = this.beforeSave(_.extend({}, props));
+    const properties = await this.beforeSave(_.extend({}, props));
     let whiteListedProperties = this.$prepareProps(properties);
     whiteListedProperties = this.$beforeSave(whiteListedProperties);
-    const loadedRelationsProps = Object.keys(whiteListedProperties).filter(key => {
-      if (this[key] instanceof Model) {
-        return true;
-      }
-      if (this[key] && _.isArray(this[key]) && this[key][0] instanceof Model) {
-        return true;
-      }
-      return false;
-    });
+    const loadedRelationsProps = Object.keys(whiteListedProperties).filter(key => isModelSet(this[key]));
 
     if (_.size(whiteListedProperties)) {
       await query("UPDATE ?? SET ? WHERE ?? = ?", [
@@ -80,13 +77,13 @@ const instanceMethods = {
       ]);
       _.extend(this, whiteListedProperties);
       this.$afterFind();
-      await this.loadRelations(loadedRelationsProps);
+      await this.refreshRelations(loadedRelationsProps);
       this.afterFind();
     }
     return this;
   },
-  $saveParams(setColumns = null) {
-    const properties = this.beforeSave(this);
+  async $saveParams(setColumns = null) {
+    const properties = await this.beforeSave(this);
     let whiteListedProperties = this.$prepareProps(properties);
     whiteListedProperties = this.$beforeSave(whiteListedProperties);
     const columns = setColumns || _.keys(whiteListedProperties);
@@ -95,7 +92,7 @@ const instanceMethods = {
   },
   async save(transactionQuerier = null) {
     const query = transactionQuerier || client.query;
-    const params = this.$saveParams();
+    const params = await this.$saveParams();
     const { values, whiteListedProperties } = params;
     let { columns } = params;
     let sql = 'INSERT INTO ?? (??) VALUES ';
@@ -135,13 +132,13 @@ const staticMethods = {
   async import(objects) {
     const schema = this.getSchema();
     const columns = schema.map(field => field.column);
-    const params = objects.map(obj => {
+    const params = await Promise.all(objects.map(obj => {
       let record = obj;
       if (!(obj instanceof this)) {
          record = new this(obj);
       }
       return record.$saveParams(columns);
-    });
+    }));
     const nonPrimaryColumns = schema.filter(f => !f.primary).map(field => field.column);
     const updateSyntax = nonPrimaryColumns.map(() => `?? = VALUES(??)`).join(', ');
     const query = `INSERT INTO ?? (??) VALUES ? ${nonPrimaryColumns.length ? `ON DUPLICATE KEY UPDATE ${updateSyntax}` : ''}`;
@@ -181,8 +178,5 @@ module.exports = {
   Model,
   staticMethods,
   instanceMethods,
-  isModelSet(set) {
-    const model = _.isArray(set) ? set[0] : set;
-    return model instanceof Model;
-  },
+  isModelSet,
 };

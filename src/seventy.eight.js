@@ -7,10 +7,11 @@ const fieldTypes = require('./lib/field');
 const { error, getAllModels } = require('./utils');
 const { mock } = require('./mock');
 
-const seventyEight = {};
+const seventyEight = require('./lib/init');
 const chainQueryMethods = require('./query.builder');
 const { cache, getModel, getBoundModelCache } = require('./model.cache');
 const { Model, staticMethods, instanceMethods, isModelSet } = require('./lib/Model');
+const { getConstructor } = require('./lib/model.helpers');
 
 seventyEight.db = client;
 seventyEight.Model = Model;
@@ -22,24 +23,6 @@ seventyEight.isModelSet = isModelSet;
 seventyEight.getAllModels = getAllModels;
 seventyEight.getBoundModelCache = getBoundModelCache;
 
-const getConstructor = (className, baseName) => `(
-  class ${className} extends ${baseName} {
-    constructor(row, found) {
-      super();
-      for (const key in row) {
-        this[key] = row[key];
-      }
-      this.$tableName = tableName;
-      this.$primaryKey = this.Class.$getPrimaryKey();
-      if (found) {
-        this.$afterFind();
-        this.afterFind();
-      } else {
-        ModelConstructor.call(this);
-      }
-    }
-  }
-)`;
 
 const extend = function(options) { // eslint-disable-line max-statements
   if (!options.constructor.name.match(/^[A-Z][A-Za-z0-9]+$/)) {
@@ -114,10 +97,14 @@ const extend = function(options) { // eslint-disable-line max-statements
   _.forEach(queryMethods, QueryConstructor.createQueryMethod);
 
   QueryConstructor.bindToContext = (context, bindingOverrides) => {
-    const BoundModel = eval(getConstructor(`Bound${ModelConstructor.name}`, 'QueryConstructor'));
+    const BoundModel = eval(getConstructor(ModelConstructor.name, 'QueryConstructor'));
+    BoundModel.isBound = true;
     Object.assign(BoundModel, QueryConstructor, bindingOverrides, context);
     BoundModel.prototype.constructor = QueryConstructor;
-    Object.assign(BoundModel.prototype, context);
+    Object.assign(BoundModel.prototype, context, {
+      Class: BoundModel,
+      constructor: BoundModel,
+    });
     BoundModel.resetRelations().setRelations();
     return BoundModel;
   };

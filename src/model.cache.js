@@ -32,6 +32,7 @@ const getBoundModelCache = async bindingContext => {
   const models = await getAllModels();
   return orderByRelation(models).reduce((memo, Model) => {
     const BoundModel = Model.bindToContext(bindingContext, { getModel: getBoundModel });
+    boundCache(BoundModel);
     boundCache(BoundModel, Model.name);
     memo[Model.name] = BoundModel;
     return memo;

@@ -1,4 +1,4 @@
-const { lasso } = require('../helpers');
+const { lasso, wait } = require('../helpers');
 const seventyEight = require('../../src/seventy.eight');
 const { NotFoundError } = require('../../src/utils/error');
 const { field: { primary, string, boolean, json } } = seventyEight;
@@ -10,6 +10,15 @@ describe('#static-query', function() {
       id: primary(),
       data: json(),
       active: boolean(),
+    },
+    instance: {
+      async beforeSave(props) {
+        await wait(100);
+        if (props.data && props.data.map) {
+          props.data = props.data.map(el => el * 2);
+        }
+        return props;
+      },
     },
   });
 
@@ -48,10 +57,10 @@ describe('#static-query', function() {
   }));
 
   it('should format data with beforeSave when saving', lasso(async () => {
-    const data = { mapping: [{ name: 'test' }, { name: 'two' }] };
+    const data = [1, 2, 3];
     const user = await new User({ username: 'wiley', password: 'password', data }).save();
     const foundUser = await User.find(user.id).exec();
-    expect(foundUser.data).toEqual(data);
+    expect(foundUser.data).toEqual([2, 4, 6]);
   }));
 
   it('should update an existing row via update()', lasso(async () => {

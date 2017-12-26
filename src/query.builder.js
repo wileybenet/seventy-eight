@@ -138,7 +138,7 @@ const queryMethods = {
       }
       return m;
     });
-    this.$queryParams.relations = this.$queryParams.relations.concat(relations);
+    this.$queryParams.relations = _.uniqBy(this.$queryParams.relations.concat(relations), model => model.name);
   },
   $() {
     this.$queryParams.defaultOverride = true;
