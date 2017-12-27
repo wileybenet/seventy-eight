@@ -61,8 +61,8 @@ const instanceMethods = {
       return Promise.all(relations.map(relation => new RelationQuery(this, relation).exec()));
     }
   },
-  async update(props, transactionQuerier = null) {
-    const query = transactionQuerier || client.query;
+  async update(props, transactionQuery = null) {
+    const query = transactionQuery || this.Class.$transactionQuery || client.query;
     const properties = await this.beforeSave(_.extend({}, props));
     let whiteListedProperties = this.$prepareProps(properties);
     whiteListedProperties = this.$beforeSave(whiteListedProperties);
@@ -90,8 +90,8 @@ const instanceMethods = {
     const values = this.$getAt(columns, whiteListedProperties);
     return { columns, values, whiteListedProperties };
   },
-  async save(transactionQuerier = null) {
-    const query = transactionQuerier || client.query;
+  async save(transactionQuery = null) {
+    const query = transactionQuery || this.Class.$transactionQuery || client.query;
     const params = await this.$saveParams();
     const { values, whiteListedProperties } = params;
     let { columns } = params;
@@ -115,8 +115,8 @@ const instanceMethods = {
     Object.assign(this, model);
     return this;
   },
-  async delete(transactionQuerier = null) {
-    const query = transactionQuerier || client.query;
+  async delete(transactionQuery = null) {
+    const query = transactionQuery || this.Class.$transactionQuery || client.query;
     await query("DELETE FROM ?? WHERE ?? = ?", [
       this.$tableName,
       this.$primaryKey,
@@ -129,7 +129,8 @@ const instanceMethods = {
 Object.assign(Model.prototype, instanceMethods);
 
 const staticMethods = {
-  async import(objects) {
+  async import(objects, transactionQuery = null) {
+    const query = transactionQuery || this.$transactionQuery || client.query;
     const schema = this.getSchema();
     const columns = schema.map(field => field.column);
     const params = await Promise.all(objects.map(obj => {
@@ -141,17 +142,17 @@ const staticMethods = {
     }));
     const nonPrimaryColumns = schema.filter(f => !f.primary).map(field => field.column);
     const updateSyntax = nonPrimaryColumns.map(() => `?? = VALUES(??)`).join(', ');
-    const query = `INSERT INTO ?? (??) VALUES ? ${nonPrimaryColumns.length ? `ON DUPLICATE KEY UPDATE ${updateSyntax}` : ''}`;
+    const sql = `INSERT INTO ?? (??) VALUES ? ${nonPrimaryColumns.length ? `ON DUPLICATE KEY UPDATE ${updateSyntax}` : ''}`;
     const injection = [
       this.tableName,
       columns,
       params.map(({ values }) => values),
       ...nonPrimaryColumns.reduce((memo, column) => memo.concat([column, column]), []),
     ];
-    await client.query(query, injection);
+    await query(sql, injection);
   },
-  async update(recordId, props, transactionQuerier = null) {
-    const query = transactionQuerier || client.query;
+  async update(recordId, props, transactionQuery = null) {
+    const query = transactionQuery || this.$transactionQuery || client.query;
     const initialProps = {
       [this.$getPrimaryKey()]: recordId,
     };

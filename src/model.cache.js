@@ -25,13 +25,13 @@ const modelCache = createCache();
 const cache = createCachingFn(modelCache);
 const getModel = createCachePullingFn(modelCache);
 
-const getBoundModelCache = async bindingContext => {
+const getBoundModelCache = async ({ context, query = null }) => {
   const boundModelCache = createCache();
   const boundCache = createCachingFn(boundModelCache);
   const getBoundModel = createCachePullingFn(boundModelCache);
   const models = await getAllModels();
   return orderByRelation(models).reduce((memo, Model) => {
-    const BoundModel = Model.bindToContext(bindingContext, { getModel: getBoundModel });
+    const BoundModel = Model.bindToContext({ getModel: getBoundModel, $transactionQuery: query }, context);
     boundCache(BoundModel);
     boundCache(BoundModel, Model.name);
     memo[Model.name] = BoundModel;

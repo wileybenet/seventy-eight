@@ -87,7 +87,7 @@ const extend = function(options) { // eslint-disable-line max-statements
     if (_.isUndefined(ret)) {
       return nextSelf;
     }
-    throw new Error(`queryMethod ${ModelConstructor.name}.${fn.name}() CANNOT return a value, call this.<otherQueryMethod>() (returns are permitted from static)`);
+    throw new Error(`queryMethod ${ModelConstructor.name}.${fn.name}() CANNOT return a value, you should call .exec() or another queryMethod (returns are permitted from static methods)`);
   };
 
   QueryConstructor.createQueryMethod = (fn, methodName) => {
@@ -96,7 +96,7 @@ const extend = function(options) { // eslint-disable-line max-statements
 
   _.forEach(queryMethods, QueryConstructor.createQueryMethod);
 
-  QueryConstructor.bindToContext = (context, bindingOverrides) => {
+  QueryConstructor.bindToContext = (bindingOverrides, context) => {
     const BoundModel = eval(getConstructor(ModelConstructor.name, 'QueryConstructor'));
     BoundModel.isBound = true;
     Object.assign(BoundModel, QueryConstructor, bindingOverrides, context);
