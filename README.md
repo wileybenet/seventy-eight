@@ -1,6 +1,7 @@
 ## Active Record Lite
 [![wercker status](https://app.wercker.com/status/00e73ae1d42d6fdab896730134abd8f8/s/master "wercker status")](https://app.wercker.com/project/byKey/00e73ae1d42d6fdab896730134abd8f8)
 [![Coverage Status](https://coveralls.io/repos/github/wileybenet/seventy-eight/badge.svg?branch=master)](https://coveralls.io/github/wileybenet/seventy-eight?branch=master)
+[![dependencies Status](https://david-dm.org/wileybenet/seventy-eight/status.svg)](https://david-dm.org/wileybenet/seventy-eight)
 
 ```javascript
 var seventyEight = require('seventy-eight');
