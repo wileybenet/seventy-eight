@@ -24,7 +24,7 @@ const utils = {
       return console.log(str.sql);
     }
     const colors = [];
-    const message = str.replace(/%%([a-z-]+)##(.*?)&&/g, (s, color, msg) => {
+    const message = (typeof str === 'string' ? str : JSON.stringify(str)).replace(/%%([a-z-]+)##(.*?)&&/g, (s, color, msg) => {
       colors.push(`color:${color};`);
       colors.push(`color:default;`);
       return `%c${msg}%c`;
