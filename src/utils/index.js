@@ -6,6 +6,7 @@ const style = require('ansi-styles');
 const error = require('./error');
 
 const PREFIX_78 = `78`;
+const TERMINAL = process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'cli';
 
 const createDirIfNotExists = dir => {
   if (!fs.existsSync(dir)) {
@@ -13,22 +14,25 @@ const createDirIfNotExists = dir => {
   }
 };
 
-const fileColors = _.curry((clr, str) => `${style[clr].open}${str}${style[clr].close}`);
-const chromeColors = _.curry((clr, str) => `%${clr}#${str}%`);
+const fileColors = _.curry((clr, str) => (process.env.NODE_ENV === 'production' ? str : `${style[clr].open}${str}${style[clr].close}`));
+const chromeColors = _.curry((clr, str) => (process.env.NODE_ENV === 'production' ? str : `%%${clr}##${str}&&`));
 
 const utils = {
-  color: process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'cli' ? fileColors : chromeColors,
+  color: TERMINAL ? fileColors : chromeColors,
   coloredConsoleLog(str, ...args) {
-    if (process.env.NODE_ENV === 'test') {
-      return console.log(str, ...args);
+    if (TERMINAL) {
+      return console.log(str.sql);
     }
     const colors = [];
-    const message = str.replace(/%([a-z-]+)#(.*?)%/g, (s, color, msg) => {
+    const message = str.replace(/%%([a-z-]+)##(.*?)&&/g, (s, color, msg) => {
       colors.push(`color:${color};`);
       colors.push(`color:default;`);
       return `%c${msg}%c`;
     });
     console.log(message, ...colors, ...args);
+  },
+  sqlHighlight(msg) {
+    return msg.replace(/( [A-Z_]{2,}|[A-Z_]{2,} |[A-Z_]{2,}$)/g, (s, m) => utils.color('cyan', m));
   },
   indent: '\n  ',
   modelDir: `${process.cwd()}/models`,

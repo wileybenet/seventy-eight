@@ -48,20 +48,26 @@ const instantiateResponse = function(data) {
   return models || [];
 };
 
-const allQueries = async function(transactionQuery) {
+const queryThrough = async function(sql, transactionQuery) {
   const send = q => q();
+  const isTransactionQuery = transactionQuery || this.$transactionQuery;
   const query = transactionQuery || this.$transactionQuery || this.db.query;
-  const result = await query(this.$sql());
+  let result = this.Class.cache.hit(sql);
+  if (!result) {
+    result = await query(sql);
+    this.Class.cache.store(sql, result);
+  }
   const models = instantiateResponse.call(this, result);
   if (this.$queryParams.relations.length) {
     const relationQueries = this.$queryParams.relations.map(relation => new RelationQuery(models, relation));
     const queries = [
       ...relationQueries.map(rq => () => rq.exec(transactionQuery)),
     ];
-    if (transactionQuery) {
+    if (isTransactionQuery) {
       await inSerial(queries, send);
+    } else {
+      await Promise.all(queries.map(send));
     }
-    await Promise.all(queries.map(send));
   }
   return models;
 };
@@ -161,7 +167,10 @@ module.exports = {
   },
   queryMethods,
   evaluation: {
-    $sql(partition = false) { // eslint-disable-line max-statements
+    $sql(returnContext = false, skipDefault = false) { // eslint-disable-line max-statements
+      if (this.default && !this.$queryParams.defaultOverride && !skipDefault) {
+        return this.default().$sql(returnContext, true);
+      }
       let query = '';
       const params = [];
       if (_.size(this.$queryParams.select)) {
@@ -192,17 +201,23 @@ module.exports = {
       }
 
       query += ';';
-      return partition ? [query, params] : db.formatQuery(query, params);
+      const sql = db.formatQuery(query, params);
+
+      if (returnContext) {
+        return {
+          context: this,
+          sql,
+        };
+      }
+      return sql;
     },
     exec(transactionQuery) {
-      if (this.default && !this.$queryParams.defaultOverride) {
-        this.default();
-      }
       if (transactionQuery && transactionQuery.length !== 2) {
         throw new Error('method passed to exec() should be a query method for performing all queries on the same connection');
       }
-      this.$chainInitialized = false;
-      return allQueries.call(this, transactionQuery);
+      const { context, sql } = this.$sql(true);
+      context.$chainInitialized = false;
+      return queryThrough.call(context, sql, transactionQuery);
     },
   },
 };

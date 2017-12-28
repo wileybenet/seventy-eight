@@ -140,7 +140,7 @@ describe('binding', () => {
   let BoundModel = null;
   let model = null;
   const context = {
-    req: {
+    $req: {
       user: {},
     },
   };
@@ -154,12 +154,12 @@ describe('binding', () => {
     },
     query: {
       getAllBindings() {
-        this.req.user; // eslint-disable-line no-unused-expressions
+        this.$req.user; // eslint-disable-line no-unused-expressions
       },
     },
     instance: {
       getUser() {
-        return this.req.user;
+        return this.$req.user;
       },
     },
   });
@@ -170,15 +170,16 @@ describe('binding', () => {
   });
 
   it('should not have the context attached to the original class', () => {
-    expect(ModelBinding.req).not.toBeDefined();
+    expect(ModelBinding.$req).not.toBeDefined();
   });
 
   it('should have the context attached to the bound class', () => {
-    expect(BoundModel.req.user).toEqual({});
+    expect(BoundModel.$req.user).toEqual({});
   });
 
   it('should have the context attached to each instance', () => {
-    expect(model.req.user).toEqual({});
+    console.log(model);
+    expect(model.$req.user).toEqual({});
   });
 
   it('should have the original static members', () => {

@@ -1,5 +1,6 @@
 const mysql = require('mysql');
-const { color, coloredConsoleLog, error: { SQLError } } = require('../utils');
+const { sqlHighlight, error: { SQLError } } = require('../utils');
+const init = require('./init');
 
 let schema = null;
 
@@ -13,59 +14,16 @@ var pool = mysql.createPool({
   multipleStatements: true,
 });
 
-const cyan = color('cyan');
-// const green = color('green');
 let totalConnections = 0;
-
-const log = (str, params) => {
-  let formattedStr = str;
-  if (params) {
-    formattedStr = mysql.format(str, params);
-  }
-  if (process.env.NODE_ENV === 'production' && process.env.DEBUG) {
-    return console.log(JSON.stringify({ service: 'mysql', query: formattedStr, timestamp: Date.now() }));
-  }
-  const logString = formattedStr.replace(/( [A-Z_]{2,}|[A-Z_]{2,} |[A-Z_]{2,}$)/g, (s, m) => cyan(m));
-  if (process.env.NODE_ENV !== 'cli') {
-    coloredConsoleLog(logString);
-  }
-};
 
 pool.on('connection', function () {
   totalConnections += 1;
-  log(`new connection made: ${totalConnections} active`);
+  init.log.info(`new connection made: ${totalConnections} active`);
 });
 
 pool.on('enqueue', function () {
-  log('waiting for available connection slot');
+  init.log.info('waiting for available connection slot');
 });
-
-const spinner = () => {
-  if (!process.env.DEBUG) {
-    return () => {};
-  }
-  // const start = new Date();
-  let count = 0;
-  let interval = null;
-  let spinning = false;
-  const character = ['\\', '|', '/', '-', '\\', '|', '/', '-'];
-  const startSpinning = () => {
-    interval = setInterval(() => {
-      process.stdout.write(`\r${character[count % 8]}`);
-      count += 1;
-    }, 75);
-    spinning = true;
-  };
-  const delay = setTimeout(startSpinning, 10000);
-  return () => {
-    if (spinning) {
-      clearInterval(interval);
-    } else {
-      clearTimeout(delay);
-    }
-    // log(green(`\r${((Number(new Date()) - start) / 1000).toFixed(3)} sec`));
-  };
-};
 
 exports.schema = schema;
 exports.format = mysql.format.bind(mysql);
@@ -88,7 +46,7 @@ exports.ping = function() {
         if (err) {
           reject(err);
         }
-        log('connected to mysql:', new Date().toJSON());
+        init.log.info('connected to mysql:', new Date().toJSON());
         connection.release();
         resolve();
       });
@@ -106,6 +64,12 @@ const getConnection = () => new Promise((resolve, reject) => {
         return new Promise((res, rej) => {
           connection.query(str, params, (error, data) => {
             if (error) {
+              init.log.error({
+                code: error.code,
+                number: error.errno,
+                message: error.sqlMessage,
+                sql: error.sql,
+              });
               return rej(new SQLError(error.message));
             }
             res(data);
@@ -129,11 +93,9 @@ exports.formatQuery = function(str, params) {
 exports.query = async (str, params, silent = false) => {
   const conn = await getConnection();
   if (!silent) {
-    log(str, params);
+    init.log.info({ sql: sqlHighlight(mysql.format(str, params)) });
   }
-  const interval = spinner();
   const data = await conn.query(str, params);
-  interval();
   conn.release();
   return data;
 };

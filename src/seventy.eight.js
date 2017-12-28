@@ -9,8 +9,8 @@ const { mock } = require('./mock');
 
 const seventyEight = require('./lib/init');
 const chainQueryMethods = require('./query.builder');
-const { cache, getModel, getBoundModelCache } = require('./model.cache');
-const { Model, staticMethods, instanceMethods, isModelSet } = require('./lib/Model');
+const { cache, getModel, getBoundModelCache } = require('./lib/model.cache');
+const { Model, staticMethods, instanceMethods, isModelSet } = require('./lib/model');
 const { getConstructor } = require('./lib/model.helpers');
 
 seventyEight.db = client;
@@ -96,7 +96,7 @@ const extend = function(options) { // eslint-disable-line max-statements
 
   _.forEach(queryMethods, QueryConstructor.createQueryMethod);
 
-  QueryConstructor.bindToContext = (bindingOverrides, context) => {
+  QueryConstructor.bindToContext = (context, bindingOverrides = {}) => {
     const BoundModel = eval(getConstructor(ModelConstructor.name, 'QueryConstructor'));
     BoundModel.isBound = true;
     Object.assign(BoundModel, QueryConstructor, bindingOverrides, context);

@@ -1,4 +1,4 @@
-const { prefix, getAllModels, orderByRelation } = require('./utils');
+const { prefix, getAllModels, orderByRelation } = require('../utils');
 
 const createCache = () => ({
   byClass: {},
@@ -29,9 +29,13 @@ const getBoundModelCache = async ({ context, query = null }) => {
   const boundModelCache = createCache();
   const boundCache = createCachingFn(boundModelCache);
   const getBoundModel = createCachePullingFn(boundModelCache);
+  const bindingOverrides = {
+    getModel: getBoundModel,
+    $transactionQuery: query,
+  };
   const models = await getAllModels();
   return orderByRelation(models).reduce((memo, Model) => {
-    const BoundModel = Model.bindToContext({ getModel: getBoundModel, $transactionQuery: query }, context);
+    const BoundModel = Model.bindToContext(context, bindingOverrides);
     boundCache(BoundModel);
     boundCache(BoundModel, Model.name);
     memo[Model.name] = BoundModel;

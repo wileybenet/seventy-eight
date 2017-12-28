@@ -2,6 +2,9 @@ const _ = require('lodash');
 const client = require('./db.client');
 const schemaFilters = require('./schema.filters');
 const RelationQuery = require('./relation.query');
+const SqlCache = require('./sql.cache');
+
+const cache = new SqlCache(10);
 
 class Model {
   constructor() {}
@@ -75,6 +78,7 @@ const instanceMethods = {
         this.$primaryKey,
         this[this.$primaryKey],
       ]);
+      this.Class.cache.invalidate();
       _.extend(this, whiteListedProperties);
       this.$afterFind();
       await this.refreshRelations(loadedRelationsProps);
@@ -111,6 +115,7 @@ const instanceMethods = {
       values,
       whiteListedProperties,
     ]);
+    this.Class.cache.invalidate();
     const model = await this.Class.find(data.insertId || this[this.$primaryKey]).exec();
     Object.assign(this, model);
     return this;
@@ -122,6 +127,7 @@ const instanceMethods = {
       this.$primaryKey,
       this[this.$primaryKey],
     ]);
+    this.Class.cache.invalidate();
     return true;
   },
 };
@@ -150,6 +156,7 @@ const staticMethods = {
       ...nonPrimaryColumns.reduce((memo, column) => memo.concat([column, column]), []),
     ];
     await query(sql, injection);
+    this.cache.invalidate();
   },
   async update(recordId, props, transactionQuery = null) {
     const query = transactionQuery || this.$transactionQuery || client.query;
@@ -168,12 +175,15 @@ const staticMethods = {
         this.$getPrimaryKey(),
         recordId,
       ]);
+      this.cache.invalidate();
     }
     return true;
   },
 };
 
-Object.assign(Model, staticMethods);
+Object.assign(Model, staticMethods, {
+  cache,
+});
 
 module.exports = {
   Model,
