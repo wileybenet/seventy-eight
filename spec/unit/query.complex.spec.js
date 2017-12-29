@@ -30,6 +30,12 @@ describe('#static-composition', function() {
       expect(query.$sql()).toEqual("SELECT * FROM `users` WHERE `id` < 1 AND `name` != 1 AND `title` >= 1;");
     });
 
+    fit('should deserialize not/lessthan/greaterthan conditions with dates', function() {
+      var query = User.where({ id: ['<', 1], name: ['!=', 1], title: ['>=', new Date('2017-12-31 00:00:00')] });
+
+      expect(query.$sql()).toEqual("SELECT * FROM `users` WHERE `id` < 1 AND `name` != 1 AND `title` >= '2017-12-31 00:00:00.000';");
+    });
+
     it('should not overwrite keys from separate where statements', function() {
       var query = User.where({ id: 1 }).where({ id: ['!=', 1] }).where({ id: ['>=', 1] });
 
