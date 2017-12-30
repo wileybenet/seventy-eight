@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle */
-const seventyEight = require('../../src/seventy.eight');
+const seventyEight = require('../../src/index');
 const { field: { primary } } = seventyEight;
 const { mock } = require('../../src/mock');
 

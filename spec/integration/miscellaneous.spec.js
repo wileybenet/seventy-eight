@@ -1,5 +1,5 @@
 const { lasso } = require('../helpers');
-const seventyEight = require('../../src/seventy.eight');
+const seventyEight = require('../../src/index');
 
 describe('#miscellaneous', function() {
 

@@ -1,5 +1,5 @@
 
-var seventyEight = require('../../src/seventy.eight');
+var seventyEight = require('../../src/index');
 const { field: { primary } } = seventyEight;
 
 describe('#miscellaneous', function() {

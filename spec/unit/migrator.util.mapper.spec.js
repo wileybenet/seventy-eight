@@ -1,4 +1,4 @@
-// const { field: { primary, string, time } } = require('../../src/seventy.eight');
+// const { field: { primary, string, time } } = require('../../src/index');
 const _ = require('lodash');
 const { getMappers } = require('../../src/lib/migrator.utils.mappers');
 

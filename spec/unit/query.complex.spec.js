@@ -1,4 +1,4 @@
-const seventyEight = require('../../src/seventy.eight');
+const seventyEight = require('../../src/index');
 const { field: { primary } } = seventyEight;
 
 describe('#static-composition', function() {

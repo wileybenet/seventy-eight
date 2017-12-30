@@ -1,5 +1,5 @@
 
-const seventyEight = require('../../src/seventy.eight');
+const seventyEight = require('../../src/index');
 // const utils = require('../../src/lib/migrator.utils');
 const { field: { primary, string, int, time, boolean, json, text, relation } } = seventyEight;
 

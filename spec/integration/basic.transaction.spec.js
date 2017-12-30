@@ -1,5 +1,5 @@
 const { lasso, wait } = require('../helpers');
-const seventyEight = require('../../src/seventy.eight');
+const seventyEight = require('../../src/index');
 const { NotFoundError } = require('../../src/utils/error');
 const { field: { primary, string, boolean, json } } = seventyEight;
 

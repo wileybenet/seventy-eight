@@ -1,5 +1,5 @@
 
-var seventyEight = require('../../src/seventy.eight');
+var seventyEight = require('../../src/index');
 
 describe('#base-static-methods', () => { // eslint-disable-line max-statements
 

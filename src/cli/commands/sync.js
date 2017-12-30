@@ -14,7 +14,7 @@ const {
   orderByRelation,
 } = require('../../utils');
 const _ = require('lodash');
-const seventyEight = require('../../seventy.eight');
+const seventyEight = require('../../index');
 const { getModel, field: { primary, string } } = seventyEight;
 
 const logG = log('green');

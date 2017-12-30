@@ -1,4 +1,4 @@
-const seventyEight = require('../src/seventy.eight');
+const seventyEight = require('../src/index');
 const { field: { primary, int, string, boolean, text, json, time, relation } } = seventyEight;
 
 module.exports = {

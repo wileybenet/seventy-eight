@@ -1,5 +1,5 @@
 const { lasso } = require('../helpers');
-const seventyEight = require('../../src/seventy.eight');
+const seventyEight = require('../../src/index');
 const utils = require('../../src/lib/migrator.utils').getUtils({ namespace: 'User' });
 const { statements } = require('../helpers');
 const { field: { primary, string, time, json, relation } } = seventyEight;

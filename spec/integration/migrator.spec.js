@@ -1,5 +1,5 @@
 const { lasso, wait, statements } = require('../helpers');
-const seventyEight = require('../../src/seventy.eight');
+const seventyEight = require('../../src/index');
 const { field: { primary, int, string, boolean, json, time, relation } } = seventyEight;
 
 describe('schema modifiers', () => {

@@ -1,5 +1,5 @@
 const { lasso } = require('../helpers');
-const seventyEight = require('../../src/seventy.eight');
+const seventyEight = require('../../src/index');
 const { buildIndex } = require('../../src/utils');
 const { db: { query }, field: { primary, int, string, relation } } = seventyEight;
 

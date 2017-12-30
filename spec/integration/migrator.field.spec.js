@@ -1,5 +1,5 @@
 const { lasso } = require('../helpers');
-const seventyEight = require('../../src/seventy.eight');
+const seventyEight = require('../../src/index');
 const { field: { primary, int, string, boolean } } = seventyEight;
 const { statements, buildFullSchema } = require('../helpers');
 

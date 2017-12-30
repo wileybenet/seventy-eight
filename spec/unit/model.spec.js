@@ -1,4 +1,4 @@
-const { createModel, isModelSet, field: { primary, string, int, json, time } } = require('../../src/seventy.eight');
+const { createModel, isModelSet, field: { primary, string, int, json, time } } = require('../../src/index');
 
 describe('initialization', () => {
   it('should throw for an invalid name', () => {
