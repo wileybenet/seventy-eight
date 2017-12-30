@@ -2,7 +2,7 @@
   "name": "seventy-eight",
   "version": "3.3.3",
   "description": "Active-Record like API",
-  "main": "index.js",
+  "main": "./src",
   "engines": {
     "node": ">=8.0.0"
   },
