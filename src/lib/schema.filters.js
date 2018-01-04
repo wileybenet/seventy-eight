@@ -37,7 +37,7 @@ module.exports = {
         int: () => coerce(model[schemaField.column], Number, 0),
         string: () => coerce(model[schemaField.column], noop, ''),
         time: () => coerce(model[schemaField.column], v => new Date(v)),
-        boolean: () => coerce(model[schemaField.column], Boolean, false),
+        boolean: () => coerce(model[schemaField.column], Boolean, 0, false),
         text: () => coerce(model[schemaField.column], noop, ''),
         json: () => {
           let value = {};
