@@ -1,6 +1,6 @@
 {
   "name": "seventy-eight",
-  "version": "3.3.4",
+  "version": "3.3.5",
   "description": "Active-Record like API",
   "main": "./src",
   "engines": {
