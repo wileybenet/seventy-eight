@@ -2,6 +2,17 @@ const noop = val => val;
 
 const pad = val => (val > 9 ? val : `0${val}`);
 
+const coerce = (value, coersion, ...allowed) => {
+  const coercedValue = coersion(value);
+  if (coercedValue) {
+    return coercedValue;
+  }
+  if (allowed.includes(value)) {
+    return coercedValue;
+  }
+  return null;
+};
+
 const toUTC = (date = null) => {
   if (!date) {
     return null;
@@ -23,11 +34,11 @@ module.exports = {
   filterOut(model) {
     return schemaField => {
       const fn = {
-        int: () => Number(model[schemaField.column]),
-        string: () => model[schemaField.column],
-        time: () => new Date(model[schemaField.column]),
-        boolean: () => Boolean(model[schemaField.column]),
-        text: () => model[schemaField.column],
+        int: () => coerce(model[schemaField.column], Number, 0),
+        string: () => coerce(model[schemaField.column], noop, ''),
+        time: () => coerce(model[schemaField.column], v => new Date(v)),
+        boolean: () => coerce(model[schemaField.column], Boolean, false),
+        text: () => coerce(model[schemaField.column], noop, ''),
         json: () => {
           let value = {};
           try {
